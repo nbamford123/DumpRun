@@ -1,0 +1,322 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Dump Pickup API",
+    "version": "1.0.0",
+    "description": "API for managing dump pickup requests, user accounts, and driver operations."
+  },
+  "servers": [
+    {
+      "url": "https://api.dumppickup.com/v1"
+    }
+  ],
+  "paths": {
+    "/v1/users": {
+      "post": {
+        "summary": "Create a new user account",
+        "operationId": "createUser",
+        "tags": [
+          "Users"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NewUser"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "User created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          }
+        }
+      }
+    },
+    "/v1/pickups": {
+      "post": {
+        "summary": "Create a new pickup request",
+        "operationId": "createPickup",
+        "tags": [
+          "Pickups"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NewPickup"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Pickup request created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Pickup"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      },
+      "get": {
+        "summary": "List pickup requests",
+        "operationId": "listPickups",
+        "tags": [
+          "Pickups"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "status",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "pending",
+                "assigned",
+                "completed",
+                "cancelled"
+              ]
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of pickup requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "pickups": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Pickup"
+                      }
+                    },
+                    "nextCursor": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "NewUser": {
+        "type": "object",
+        "required": [
+          "name",
+          "email",
+          "password"
+        ],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "password": {
+            "type": "string",
+            "format": "password"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "address": {
+            "type": "string"
+          }
+        }
+      },
+      "User": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "address": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "NewPickup": {
+        "type": "object",
+        "required": [
+          "location",
+          "estimatedWeight",
+          "wasteType"
+        ],
+        "properties": {
+          "location": {
+            "type": "string"
+          },
+          "estimatedWeight": {
+            "type": "number",
+            "format": "float"
+          },
+          "wasteType": {
+            "type": "string"
+          },
+          "requestedTime": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "Pickup": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "userId": {
+            "type": "string"
+          },
+          "driverId": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "assigned",
+              "completed",
+              "cancelled"
+            ]
+          },
+          "location": {
+            "type": "string"
+          },
+          "estimatedWeight": {
+            "type": "number",
+            "format": "float"
+          },
+          "wasteType": {
+            "type": "string"
+          },
+          "requestedTime": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "assignedTime": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "completedTime": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Bad request",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Unauthorized",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  }
+}

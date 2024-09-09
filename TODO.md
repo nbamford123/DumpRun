@@ -12,3 +12,4 @@
 11. Issue tracking software? Jira? 
 12. Documentation will become an issue soon enough, too. Confluence?
 13. For admin frontend, does Next make the most sense?
+14. Cognito user name is case sensitive. Is that bad?

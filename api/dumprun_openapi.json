@@ -658,7 +658,7 @@
         "x-amazon-apigateway-authorizer": {
           "type": "cognito_user_pools",
           "providerARNs": [
-            "arn:aws:cognito-idp:{region}:{account-id}:userpool/{user-pool-id}"
+            "arn:aws:cognito-idp:us-west-2:369547265320:userpool/us-west-2_vriluhdDN"
           ]
         }
       }

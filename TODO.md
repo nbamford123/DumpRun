@@ -11,7 +11,7 @@
 * Issue tracking software? Jira? 
 * Documentation will become an issue soon enough, too. Confluence?
 * For admin frontend, does Next make the most sense?
-
+* precommit hook with prettier, lint and testing
 
 1. Set up your database:
 For PostgreSQL: Set up an RDS instance or use a local PostgreSQL for development.

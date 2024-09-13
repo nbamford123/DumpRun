@@ -1,7 +1,10 @@
 # Temporary ToDo File
 
+* tsc build and pre-commit hook: autorun prettier, then lint and tsc for errors
+* vitest for tests
+* logging for the lambda functions? https://docs.aws.amazon.com/lambda/latest/dg/typescript-logging.html
 * Make sure the update AWS github action validates the openapi spec
-* set up github actions to automatically redploy aws gateway when openapi spec changes
+* seeslt up github actions to automatically redploy aws gateway when openapi spec changes
 * can user/driver change email/phone #? Makes sense in a way, but how to prevent account hijacking?
 * Will we need to store the driver's dl #? What about insurance? Going to punt on that for now.
 * Does the driver have to put in the vehicle info, etc. to create the account, or can that be done later? Obviously they can't pick up a job without it.

@@ -15,9 +15,7 @@
       "post": {
         "summary": "Create a new user account",
         "operationId": "createUser",
-        "tags": [
-          "Users"
-        ],
+        "tags": ["Users"],
         "requestBody": {
           "required": true,
           "content": {
@@ -222,9 +220,7 @@
       "post": {
         "summary": "Create a new driver account",
         "operationId": "createDriver",
-        "tags": [
-          "Drivers"
-        ],
+        "tags": ["Drivers"],
         "requestBody": {
           "required": true,
           "content": {
@@ -429,9 +425,7 @@
       "post": {
         "summary": "Create a new pickup request",
         "operationId": "createPickup",
-        "tags": [
-          "Pickups"
-        ],
+        "tags": ["Pickups"],
         "security": [
           {
             "CognitoAuth": []
@@ -466,9 +460,7 @@
       "get": {
         "summary": "List pickup requests",
         "operationId": "listPickups",
-        "tags": [
-          "Pickups"
-        ],
+        "tags": ["Pickups"],
         "security": [
           {
             "CognitoAuth": ["admin"]
@@ -480,12 +472,7 @@
             "name": "status",
             "schema": {
               "type": "string",
-              "enum": [
-                "pending",
-                "assigned",
-                "completed",
-                "cancelled"
-              ]
+              "enum": ["pending", "assigned", "completed", "cancelled"]
             }
           },
           {
@@ -666,14 +653,12 @@
     "schemas": {
       "NewUser": {
         "type": "object",
-        "required": [
-          "name",
-          "email",
-          "password"
-        ],
+        "required": ["name", "email", "password"],
         "properties": {
           "name": {
-            "type": "string"
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
           },
           "email": {
             "type": "string",
@@ -681,10 +666,12 @@
           },
           "password": {
             "type": "string",
-            "format": "password"
+            "format": "password",
+            "minLength": 8
           },
           "phone": {
-            "type": "string"
+            "type": "string",
+            "pattern": "^\\+?[1-9]\\d{1,14}$"
           },
           "address": {
             "type": "string"
@@ -695,10 +682,13 @@
         "type": "object",
         "properties": {
           "name": {
-            "type": "string"
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
           },
           "phone": {
-            "type": "string"
+            "type": "string",
+            "pattern": "^\\+?[1-9]\\d{1,14}$"
           },
           "address": {
             "type": "string"
@@ -735,11 +725,7 @@
       },
       "NewDriver": {
         "type": "object",
-        "required": [
-          "name",
-          "email",
-          "password"
-        ],
+        "required": ["name", "email", "password"],
         "properties": {
           "name": {
             "type": "string"
@@ -822,11 +808,7 @@
       },
       "NewPickup": {
         "type": "object",
-        "required": [
-          "location",
-          "estimatedWeight",
-          "wasteType"
-        ],
+        "required": ["location", "estimatedWeight", "wasteType"],
         "properties": {
           "userId": {
             "type": "string"
@@ -880,12 +862,7 @@
           },
           "status": {
             "type": "string",
-            "enum": [
-              "pending",
-              "assigned",
-              "completed",
-              "cancelled"
-            ]
+            "enum": ["pending", "assigned", "completed", "cancelled"]
           },
           "location": {
             "type": "string"

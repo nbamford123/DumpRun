@@ -14,7 +14,8 @@
     "prepare": "husky install",
     "pre-commit": "pnpm format && pnpm validate",
     "test": "vitest run src",
-    "validate": "pnpm format && pnpm lint && pnpm check-types && pnpm test"
+    "test-integration": "vitest run integration-tests",
+    "validate": "pnpm lint && pnpm check-types && pnpm test"
   },
   "author": "Nathan Bamford",
   "license": "ISC",

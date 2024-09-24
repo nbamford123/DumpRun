@@ -25,6 +25,8 @@ describe('user lambdas', () => {
       username: 'testuser',
       email: 'test@example.com',
       name: 'Test User',
+      phone: '303-555-1212',
+      address: '11382 High St. Northglenn, CO 80233',
       password: 'password'
     };
     const mockCreatedUser = {
@@ -69,6 +71,8 @@ describe('user lambdas', () => {
       username: 'testuser',
       email: 'test@example.com',
       name: 'Test User',
+      phone: '303-555-1212',
+      address: '11382 High St. Northglenn, CO 80233',
       password: 'password'
     };
 

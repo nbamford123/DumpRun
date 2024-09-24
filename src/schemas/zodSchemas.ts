@@ -6,11 +6,8 @@ const NewUser = z
     name: z.string().min(1).max(100),
     email: z.string().email(),
     password: z.string().min(8),
-    phone: z
-      .string()
-      .regex(/^\+?[1-9]\d{1,14}$/)
-      .optional(),
-    address: z.string().optional(),
+    phone: z.string().regex(/^\+?[1-9]\d{1,14}$|^\d{3}-\d{3}-\d{4}$/),
+    address: z.string(),
   })
   .passthrough();
 const User = z
@@ -32,7 +29,8 @@ const Error = z
 const UpdateUser = z
   .object({
     name: z.string().min(1).max(100),
-    phone: z.string().regex(/^\+?[1-9]\d{1,14}$/),
+    password: z.string().min(8),
+    phone: z.string().regex(/^\+?[1-9]\d{1,14}$|^\d{3}-\d{3}-\d{4}$/),
     address: z.string(),
   })
   .partial()

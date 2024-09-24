@@ -7,7 +7,7 @@ export const createUser: APIGatewayProxyHandler = async (event) => {
   try {
     const requestBody = JSON.parse(event.body || '{}')
     const result = schemas.NewUser.safeParse(requestBody)
-
+    console.log(result.error?.issues)
     if (!result.success) {
       return {
         statusCode: 400,
@@ -114,18 +114,18 @@ export const deleteUser: APIGatewayProxyHandler = async (event) => {
 
     const deletedUser = await deleteUserService(userId);
 
+    if (!deletedUser) {
+      return {
+        statusCode: 404,
+        body: JSON.stringify({ message: 'User not found' }),
+      };
+    }
     return {
       statusCode: 204,
       body: JSON.stringify(deletedUser),
     };
   } catch (error) {
     console.error('Error in deleteUser:', error);
-    if (error instanceof Error && error.message === 'User not found') {
-      return {
-        statusCode: 404,
-        body: JSON.stringify({ message: 'User not found' }),
-      };
-    }
     return {
       statusCode: 500,
       body: JSON.stringify({ message: 'Internal Server Error' }),

@@ -125,11 +125,13 @@ export interface components {
             email: string;
             /** Format: password */
             password: string;
-            phone?: string;
-            address?: string;
+            phone: string;
+            address: string;
         };
         UpdateUser: {
             name?: string;
+            /** Format: password */
+            password?: string;
             phone?: string;
             address?: string;
         };

@@ -1,9 +1,10 @@
 # Temporary ToDo File
 
-- ts-to-zod can do some more complicated stuff like validate emails and phone numbers via jsdoc comments: https://www.npmjs.com/package/ts-to-zod, but how can we leverage that when we're autogenerating types from the openapi spec?
+- put prisma/docker setup tasks in readme-- when to run integration tests? How can they be run on github? Probably they can't
 - logging for the lambda functions? https://docs.aws.amazon.com/lambda/latest/dg/typescript-logging.html
 - Make sure the update AWS github action validates the openapi spec
 - set up github actions to automatically redploy aws gateway when openapi spec changes
+- is driver really just a special user? Like the driver table would only contain extra info and a userid back to the user table?
 - can user/driver change email/phone #? Makes sense in a way, but how to prevent account hijacking?
 - Will we need to store the driver's dl #? What about insurance? Going to punt on that for now.
 - Does the driver have to put in the vehicle info, etc. to create the account, or can that be done later? Obviously they can't pick up a job without it.
@@ -13,7 +14,6 @@
 - Issue tracking software? Jira?
 - Documentation will become an issue soon enough, too. Confluence?
 - For admin frontend, does Next make the most sense?
-- precommit hook with prettier, lint and testing
 
 1. Implement Lambda Functions
 # Lambda Implementation Plan

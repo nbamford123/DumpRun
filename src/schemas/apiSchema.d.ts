@@ -152,11 +152,16 @@ export interface components {
             email: string;
             /** Format: password */
             password: string;
-            phone?: string;
-            address?: string;
+            phone: string;
+            address: string;
+            vehicleMake: string;
+            vehicleModel: string;
+            vehicleYear: number;
         };
         UpdateDriver: {
             name?: string;
+            /** Format: password */
+            password?: string;
             phone?: string;
             address?: string;
             vehicleMake?: string;

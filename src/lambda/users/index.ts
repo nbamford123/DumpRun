@@ -1,6 +1,6 @@
 export {
     createUser,
-    // getUser,
-    // updateUser,
-    // deleteUser
+    getUser,
+    updateUser,
+    deleteUser
 } from './userHandlers.js';

@@ -20,7 +20,7 @@ CREATE TABLE "Driver" (
     "phone" TEXT NOT NULL,
     "address" TEXT NOT NULL,
     "password" TEXT NOT NULL,
-    "vehicleMale" TEXT NOT NULL,
+    "vehicleMake" TEXT NOT NULL,
     "vehicleModel" TEXT NOT NULL,
     "vehicleYear" INTEGER NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,

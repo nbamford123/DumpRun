@@ -33,7 +33,7 @@ model Driver {
   phone     String
   address   String
   password  String
-  vehicleMale String
+  vehicleMake String
   vehicleModel String
   vehicleYear  Int
   createdAt DateTime @default(now())

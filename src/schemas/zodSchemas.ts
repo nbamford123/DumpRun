@@ -37,11 +37,14 @@ const UpdateUser = z
   .passthrough();
 const NewDriver = z
   .object({
-    name: z.string(),
+    name: z.string().min(1).max(100),
     email: z.string().email(),
-    password: z.string(),
-    phone: z.string().optional(),
-    address: z.string().optional(),
+    password: z.string().min(8),
+    phone: z.string().regex(/^\+?[1-9]\d{1,14}$|^\d{3}-\d{3}-\d{4}$/),
+    address: z.string(),
+    vehicleMake: z.string(),
+    vehicleModel: z.string(),
+    vehicleYear: z.number(),
   })
   .passthrough();
 const Driver = z
@@ -61,8 +64,9 @@ const Driver = z
   .passthrough();
 const UpdateDriver = z
   .object({
-    name: z.string(),
-    phone: z.string(),
+    name: z.string().min(1).max(100),
+    password: z.string().min(8),
+    phone: z.string().regex(/^\+?[1-9]\d{1,14}$|^\d{3}-\d{3}-\d{4}$/),
     address: z.string(),
     vehicleMake: z.string(),
     vehicleModel: z.string(),

@@ -227,7 +227,7 @@ describe('user lambdas', () => {
       pathParameters: { userId: 'nonexistent' },
     };
 
-    const result = await updateUser(event as APIGatewayProxyEvent, {} as any, {} as any);
+    const result = await deleteUser(event as APIGatewayProxyEvent, {} as any, {} as any);
 
     expect(result?.statusCode).toBe(404);
     expect(JSON.parse((result as APIGatewayProxyResult).body)).toEqual({

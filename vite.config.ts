@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite'
 import { nodeResolve } from '@rollup/plugin-node-resolve'
 import externals from 'rollup-plugin-node-externals'
-import path from 'path'
+import path, { resolve } from 'path'
 import { globSync } from 'glob'
 
 const lambdaEntries = globSync('src/lambda/**/index.ts').reduce((acc, file) => {
@@ -18,6 +18,7 @@ export default defineConfig({
       fileName: () => 'index.js',
     },
     rollupOptions: {
+      external: ['aws-sdk', 'zod'],
       plugins: [
         nodeResolve({ preferBuiltins: true }),
         externals({ deps: true }),
@@ -28,6 +29,11 @@ export default defineConfig({
     },
     target: 'es2020',
     sourcemap: true,
+  },
+  resolve: {
+    alias: {
+      '@': resolve(__dirname, './src'),
+    },
   },
   test: {
     globals: true,

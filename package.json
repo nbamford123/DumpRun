@@ -6,31 +6,38 @@
   "scripts": {
     "build": "vite build",
     "check-types": "tsc --noEmit",
-    "format": "prettier --write .",
-    "lint": "eslint .",
-    "lint:fix": "eslint . --fix",
+    "format": "biome format .",
+    "generate-types": "openapi-typescript ./api/dumprun_openapi.json -o ./src/schemas/apiSchema.d.ts",
+    "generate-zod": "openapi-zod-client ./api/dumprun_openapi.json -o ./src/schemas/zodSchemas.ts",
+    "lint": "biome lint .",
+    "lint:fix": "biome lint . --fix",
     "prepare": "husky install",
     "pre-commit": "pnpm format && pnpm validate",
-    "test": "vitest run",
+    "test": "vitest run src",
+    "test-integration": "vitest run integration-tests",
     "validate": "pnpm lint && pnpm check-types && pnpm test"
   },
   "author": "Nathan Bamford",
   "license": "ISC",
   "devDependencies": {
-    "@eslint/js": "^9.10.0",
     "@rollup/plugin-node-resolve": "^15.2.3",
     "@types/aws-lambda": "^8.10.145",
-    "@types/eslint__js": "^8.42.3",
     "@types/node": "^22.5.4",
-    "eslint": "^9.10.0",
+    "biome": "^0.3.3",
     "glob": "^11.0.0",
     "globals": "^15.9.0",
     "husky": "^8.0.0",
-    "prettier": "^3.3.3",
+    "openapi-typescript": "^7.4.0",
+    "openapi-zod-client": "^1.18.2",
+    "prisma": "^5.19.1",
     "rollup-plugin-node-externals": "^7.1.3",
     "typescript": "^5.6.2",
-    "typescript-eslint": "^8.5.0",
     "vite": "^5.4.5",
-    "vitest": "^2.1.1"
+    "vitest": "^2.1.1",
+    "zod": "^3.23.8"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.19.1",
+    "@zodios/core": "^10.9.6"
   }
 }

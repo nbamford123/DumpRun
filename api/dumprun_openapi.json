@@ -653,10 +653,12 @@
     "schemas": {
       "NewUser": {
         "type": "object",
-        "required": ["name", "email", "password"],
+        "required": ["name", "email", "password", "phone", "address"],
         "properties": {
           "name": {
-            "type": "string"
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
           },
           "email": {
             "type": "string",
@@ -664,10 +666,12 @@
           },
           "password": {
             "type": "string",
-            "format": "password"
+            "format": "password",
+            "minLength": 8
           },
           "phone": {
-            "type": "string"
+            "type": "string",
+            "pattern": "^\\+?[1-9]\\d{1,14}$|^\\d{3}-\\d{3}-\\d{4}$"
           },
           "address": {
             "type": "string"
@@ -678,10 +682,18 @@
         "type": "object",
         "properties": {
           "name": {
-            "type": "string"
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "password": {
+            "type": "string",
+            "format": "password",
+            "minLength": 8
           },
           "phone": {
-            "type": "string"
+            "type": "string",
+            "pattern": "^\\+?[1-9]\\d{1,14}$|^\\d{3}-\\d{3}-\\d{4}$"
           },
           "address": {
             "type": "string"
@@ -718,10 +730,12 @@
       },
       "NewDriver": {
         "type": "object",
-        "required": ["name", "email", "password"],
+        "required": ["name", "email", "password", "phone", "address", "vehicleMake", "vehicleModel", "vehicleYear"],
         "properties": {
           "name": {
-            "type": "string"
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
           },
           "email": {
             "type": "string",
@@ -729,13 +743,24 @@
           },
           "password": {
             "type": "string",
-            "format": "password"
+            "format": "password",
+            "minLength": 8
           },
           "phone": {
-            "type": "string"
+            "type": "string",
+            "pattern": "^\\+?[1-9]\\d{1,14}$|^\\d{3}-\\d{3}-\\d{4}$"
           },
           "address": {
             "type": "string"
+          },
+          "vehicleMake": {
+            "type": "string"
+          },
+          "vehicleModel": {
+            "type": "string"
+          },
+          "vehicleYear": {
+            "type": "number"
           }
         }
       },
@@ -743,10 +768,18 @@
         "type": "object",
         "properties": {
           "name": {
-            "type": "string"
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "password": {
+            "type": "string",
+            "format": "password",
+            "minLength": 8
           },
           "phone": {
-            "type": "string"
+            "type": "string",
+            "pattern": "^\\+?[1-9]\\d{1,14}$|^\\d{3}-\\d{3}-\\d{4}$"
           },
           "address": {
             "type": "string"

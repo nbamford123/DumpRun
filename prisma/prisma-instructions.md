@@ -1,0 +1,4 @@
+- docker-compose up -d
+- docker compose down
+- npx prisma migrate dev --name init
+- npx prisma generate

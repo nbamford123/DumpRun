@@ -7,7 +7,6 @@ export const createDriver: APIGatewayProxyHandler = async (event) => {
   try {
     const requestBody = JSON.parse(event.body || '{}')
     const result = schemas.NewDriver.safeParse(requestBody)
-    console.log(result.error?.issues)
     if (!result.success) {
       return {
         statusCode: 400,

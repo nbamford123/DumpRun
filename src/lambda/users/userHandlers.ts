@@ -12,7 +12,6 @@ export const createUser: APIGatewayProxyHandler = async (event) => {
   try {
     const requestBody = JSON.parse(event.body || '{}');
     const result = schemas.NewUser.safeParse(requestBody);
-    console.log(result.error?.issues);
     if (!result.success) {
       return {
         statusCode: 400,

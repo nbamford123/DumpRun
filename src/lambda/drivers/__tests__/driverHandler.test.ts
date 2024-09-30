@@ -256,7 +256,6 @@ describe('driver lambdas', () => {
       {} as Context,
       {} as Callback,
     );
-    console.log(result);
     expect(result?.statusCode).toBe(200);
     expect(JSON.parse((result as APIGatewayProxyResult).body)).toEqual(
       mockUpdatedDriver,

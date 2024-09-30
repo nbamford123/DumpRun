@@ -1,13 +1,18 @@
-import type { APIGatewayProxyHandler } from 'aws-lambda'
-import { schemas } from '@/schemas/zodSchemas.js'
+import type { APIGatewayProxyHandler } from 'aws-lambda';
+import { schemas } from '@/schemas/zodSchemas.js';
 
-import { createUserService, getUserService, updateUserService, deleteUserService } from './userServices.js'
+import {
+  createUserService,
+  getUserService,
+  updateUserService,
+  deleteUserService,
+} from './userServices.js';
 
 export const createUser: APIGatewayProxyHandler = async (event) => {
   try {
-    const requestBody = JSON.parse(event.body || '{}')
-    const result = schemas.NewUser.safeParse(requestBody)
-    console.log(result.error?.issues)
+    const requestBody = JSON.parse(event.body || '{}');
+    const result = schemas.NewUser.safeParse(requestBody);
+    console.log(result.error?.issues);
     if (!result.success) {
       return {
         statusCode: 400,
@@ -15,21 +20,21 @@ export const createUser: APIGatewayProxyHandler = async (event) => {
           message: 'Invalid input',
           errors: result.error.issues,
         }),
-      }
+      };
     }
     const newUser = await createUserService(result.data);
     return {
       statusCode: 201,
       body: JSON.stringify(newUser),
-    }
+    };
   } catch (error) {
     console.error('Error in create user ', error);
     return {
       statusCode: 500,
       body: JSON.stringify({ message: 'Internal Server Error' }),
-    }
+    };
   }
-}
+};
 
 export const getUser: APIGatewayProxyHandler = async (event) => {
   try {
@@ -77,7 +82,10 @@ export const updateUser: APIGatewayProxyHandler = async (event) => {
     if (!result.success) {
       return {
         statusCode: 400,
-        body: JSON.stringify({ message: 'Invalid input', errors: result.error.issues }),
+        body: JSON.stringify({
+          message: 'Invalid input',
+          errors: result.error.issues,
+        }),
       };
     }
 

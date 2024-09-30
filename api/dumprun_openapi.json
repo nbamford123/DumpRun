@@ -428,9 +428,18 @@
         "tags": ["Pickups"],
         "security": [
           {
-            "CognitoAuth": []
+            "cognitoAuth": ["openid"]
           }
         ],
+        "x-amazon-apigateway-auth": {
+          "type": "cognito_user_pools"
+        },
+        "x-amazon-apigateway-integration": {
+          "type": "aws_proxy",
+          "uri": "arn:aws:apigateway:region:lambda:path/2015-03-31/functions/arn:aws:lambda:region:account-id:function:create-pickup/invocations",
+          "passthroughBehavior": "when_no_match",
+          "httpMethod": "POST"
+        },
         "requestBody": {
           "required": true,
           "content": {
@@ -521,7 +530,7 @@
         }
       }
     },
-    "/v1/pikcups/{pickupId}": {
+    "/v1/pickups/{pickupId}": {
       "get": {
         "summary": "Get a pickup by ID",
         "operationId": "getPickup",
@@ -633,6 +642,98 @@
           }
         }
       }
+    },
+    "/v1/pickups/available": {
+      "get": {
+        "summary": "List available pickups for drivers",
+        "operationId": "listAvailablePickups",
+        "tags": ["Pickups"],
+        "security": [
+          {
+            "CognitoAuth": ["driver"]
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of available pickup requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Pickup"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/pickups/{pickupId}/accept": {
+      "post": {
+        "summary": "Accept a pickup request",
+        "operationId": "acceptPickup",
+        "tags": ["Pickups"],
+        "security": [
+          {
+            "CognitoAuth": ["driver"]
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "pickupId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Pickup request accepted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Pickup"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Cancel acceptance of a pickup",
+        "operationId": "cancelAcceptance",
+        "tags": ["Pickups"],
+        "security": [
+          {
+            "CognitoAuth": ["driver"]
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "pickupId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Acceptance cancelled successfully"
+          },
+          "404": {
+            "description": "Pickup not found or not currently accepted"
+          },
+          "403": {
+            "description": "Not authorized to cancel this acceptance"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -730,7 +831,16 @@
       },
       "NewDriver": {
         "type": "object",
-        "required": ["name", "email", "password", "phone", "address", "vehicleMake", "vehicleModel", "vehicleYear"],
+        "required": [
+          "name",
+          "email",
+          "password",
+          "phone",
+          "address",
+          "vehicleMake",
+          "vehicleModel",
+          "vehicleYear"
+        ],
         "properties": {
           "name": {
             "type": "string",
@@ -834,11 +944,13 @@
       },
       "NewPickup": {
         "type": "object",
-        "required": ["location", "estimatedWeight", "wasteType"],
+        "required": [
+          "location",
+          "estimatedWeight",
+          "requestedTime",
+          "wasteType"
+        ],
         "properties": {
-          "userId": {
-            "type": "string"
-          },
           "location": {
             "type": "string"
           },
@@ -863,14 +975,27 @@
           },
           "estimatedWeight": {
             "type": "number",
-            "format": "float"
+            "format": "float",
+            "minimum": 1
           },
           "wasteType": {
-            "type": "string"
+            "type": "string",
+            "enum": ["household", "construction", "green", "electronic"]
           },
           "requestedTime": {
             "type": "string",
             "format": "date-time"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "available",
+              "accepted",
+              "in_progress",
+              "completed",
+              "cancelled"
+            ]
           }
         }
       },
@@ -888,17 +1013,26 @@
           },
           "status": {
             "type": "string",
-            "enum": ["pending", "assigned", "completed", "cancelled"]
+            "enum": [
+              "pending",
+              "available",
+              "accepted",
+              "in_progress",
+              "completed",
+              "cancelled"
+            ]
           },
           "location": {
             "type": "string"
           },
           "estimatedWeight": {
             "type": "number",
-            "format": "float"
+            "format": "float",
+            "minimum": 1
           },
           "wasteType": {
-            "type": "string"
+            "type": "string",
+            "enum": ["household", "construction", "green", "electronic"]
           },
           "requestedTime": {
             "type": "string",

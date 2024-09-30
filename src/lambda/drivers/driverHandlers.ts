@@ -1,12 +1,17 @@
-import type { APIGatewayProxyHandler } from 'aws-lambda'
-import { schemas } from '@/schemas/zodSchemas.js'
+import type { APIGatewayProxyHandler } from 'aws-lambda';
+import { schemas } from '@/schemas/zodSchemas.js';
 
-import { createDriverService, getDriverService, updateDriverService, deleteDriverService } from './driverServices.js'
+import {
+  createDriverService,
+  getDriverService,
+  updateDriverService,
+  deleteDriverService,
+} from './driverServices.js';
 
 export const createDriver: APIGatewayProxyHandler = async (event) => {
   try {
-    const requestBody = JSON.parse(event.body || '{}')
-    const result = schemas.NewDriver.safeParse(requestBody)
+    const requestBody = JSON.parse(event.body || '{}');
+    const result = schemas.NewDriver.safeParse(requestBody);
     if (!result.success) {
       return {
         statusCode: 400,
@@ -14,21 +19,21 @@ export const createDriver: APIGatewayProxyHandler = async (event) => {
           message: 'Invalid input',
           errors: result.error.issues,
         }),
-      }
+      };
     }
     const newDriver = await createDriverService(result.data);
     return {
       statusCode: 201,
       body: JSON.stringify(newDriver),
-    }
+    };
   } catch (error) {
     console.error('Error in create driver ', error);
     return {
       statusCode: 500,
       body: JSON.stringify({ message: 'Internal Server Error' }),
-    }
+    };
   }
-}
+};
 
 export const getDriver: APIGatewayProxyHandler = async (event) => {
   try {
@@ -36,7 +41,9 @@ export const getDriver: APIGatewayProxyHandler = async (event) => {
     if (!driverId) {
       return {
         statusCode: 400,
-        body: JSON.stringify({ message: 'Missing driverId in path parameters' }),
+        body: JSON.stringify({
+          message: 'Missing driverId in path parameters',
+        }),
       };
     }
 
@@ -67,7 +74,9 @@ export const updateDriver: APIGatewayProxyHandler = async (event) => {
     if (!driverId) {
       return {
         statusCode: 400,
-        body: JSON.stringify({ message: 'Missing driverId in path parameters' }),
+        body: JSON.stringify({
+          message: 'Missing driverId in path parameters',
+        }),
       };
     }
 
@@ -76,7 +85,10 @@ export const updateDriver: APIGatewayProxyHandler = async (event) => {
     if (!result.success) {
       return {
         statusCode: 400,
-        body: JSON.stringify({ message: 'Invalid input', errors: result.error.issues }),
+        body: JSON.stringify({
+          message: 'Invalid input',
+          errors: result.error.issues,
+        }),
       };
     }
 
@@ -107,7 +119,9 @@ export const deleteDriver: APIGatewayProxyHandler = async (event) => {
     if (!driverId) {
       return {
         statusCode: 400,
-        body: JSON.stringify({ message: 'Missing driverId in path parameters' }),
+        body: JSON.stringify({
+          message: 'Missing driverId in path parameters',
+        }),
       };
     }
 

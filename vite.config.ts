@@ -1,14 +1,14 @@
-import { defineConfig } from 'vite'
-import { nodeResolve } from '@rollup/plugin-node-resolve'
-import externals from 'rollup-plugin-node-externals'
-import path, { resolve } from 'path'
-import { globSync } from 'glob'
+import { defineConfig } from 'vite';
+import { nodeResolve } from '@rollup/plugin-node-resolve';
+import externals from 'rollup-plugin-node-externals';
+import path, { resolve } from 'node:path';
+import { globSync } from 'glob';
 
 const lambdaEntries = globSync('src/lambda/**/index.ts').reduce((acc, file) => {
-  const name: string = path.dirname(file).split(path.sep).pop() || ''
-  acc[name] = file
-  return acc
-}, {})
+  const name: string = path.dirname(file).split(path.sep).pop() || '';
+  acc[name] = file;
+  return acc;
+}, {});
 
 export default defineConfig({
   build: {
@@ -39,4 +39,4 @@ export default defineConfig({
     globals: true,
     environment: 'node',
   },
-})
+});

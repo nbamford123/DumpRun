@@ -6,24 +6,28 @@
   "scripts": {
     "build": "vite build",
     "check-types": "tsc --noEmit",
-    "format": "biome format .",
+    "format": "biome format --write .",
     "generate-types": "openapi-typescript ./api/dumprun_openapi.json -o ./src/schemas/apiSchema.d.ts",
-    "generate-zod": "openapi-zod-client ./api/dumprun_openapi.json -o ./src/schemas/zodSchemas.ts",
+    "generate-zod": "./scripts/generate-zod-schemas.sh ./api/dumprun_openapi.json ./src/schemas/zodSchemas.ts",
     "lint": "biome lint .",
     "lint:fix": "biome lint . --fix",
     "prepare": "husky install",
     "pre-commit": "pnpm format && pnpm validate",
     "test": "vitest run src",
     "test-integration": "vitest run integration-tests",
-    "validate": "pnpm lint && pnpm check-types && pnpm test"
+    "validate": "pnpm lint && pnpm check-types && pnpm test",
+    "validate-openapi": "pnpm swagger-cli validate api/dumprun_openapi.json",
+    "validate-and-generate": "pnpm validate-openapi && pnpm generate-types && pnpm generate-zod"
   },
   "author": "Nathan Bamford",
   "license": "ISC",
   "devDependencies": {
+    "@apidevtools/swagger-cli": "^4.0.4",
+    "@biomejs/biome": "^1.9.2",
     "@rollup/plugin-node-resolve": "^15.2.3",
     "@types/aws-lambda": "^8.10.145",
     "@types/node": "^22.5.4",
-    "biome": "^0.3.3",
+    "@types/uuid": "^10.0.0",
     "glob": "^11.0.0",
     "globals": "^15.9.0",
     "husky": "^8.0.0",
@@ -38,6 +42,8 @@
   },
   "dependencies": {
     "@prisma/client": "^5.19.1",
-    "@zodios/core": "^10.9.6"
+    "@zodios/core": "^10.9.6",
+    "aws-sdk": "^2.1691.0",
+    "uuid": "^10.0.0"
   }
 }

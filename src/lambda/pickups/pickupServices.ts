@@ -102,8 +102,12 @@ export async function updatePickupService(
 
   const updateExpression = [
     setExpressions.length > 0 ? `SET ${setExpressions.join(', ')}` : null,
-    removeExpressions.length > 0 ? `REMOVE ${removeExpressions.join(', ')}` : null,
-  ].filter(Boolean).join(' ');
+    removeExpressions.length > 0
+      ? `REMOVE ${removeExpressions.join(', ')}`
+      : null,
+  ]
+    .filter(Boolean)
+    .join(' ');
 
   const params = {
     TableName: TABLE_NAME,
@@ -134,8 +138,8 @@ export const deletePickupService = async (
         ReturnValues: 'ALL_OLD',
       })
       .promise();
-      return result.Attributes as Pickup;
-  } 
+    return result.Attributes as Pickup;
+  }
   const params = {
     TableName: TABLE_NAME,
     Key: { pickupId },

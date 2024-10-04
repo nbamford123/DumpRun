@@ -744,7 +744,7 @@ describe('pickup lambdas', () => {
   });
 
   it('should return 200 for valid delete pickup', async () => {
-    const mockDeletedPickup = {...mockCreatedPickup, status: 'deleted'};
+    const mockDeletedPickup = { ...mockCreatedPickup, status: 'deleted' };
     (
       getPickupService as vi.MockedFunction<typeof getPickupService>
     ).mockResolvedValue(mockCreatedPickup);
@@ -771,7 +771,7 @@ describe('pickup lambdas', () => {
   });
 
   it('should return 200 for valid delete pickup when admin', async () => {
-    const mockDeletedPickup = {...mockCreatedPickup, status: 'deleted'};
+    const mockDeletedPickup = { ...mockCreatedPickup, status: 'deleted' };
     (
       getPickupService as vi.MockedFunction<typeof getPickupService>
     ).mockResolvedValue(mockCreatedPickup);
@@ -873,7 +873,7 @@ describe('pickup lambdas', () => {
   it('should return 404 for delete pickup deleted pickup', async () => {
     (
       getPickupService as vi.MockedFunction<typeof getPickupService>
-    ).mockResolvedValue({...mockCreatedPickup, status: 'deleted'});
+    ).mockResolvedValue({ ...mockCreatedPickup, status: 'deleted' });
 
     const event: DeepPartial<APIGatewayProxyEvent> = {
       pathParameters: { pickupId: '123' },

@@ -14,8 +14,7 @@ export const validGetPickup = (
     if (pickup.driverId === requesterId)
       // Can return any status if its their pickup
       return true;
-    if (pickup.status === 'available')
-      return true;
+    if (pickup.status === 'available') return true;
   }
   return false;
 };

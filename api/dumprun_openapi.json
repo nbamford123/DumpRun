@@ -483,7 +483,14 @@
               "type": "array",
               "items": {
                 "type": "string",
-                "enum": ["pending", "assigned", "completed", "in_progress", "cancelled", "deleted"]
+                "enum": [
+                  "pending",
+                  "assigned",
+                  "completed",
+                  "in_progress",
+                  "cancelled",
+                  "deleted"
+                ]
               }
             },
             "style": "form",

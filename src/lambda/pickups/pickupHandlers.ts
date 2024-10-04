@@ -388,15 +388,14 @@ export const cancelAcceptedPickup: APIGatewayProxyHandler = async (event) => {
         statusCode: 200,
         body: JSON.stringify(returnVal),
       };
-    } 
-  
+    }
+
     return {
       statusCode: 403,
       body: JSON.stringify({
         message: 'Not authorized',
       }),
     };
-
   } catch (error) {
     console.error('Error cancelling pickup acceptance:', error);
     return {

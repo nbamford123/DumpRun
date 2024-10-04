@@ -1,4 +1,6 @@
 export {
+  acceptPickup,
+  availablePickups,
   createPickup,
   getPickup,
   updatePickup,

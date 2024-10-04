@@ -1,14 +1,18 @@
 # Temporary ToDo File
 
+- deleted shouldn't matter, I guess. we can refuse to return it when it's status deleted if it's not admin-- what about other getpickup calls, though?
+- not really possible to test the hard and soft deletes with unit testing, that will have to be part of the integration test
+- when can you delete a pickup? Current statuses are: pending" | "available" | "accepted" | "in_progress" | "completed" | "cancelled" | "deleted. For now I'm saying it has to be pending, available or cancelled
+- does it make any sense to have an "in_progress" pickup state? Once you pick up a load and the user pays, isn't it over? Maybe for taking stuff from home depot or wherever...
+- what about pending? What does that even mean?
+- get/update pickups need to filter for deleted-- should take a flag. I see no reason why users couldn't see their deleted pickups, and admins should always be able to.
+- should pickups have an accepted timestamp? Probably.
 - update users/drivers-- get users and get drivers for admins only, role/id checks for the others like pickups? Also add for pickups.
 - should we be checking that the correct logged in user (or admin) is trying to update/delete user (and driver)? 
-- Even though we're going to have another admin interface (I guess), it seems like we still want admin to be able to access any of these apis, right?
-- I guess we want to take the user/driver list out of the openapi spec?
+- go through openapi spec and compare against lambdas, especially return codes
 - Drivers or admin can get the list of available pickups (constrained by geographic location?   We might want this to be constrained by truck size vs. load size too.
 - should a user be able to have more than one pickup scheduled? If so "list pickups" ought to differentiate between admin and user (only list pickups for that user id)
 - we need claims in cognito for "user" and "driver" (and probably "admin") to determine which api calls they can make, doublechecked in the lambdas
-- we need to make sure only the user associated with a pickup (or admin) can modify/delete it
-- driver should be able to cancel his acceptance, but not terms of the deal. how?
 - put prisma/docker setup tasks in readme-- when to run integration tests? How can they be run on github? Probably they can't
 - logging for the lambda functions? https://docs.aws.amazon.com/lambda/latest/dg/typescript-logging.html
 - Make sure the update AWS github action validates the openapi spec
@@ -18,8 +22,6 @@
 - Will we need to store the driver's dl #? What about insurance? Going to punt on that for now.
 - Does the driver have to put in the vehicle info, etc. to create the account, or can that be done later? Obviously they can't pick up a job without it.
 - PII! If we store any of this kind of stuff, we have to be incredibly careful with how we deal with it.
-- It's fine and well to implement a delete operation for pickups, but in reality either the driver or the client should be able to cancel them. How are we going to handle that?
-- Only user should be able to update pickup location, size, etc. What about time? Can either of them change that? Or would the driver have to request the user change it? Remember, the driver can always cancel it, though.
 - Issue tracking software? Jira?
 - Documentation will become an issue soon enough, too. Confluence?
 - For admin frontend, does Next make the most sense?

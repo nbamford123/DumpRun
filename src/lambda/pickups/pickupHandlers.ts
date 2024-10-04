@@ -1,22 +1,25 @@
 import type { APIGatewayProxyHandler } from 'aws-lambda';
-import { schemas, AuthInfoSchema } from '@/schemas/zodSchemas.js';
+import { schemas, schemas_addons } from '@/schemas/zodSchemas.js';
 
 import {
   createPickupService,
   getPickupService,
+  getPickupsService,
   updatePickupService,
   deletePickupService,
   availablePickupsService,
   acceptPickupService,
 } from './pickupServices.js';
+import { validGetPickup } from './pickupHelpers.js';
+import { listPickupsQuerySchema } from '@/schemas/zodSchemaHelpers.js';
 
 export const createPickup: APIGatewayProxyHandler = async (event) => {
   try {
-    // Parse and validate auth info
-    const authInfo = AuthInfoSchema.parse(
+    // Parse and validate auth info-- should this be safeParse with a return instead
+    // of the throw and 500?
+    const authInfo = schemas_addons.AuthInfo.parse(
       event.requestContext.authorizer?.claims,
     );
-
     // Fine-grained authorization
     if (!['user', 'admin'].includes(authInfo['custom:role'])) {
       return {
@@ -55,8 +58,6 @@ export const createPickup: APIGatewayProxyHandler = async (event) => {
 };
 
 export const getPickup: APIGatewayProxyHandler = async (event) => {
-  // Who can get pickups? The driver who accepted it, the user who created it, and admin?
-  // Where else would that be enforced if not here?
   try {
     const pickupId = event.pathParameters?.pickupId;
     if (!pickupId) {
@@ -69,19 +70,67 @@ export const getPickup: APIGatewayProxyHandler = async (event) => {
     }
 
     const pickup = await getPickupService(pickupId);
-    if (!pickup) {
+    const authInfo = schemas_addons.AuthInfo.parse(
+      event.requestContext.authorizer?.claims,
+    );
+    // only admin can retrieve deleted pickups
+    if (
+      !pickup ||
+      (pickup.status === 'deleted' && authInfo['custom:role'] !== 'admin')
+    ) {
       return {
         statusCode: 404,
         body: JSON.stringify({ message: 'Pickup not found' }),
       };
     }
 
+    const requesterId = event?.requestContext?.authorizer?.claims.sub;
+
+    if (!validGetPickup(authInfo['custom:role'], requesterId, pickup)) {
+      return {
+        statusCode: 403,
+        body: JSON.stringify({
+          message: 'Not authorized',
+        }),
+      };
+    }
     return {
       statusCode: 200,
       body: JSON.stringify(pickup),
     };
   } catch (error) {
     console.error('Error in getPickup:', error);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ message: 'Internal Server Error' }),
+    };
+  }
+};
+
+export const getPickups: APIGatewayProxyHandler = async (event) => {
+  try {
+    const authInfo = schemas_addons.AuthInfo.parse(
+      event.requestContext.authorizer?.claims,
+    );
+    // only admins are allowed to retrieve a list of pickups
+    if (authInfo['custom:role'] !== 'admin') {
+      return {
+        statusCode: 403,
+        body: JSON.stringify({ message: 'Not authorized' }),
+      };
+    }
+    // Extract query parameters
+    const { status, limit, cursor } = listPickupsQuerySchema.parse(
+      event.queryStringParameters,
+    );
+
+    const pickup = await getPickupsService(limit, cursor, status);
+    return {
+      statusCode: 200,
+      body: JSON.stringify(pickup),
+    };
+  } catch (error) {
+    console.error('Error in getPickups:', error);
     return {
       statusCode: 500,
       body: JSON.stringify({ message: 'Internal Server Error' }),
@@ -101,9 +150,18 @@ export const updatePickup: APIGatewayProxyHandler = async (event) => {
       };
     }
 
-    const authInfo = AuthInfoSchema.parse(
+    const authInfo = schemas_addons.AuthInfo.parse(
       event.requestContext.authorizer?.claims,
     );
+    // Only users and admins can update pickups
+    if (!['admin', 'user'].includes(authInfo['custom:role'])) {
+      return {
+        statusCode: 403,
+        body: JSON.stringify({
+          message: 'Not authorized',
+        }),
+      };
+    }
     const result = schemas.UpdatePickup.safeParse(
       JSON.parse(event.body || '{}'),
     );
@@ -116,23 +174,17 @@ export const updatePickup: APIGatewayProxyHandler = async (event) => {
         }),
       };
     }
-    let updateData = { ...result.data };
     // Fetch the existing pickup
     const pickup = await getPickupService(pickupId);
-    if (!pickup) {
+    // Can't update deleted pickup
+    if (!pickup || pickup.status === 'deleted') {
       return {
         statusCode: 404,
         body: JSON.stringify({ message: 'Pickup not found' }),
       };
     }
 
-    // Authorization and business logic checks
-    if (authInfo['custom:role'] === 'admin') {
-      // Admins can update anything
-    } else if (
-      authInfo['custom:role'] === 'user' &&
-      pickup.userId === authInfo.sub
-    ) {
+    if (authInfo['custom:role'] === 'user' && pickup.userId === authInfo.sub) {
       if (pickup.status === 'accepted' || pickup.status === 'completed') {
         return {
           statusCode: 403,
@@ -142,30 +194,10 @@ export const updatePickup: APIGatewayProxyHandler = async (event) => {
         };
       }
       // For pending pickups, users can update any field
-    } else if (
-      authInfo['custom:role'] === 'driver' &&
-      pickup.driverId === authInfo.sub
-    ) {
-      if (updateData.status !== 'pending') {
-        return {
-          statusCode: 403,
-          body: JSON.stringify({
-            message: 'Drivers can only cancel their acceptance',
-          }),
-        };
-      }
-      updateData = { status: 'pending', driverId: null };
-    } else {
-      return {
-        statusCode: 403,
-        body: JSON.stringify({
-          message: 'Not authorized to update this pickup',
-        }),
-      };
     }
 
     // Update the pickup
-    const updatedPickup = await updatePickupService(pickupId, updateData);
+    const updatedPickup = await updatePickupService(pickupId, result.data);
 
     return {
       statusCode: 200,
@@ -181,8 +213,7 @@ export const updatePickup: APIGatewayProxyHandler = async (event) => {
 };
 
 export const deletePickup: APIGatewayProxyHandler = async (event) => {
-  // Only user can delete their own pickup? or admin
-  // Do we want to delete them, or just leave them as cancelled?
+  // Shouldn't the custom role checks come before the getPickup?
   try {
     const pickupId = event.pathParameters?.pickupId;
     if (!pickupId) {
@@ -194,65 +225,75 @@ export const deletePickup: APIGatewayProxyHandler = async (event) => {
       };
     }
 
-    const deletedPickup = await deletePickupService(pickupId);
+    const authInfo = schemas_addons.AuthInfo.parse(
+      event.requestContext.authorizer?.claims,
+    );
 
-    if (!deletedPickup) {
+    // Fetch the existing pickup
+    const pickup = await getPickupService(pickupId);
+    // Can't delete a deleted pickup
+    if (!pickup || pickup.status === 'deleted') {
       return {
         statusCode: 404,
         body: JSON.stringify({ message: 'Pickup not found' }),
       };
     }
-    return {
-      statusCode: 204,
-      body: JSON.stringify(deletedPickup),
-    };
-  } catch (error) {
-    console.error('Error in deletePickup:', error);
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ message: 'Internal Server Error' }),
-    };
-  }
-};
 
-export const availablePickups: APIGatewayProxyHandler = async (event) => {
-  try {
-    const authInfo = AuthInfoSchema.parse(
-      event.requestContext.authorizer?.claims,
-    );
-    // Drivers or admin can get the list of available pickups (constrained by geographic location?)
-    // We might want this to be constrained by truck size vs. load size too.
-    if (
-      authInfo['custom:role'] === 'admin' ||
-      authInfo['custom:role'] === 'driver'
+    // Check authorization and pickup state
+    if (authInfo['custom:role'] === 'admin') {
+      // Admins can delete any pickup
+      if (event.queryStringParameters?.hardDelete === 'true') {
+        const deletedPickup = await deletePickupService(pickupId, true);
+        return {
+          statusCode: 200,
+          body: JSON.stringify(deletedPickup),
+        };
+      }
+    } else if (
+      authInfo['custom:role'] === 'user' &&
+      pickup.userId === authInfo.sub
     ) {
-      const pickups = await availablePickupsService();
-
+      // Users can only soft delete their own pickups if they're not in progress (and not cancelled)
+      if (
+        pickup.status !== 'available' &&
+        pickup.status !== 'accepted' &&
+        pickup.status !== 'cancelled'
+      ) {
+        return {
+          statusCode: 403,
+          body: JSON.stringify({
+            message: `Cannot delete pickup with status ${pickup.status}`,
+          }),
+        };
+      }
+    } else {
       return {
-        statusCode: 200,
-        body: JSON.stringify(pickups),
+        statusCode: 403,
+        body: JSON.stringify({
+          message: 'Not authorized to delete this pickup',
+        }),
       };
     }
 
+    // Perform soft delete
+    const deletedPickup = await deletePickupService(pickupId);
+
     return {
-      statusCode: 403,
-      body: JSON.stringify({
-        message: 'Not authorized to update this pickup',
-      }),
+      statusCode: 200,
+      body: JSON.stringify(deletedPickup),
     };
-    // return error wrong role or whatever here
   } catch (error) {
-    console.error('Error in availablePickups:', error);
+    console.error('Error deleting pickup:', error);
     return {
       statusCode: 500,
-      body: JSON.stringify({ message: 'Internal Server Error' }),
+      body: JSON.stringify({ message: 'Internal server error' }),
     };
   }
 };
 
 export const acceptPickup: APIGatewayProxyHandler = async (event) => {
   try {
-    const authInfo = AuthInfoSchema.parse(
+    const authInfo = schemas_addons.AuthInfo.parse(
       event.requestContext.authorizer?.claims,
     );
     // I guess you have to be a driver to accept a pickup
@@ -272,7 +313,8 @@ export const acceptPickup: APIGatewayProxyHandler = async (event) => {
         };
       }
       const pickup = await getPickupService(pickupId);
-      if (!pickup) {
+      // Don't return deleted pickup
+      if (!pickup || pickup.status === 'deleted') {
         return {
           statusCode: 404,
           body: JSON.stringify({ message: 'Pickup not found' }),
@@ -285,11 +327,10 @@ export const acceptPickup: APIGatewayProxyHandler = async (event) => {
         };
       }
 
-      const acceptedPickup = acceptPickupService(driverId, pickupId);
+      const acceptedPickup = await acceptPickupService(driverId, pickupId);
       if (!acceptedPickup) {
         throw new Error('Failed to accept pickup');
       }
-
       return {
         statusCode: 200,
         body: JSON.stringify(acceptedPickup),
@@ -307,7 +348,94 @@ export const acceptPickup: APIGatewayProxyHandler = async (event) => {
     console.error('Error in acceptPickup:', error);
     return {
       statusCode: 500,
-      body: JSON.stringify({ message: 'Internal Server Error' }),
+      body: JSON.stringify({ message: 'Internal server error' }),
+    };
+  }
+};
+
+export const cancelAcceptedPickup: APIGatewayProxyHandler = async (event) => {
+  try {
+    const pickupId = event.pathParameters?.pickupId;
+    if (!pickupId) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({
+          message: 'Missing pickupId in path parameters',
+        }),
+      };
+    }
+    const authInfo = schemas_addons.AuthInfo.parse(
+      event.requestContext.authorizer?.claims,
+    );
+    const pickup = await getPickupService(pickupId);
+
+    // Can't cancel deleted pickup
+    if (!pickup || pickup.status === 'deleted') {
+      return {
+        statusCode: 404,
+        body: JSON.stringify({ message: 'Pickup not found' }),
+      };
+    }
+
+    if (
+      authInfo['custom:role'] === 'admin' ||
+      (authInfo['custom:role'] === 'driver' && pickup.driverId === authInfo.sub)
+    ) {
+      // Is there any way a pickup could have a driverId and *not* the accepted state?
+      const updateData = { status: 'available' as const, driverId: null };
+      const returnVal = await updatePickupService(pickupId, updateData);
+      return {
+        statusCode: 200,
+        body: JSON.stringify(returnVal),
+      };
+    } 
+  
+    return {
+      statusCode: 403,
+      body: JSON.stringify({
+        message: 'Not authorized',
+      }),
+    };
+
+  } catch (error) {
+    console.error('Error cancelling pickup acceptance:', error);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ message: 'Internal server error' }),
+    };
+  }
+};
+
+export const availablePickups: APIGatewayProxyHandler = async (event) => {
+  try {
+    const authInfo = schemas_addons.AuthInfo.parse(
+      event.requestContext.authorizer?.claims,
+    );
+    // I guess you have to be a driver to accept a pickup
+    // Should we also check that you haven't scheduled another one at the same time?
+    if (
+      authInfo['custom:role'] === 'driver' ||
+      authInfo['custom:role'] === 'admin'
+    ) {
+      const pickups = await availablePickupsService();
+      return {
+        statusCode: 200,
+        body: JSON.stringify(pickups),
+      };
+    }
+    return {
+      statusCode: 403,
+      body: JSON.stringify({
+        message: 'Not authorized to accept this pickup',
+      }),
+    };
+
+    // return error wrong role or whatever here. not a driver?
+  } catch (error) {
+    console.error('Error in acceptPickup:', error);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ message: 'Internal server error' }),
     };
   }
 };

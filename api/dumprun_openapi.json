@@ -480,9 +480,14 @@
             "in": "query",
             "name": "status",
             "schema": {
-              "type": "string",
-              "enum": ["pending", "assigned", "completed", "cancelled"]
-            }
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": ["pending", "assigned", "completed", "in_progress", "cancelled", "deleted"]
+              }
+            },
+            "style": "form",
+            "explode": false
           },
           {
             "in": "query",
@@ -548,6 +553,15 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "in": "query",
+            "name": "includeDeleted",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            },
+            "description": "Whether to include deleted pickups"
           }
         ],
         "responses": {
@@ -702,8 +716,10 @@
             }
           }
         }
-      },
-      "delete": {
+      }
+    },
+    "/v1/pickups/{pickupId}/cancel-acceptance": {
+      "post": {
         "summary": "Cancel acceptance of a pickup",
         "operationId": "cancelAcceptance",
         "tags": ["Pickups"],
@@ -723,8 +739,15 @@
           }
         ],
         "responses": {
-          "204": {
-            "description": "Acceptance cancelled successfully"
+          "200": {
+            "description": "Acceptance cancelled successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Pickup"
+                }
+              }
+            }
           },
           "404": {
             "description": "Pickup not found or not currently accepted"
@@ -994,10 +1017,12 @@
               "accepted",
               "in_progress",
               "completed",
-              "cancelled"
+              "cancelled",
+              "deleted"
             ]
           }
-        }
+        },
+        "additionalProperties": false
       },
       "Pickup": {
         "type": "object",
@@ -1009,7 +1034,8 @@
             "type": "string"
           },
           "driverId": {
-            "type": "string"
+            "type": "string",
+            "nullable": true
           },
           "status": {
             "type": "string",
@@ -1019,7 +1045,8 @@
               "accepted",
               "in_progress",
               "completed",
-              "cancelled"
+              "cancelled",
+              "deleted"
             ]
           },
           "location": {
@@ -1043,6 +1070,10 @@
             "format": "date-time"
           },
           "completedTime": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "deletedAt": {
             "type": "string",
             "format": "date-time"
           }

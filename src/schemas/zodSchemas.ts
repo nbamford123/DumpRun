@@ -1,5 +1,5 @@
-import { makeApi, Zodios, type ZodiosOptions } from '@zodios/core'
-import { z } from 'zod'
+import { makeApi, Zodios, type ZodiosOptions } from "@zodios/core";
+import { z } from "zod";
 
 const NewUser = z
   .object({
@@ -9,7 +9,8 @@ const NewUser = z
     phone: z.string().regex(/^\+?[1-9]\d{1,14}$|^\d{3}-\d{3}-\d{4}$/),
     address: z.string(),
   })
-  .passthrough()
+  .strict()
+  .passthrough();
 const User = z
   .object({
     id: z.string(),
@@ -21,11 +22,13 @@ const User = z
     updatedAt: z.string().datetime({ offset: true }),
   })
   .partial()
-  .passthrough()
+  .strict()
+  .passthrough();
 const Error = z
   .object({ code: z.string(), message: z.string() })
   .partial()
-  .passthrough()
+  .strict()
+  .passthrough();
 const UpdateUser = z
   .object({
     name: z.string().min(1).max(100),
@@ -34,7 +37,8 @@ const UpdateUser = z
     address: z.string(),
   })
   .partial()
-  .passthrough()
+  .strict()
+  .passthrough();
 const NewDriver = z
   .object({
     name: z.string().min(1).max(100),
@@ -46,7 +50,8 @@ const NewDriver = z
     vehicleModel: z.string(),
     vehicleYear: z.number(),
   })
-  .passthrough()
+  .strict()
+  .passthrough();
 const Driver = z
   .object({
     id: z.string(),
@@ -61,7 +66,8 @@ const Driver = z
     updatedAt: z.string().datetime({ offset: true }),
   })
   .partial()
-  .passthrough()
+  .strict()
+  .passthrough();
 const UpdateDriver = z
   .object({
     name: z.string().min(1).max(100),
@@ -73,7 +79,8 @@ const UpdateDriver = z
     vehicleYear: z.number(),
   })
   .partial()
-  .passthrough()
+  .strict()
+  .passthrough();
 const NewPickup = z
   .object({
     location: z.string(),
@@ -81,46 +88,51 @@ const NewPickup = z
     wasteType: z.string(),
     requestedTime: z.string().datetime({ offset: true }),
   })
-  .passthrough()
+  .strict()
+  .passthrough();
 const Pickup = z
   .object({
     id: z.string(),
     userId: z.string(),
-    driverId: z.string(),
+    driverId: z.string().nullable(),
     status: z.enum([
-      'pending',
-      'available',
-      'accepted',
-      'in_progress',
-      'completed',
-      'cancelled',
+      "pending",
+      "available",
+      "accepted",
+      "in_progress",
+      "completed",
+      "cancelled",
+      "deleted",
     ]),
     location: z.string(),
     estimatedWeight: z.number().gte(1),
-    wasteType: z.enum(['household', 'construction', 'green', 'electronic']),
+    wasteType: z.enum(["household", "construction", "green", "electronic"]),
     requestedTime: z.string().datetime({ offset: true }),
     assignedTime: z.string().datetime({ offset: true }),
     completedTime: z.string().datetime({ offset: true }),
+    deletedAt: z.string().datetime({ offset: true }),
   })
   .partial()
-  .passthrough()
+  .strict()
+  .passthrough();
 const UpdatePickup = z
   .object({
     location: z.string(),
     estimatedWeight: z.number().gte(1),
-    wasteType: z.enum(['household', 'construction', 'green', 'electronic']),
+    wasteType: z.enum(["household", "construction", "green", "electronic"]),
     requestedTime: z.string().datetime({ offset: true }),
     status: z.enum([
-      'pending',
-      'available',
-      'accepted',
-      'in_progress',
-      'completed',
-      'cancelled',
+      "pending",
+      "available",
+      "accepted",
+      "in_progress",
+      "completed",
+      "cancelled",
+      "deleted",
     ]),
   })
   .partial()
-  .passthrough()
+  .strict();
 
 export const schemas = {
   NewUser,
@@ -133,18 +145,18 @@ export const schemas = {
   NewPickup,
   Pickup,
   UpdatePickup,
-}
+};
 
 const endpoints = makeApi([
   {
-    method: 'post',
-    path: '/v1/drivers',
-    alias: 'createDriver',
-    requestFormat: 'json',
+    method: "post",
+    path: "/v1/drivers",
+    alias: "createDriver",
+    requestFormat: "json",
     parameters: [
       {
-        name: 'body',
-        type: 'Body',
+        name: "body",
+        type: "Body",
         schema: NewDriver,
       },
     ],
@@ -158,25 +170,26 @@ const endpoints = makeApi([
     ],
   },
   {
-    method: 'get',
-    path: '/v1/drivers',
-    alias: 'listDrivers',
-    requestFormat: 'json',
+    method: "get",
+    path: "/v1/drivers",
+    alias: "listDrivers",
+    requestFormat: "json",
     parameters: [
       {
-        name: 'limit',
-        type: 'Query',
+        name: "limit",
+        type: "Query",
         schema: z.number().int().gte(1).lte(100).optional().default(20),
       },
       {
-        name: 'offset',
-        type: 'Query',
+        name: "offset",
+        type: "Query",
         schema: z.number().int().gte(0).optional().default(0),
       },
     ],
     response: z
       .object({ users: z.array(Driver), total: z.number().int() })
       .partial()
+      .strict()
       .passthrough(),
     errors: [
       {
@@ -192,14 +205,14 @@ const endpoints = makeApi([
     ],
   },
   {
-    method: 'get',
-    path: '/v1/drivers/:driverId',
-    alias: 'getDriver',
-    requestFormat: 'json',
+    method: "get",
+    path: "/v1/drivers/:driverId",
+    alias: "getDriver",
+    requestFormat: "json",
     parameters: [
       {
-        name: 'driverId',
-        type: 'Path',
+        name: "driverId",
+        type: "Path",
         schema: z.string(),
       },
     ],
@@ -213,19 +226,19 @@ const endpoints = makeApi([
     ],
   },
   {
-    method: 'put',
-    path: '/v1/drivers/:driverId',
-    alias: 'updateDriver',
-    requestFormat: 'json',
+    method: "put",
+    path: "/v1/drivers/:driverId",
+    alias: "updateDriver",
+    requestFormat: "json",
     parameters: [
       {
-        name: 'body',
-        type: 'Body',
+        name: "body",
+        type: "Body",
         schema: UpdateDriver,
       },
       {
-        name: 'driverId',
-        type: 'Path',
+        name: "driverId",
+        type: "Path",
         schema: z.string(),
       },
     ],
@@ -244,14 +257,14 @@ const endpoints = makeApi([
     ],
   },
   {
-    method: 'delete',
-    path: '/v1/drivers/:driverId',
-    alias: 'deleteDriver',
-    requestFormat: 'json',
+    method: "delete",
+    path: "/v1/drivers/:driverId",
+    alias: "deleteDriver",
+    requestFormat: "json",
     parameters: [
       {
-        name: 'driverId',
-        type: 'Path',
+        name: "driverId",
+        type: "Path",
         schema: z.string(),
       },
     ],
@@ -265,14 +278,14 @@ const endpoints = makeApi([
     ],
   },
   {
-    method: 'post',
-    path: '/v1/pickups',
-    alias: 'createPickup',
-    requestFormat: 'json',
+    method: "post",
+    path: "/v1/pickups",
+    alias: "createPickup",
+    requestFormat: "json",
     parameters: [
       {
-        name: 'body',
-        type: 'Body',
+        name: "body",
+        type: "Body",
         schema: NewPickup,
       },
     ],
@@ -286,32 +299,42 @@ const endpoints = makeApi([
     ],
   },
   {
-    method: 'get',
-    path: '/v1/pickups',
-    alias: 'listPickups',
-    requestFormat: 'json',
+    method: "get",
+    path: "/v1/pickups",
+    alias: "listPickups",
+    requestFormat: "json",
     parameters: [
       {
-        name: 'status',
-        type: 'Query',
+        name: "status",
+        type: "Query",
         schema: z
-          .enum(['pending', 'assigned', 'completed', 'cancelled'])
+          .array(
+            z.enum([
+              "pending",
+              "assigned",
+              "completed",
+              "in_progress",
+              "cancelled",
+              "deleted",
+            ])
+          )
           .optional(),
       },
       {
-        name: 'limit',
-        type: 'Query',
+        name: "limit",
+        type: "Query",
         schema: z.number().int().gte(1).lte(100).optional().default(20),
       },
       {
-        name: 'cursor',
-        type: 'Query',
+        name: "cursor",
+        type: "Query",
         schema: z.string().optional(),
       },
     ],
     response: z
       .object({ pickups: z.array(Pickup), nextCursor: z.string() })
       .partial()
+      .strict()
       .passthrough(),
     errors: [
       {
@@ -322,15 +345,20 @@ const endpoints = makeApi([
     ],
   },
   {
-    method: 'get',
-    path: '/v1/pickups/:pickupId',
-    alias: 'getPickup',
-    requestFormat: 'json',
+    method: "get",
+    path: "/v1/pickups/:pickupId",
+    alias: "getPickup",
+    requestFormat: "json",
     parameters: [
       {
-        name: 'pickupId',
-        type: 'Path',
+        name: "pickupId",
+        type: "Path",
         schema: z.string(),
+      },
+      {
+        name: "includeDeleted",
+        type: "Query",
+        schema: z.boolean().optional(),
       },
     ],
     response: Pickup,
@@ -343,40 +371,19 @@ const endpoints = makeApi([
     ],
   },
   {
-    method: 'put',
-    path: '/v1/pickups/:pickupId',
-    alias: 'updatePickup',
-    requestFormat: 'json',
+    method: "put",
+    path: "/v1/pickups/:pickupId",
+    alias: "updatePickup",
+    requestFormat: "json",
     parameters: [
       {
-        name: 'body',
-        type: 'Body',
-        schema: z
-          .object({
-            location: z.string(),
-            estimatedWeight: z.number().gte(1),
-            wasteType: z.enum([
-              'household',
-              'construction',
-              'green',
-              'electronic',
-            ]),
-            requestedTime: z.string().datetime({ offset: true }),
-            status: z.enum([
-              'pending',
-              'available',
-              'accepted',
-              'in_progress',
-              'completed',
-              'cancelled',
-            ]),
-          })
-          .partial()
-          .passthrough(),
+        name: "body",
+        type: "Body",
+        schema: UpdatePickup,
       },
       {
-        name: 'pickupId',
-        type: 'Path',
+        name: "pickupId",
+        type: "Path",
         schema: z.string(),
       },
     ],
@@ -395,14 +402,14 @@ const endpoints = makeApi([
     ],
   },
   {
-    method: 'delete',
-    path: '/v1/pickups/:pickupId',
-    alias: 'deletePickup',
-    requestFormat: 'json',
+    method: "delete",
+    path: "/v1/pickups/:pickupId",
+    alias: "deletePickup",
+    requestFormat: "json",
     parameters: [
       {
-        name: 'pickupId',
-        type: 'Path',
+        name: "pickupId",
+        type: "Path",
         schema: z.string(),
       },
     ],
@@ -416,32 +423,32 @@ const endpoints = makeApi([
     ],
   },
   {
-    method: 'post',
-    path: '/v1/pickups/:pickupId/accept',
-    alias: 'acceptPickup',
-    requestFormat: 'json',
+    method: "post",
+    path: "/v1/pickups/:pickupId/accept",
+    alias: "acceptPickup",
+    requestFormat: "json",
     parameters: [
       {
-        name: 'pickupId',
-        type: 'Path',
+        name: "pickupId",
+        type: "Path",
         schema: z.string(),
       },
     ],
     response: Pickup,
   },
   {
-    method: 'delete',
-    path: '/v1/pickups/:pickupId/accept',
-    alias: 'cancelAcceptance',
-    requestFormat: 'json',
+    method: "post",
+    path: "/v1/pickups/:pickupId/cancel-acceptance",
+    alias: "cancelAcceptance",
+    requestFormat: "json",
     parameters: [
       {
-        name: 'pickupId',
-        type: 'Path',
+        name: "pickupId",
+        type: "Path",
         schema: z.string(),
       },
     ],
-    response: z.void(),
+    response: Pickup,
     errors: [
       {
         status: 403,
@@ -456,21 +463,21 @@ const endpoints = makeApi([
     ],
   },
   {
-    method: 'get',
-    path: '/v1/pickups/available',
-    alias: 'listAvailablePickups',
-    requestFormat: 'json',
+    method: "get",
+    path: "/v1/pickups/available",
+    alias: "listAvailablePickups",
+    requestFormat: "json",
     response: z.array(Pickup),
   },
   {
-    method: 'post',
-    path: '/v1/users',
-    alias: 'createUser',
-    requestFormat: 'json',
+    method: "post",
+    path: "/v1/users",
+    alias: "createUser",
+    requestFormat: "json",
     parameters: [
       {
-        name: 'body',
-        type: 'Body',
+        name: "body",
+        type: "Body",
         schema: NewUser,
       },
     ],
@@ -484,25 +491,26 @@ const endpoints = makeApi([
     ],
   },
   {
-    method: 'get',
-    path: '/v1/users',
-    alias: 'listUsers',
-    requestFormat: 'json',
+    method: "get",
+    path: "/v1/users",
+    alias: "listUsers",
+    requestFormat: "json",
     parameters: [
       {
-        name: 'limit',
-        type: 'Query',
+        name: "limit",
+        type: "Query",
         schema: z.number().int().gte(1).lte(100).optional().default(20),
       },
       {
-        name: 'offset',
-        type: 'Query',
+        name: "offset",
+        type: "Query",
         schema: z.number().int().gte(0).optional().default(0),
       },
     ],
     response: z
       .object({ users: z.array(User), total: z.number().int() })
       .partial()
+      .strict()
       .passthrough(),
     errors: [
       {
@@ -518,14 +526,14 @@ const endpoints = makeApi([
     ],
   },
   {
-    method: 'get',
-    path: '/v1/users/:userId',
-    alias: 'getUser',
-    requestFormat: 'json',
+    method: "get",
+    path: "/v1/users/:userId",
+    alias: "getUser",
+    requestFormat: "json",
     parameters: [
       {
-        name: 'userId',
-        type: 'Path',
+        name: "userId",
+        type: "Path",
         schema: z.string(),
       },
     ],
@@ -539,19 +547,19 @@ const endpoints = makeApi([
     ],
   },
   {
-    method: 'put',
-    path: '/v1/users/:userId',
-    alias: 'updateUser',
-    requestFormat: 'json',
+    method: "put",
+    path: "/v1/users/:userId",
+    alias: "updateUser",
+    requestFormat: "json",
     parameters: [
       {
-        name: 'body',
-        type: 'Body',
+        name: "body",
+        type: "Body",
         schema: UpdateUser,
       },
       {
-        name: 'userId',
-        type: 'Path',
+        name: "userId",
+        type: "Path",
         schema: z.string(),
       },
     ],
@@ -570,14 +578,14 @@ const endpoints = makeApi([
     ],
   },
   {
-    method: 'delete',
-    path: '/v1/users/:userId',
-    alias: 'deleteUser',
-    requestFormat: 'json',
+    method: "delete",
+    path: "/v1/users/:userId",
+    alias: "deleteUser",
+    requestFormat: "json",
     parameters: [
       {
-        name: 'userId',
-        type: 'Path',
+        name: "userId",
+        type: "Path",
         schema: z.string(),
       },
     ],
@@ -590,15 +598,17 @@ const endpoints = makeApi([
       },
     ],
   },
-])
+]);
 
-export const api = new Zodios(endpoints)
+export const api = new Zodios(endpoints);
 
 export function createApiClient(baseUrl: string, options?: ZodiosOptions) {
-  return new Zodios(baseUrl, endpoints, options)
+  return new Zodios(baseUrl, endpoints, options);
 }
 
-export const AuthInfoSchema = z.object({
-  sub: z.string(),
-  'custom:role': z.enum(['user', 'driver', 'admin']),
-});
+export const schemas_addons = {
+  AuthInfo: z.object({
+    sub: z.string(),
+    'custom:role': z.enum(['user', 'driver', 'admin']),
+  })
+};

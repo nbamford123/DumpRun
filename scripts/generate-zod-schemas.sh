@@ -10,13 +10,15 @@ input=$1
 output=$2
 
 # Run the openapi-zod-client command
-openapi-zod-client "$input" -o "$output"
+openapi-zod-client "$input" -o "$output" --strict-objects
 
 # Append the export text to the output file
 cat <<EOL >> "$output"
 
-export const AuthInfoSchema = z.object({
-  sub: z.string(),
-  'custom:role': z.enum(['user', 'driver', 'admin']),
-});
+export const schemas_addons = {
+  AuthInfo: z.object({
+    sub: z.string(),
+    'custom:role': z.enum(['user', 'driver', 'admin']),
+  })
+};
 EOL

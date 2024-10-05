@@ -96,7 +96,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/pikcups/{pickupId}": {
+    "/v1/pickups/{pickupId}": {
         parameters: {
             query?: never;
             header?: never;
@@ -110,6 +110,57 @@ export interface paths {
         post?: never;
         /** Delete a pickup */
         delete: operations["deletePickup"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/pickups/available": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List available pickups for drivers */
+        get: operations["listAvailablePickups"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/pickups/{pickupId}/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Accept a pickup request */
+        post: operations["acceptPickup"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/pickups/{pickupId}/cancel-acceptance": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cancel acceptance of a pickup */
+        post: operations["cancelAcceptance"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -183,38 +234,43 @@ export interface components {
             updatedAt?: string;
         };
         NewPickup: {
-            userId?: string;
             location: string;
             /** Format: float */
             estimatedWeight: number;
             wasteType: string;
             /** Format: date-time */
-            requestedTime?: string;
+            requestedTime: string;
         };
         UpdatePickup: {
             location?: string;
             /** Format: float */
             estimatedWeight?: number;
-            wasteType?: string;
+            /** @enum {string} */
+            wasteType?: "household" | "construction" | "green" | "electronic";
             /** Format: date-time */
             requestedTime?: string;
+            /** @enum {string} */
+            status?: "pending" | "available" | "accepted" | "in_progress" | "completed" | "cancelled" | "deleted";
         };
         Pickup: {
             id?: string;
             userId?: string;
-            driverId?: string;
+            driverId?: string | null;
             /** @enum {string} */
-            status?: "pending" | "assigned" | "completed" | "cancelled";
+            status?: "pending" | "available" | "accepted" | "in_progress" | "completed" | "cancelled" | "deleted";
             location?: string;
             /** Format: float */
             estimatedWeight?: number;
-            wasteType?: string;
+            /** @enum {string} */
+            wasteType?: "household" | "construction" | "green" | "electronic";
             /** Format: date-time */
             requestedTime?: string;
             /** Format: date-time */
             assignedTime?: string;
             /** Format: date-time */
             completedTime?: string;
+            /** Format: date-time */
+            deletedAt?: string;
         };
         Error: {
             code?: string;
@@ -224,6 +280,15 @@ export interface components {
     responses: {
         /** @description Bad request */
         BadRequest: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["Error"];
+            };
+        };
+        /** @description The request could not be completed due to a conflict with the current state of the target resource. */
+        Conflict: {
             headers: {
                 [name: string]: unknown;
             };
@@ -251,6 +316,15 @@ export interface components {
         };
         /** @description Resource not found */
         NotFound: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["Error"];
+            };
+        };
+        /** @description Internal Server Error */
+        InternalServerError: {
             headers: {
                 [name: string]: unknown;
             };
@@ -292,6 +366,7 @@ export interface operations {
             };
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
+            500: components["responses"]["InternalServerError"];
         };
     };
     createUser: {
@@ -317,6 +392,7 @@ export interface operations {
                 };
             };
             400: components["responses"]["BadRequest"];
+            500: components["responses"]["InternalServerError"];
         };
     };
     getUser: {
@@ -339,7 +415,11 @@ export interface operations {
                     "application/json": components["schemas"]["User"];
                 };
             };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+            500: components["responses"]["InternalServerError"];
         };
     };
     updateUser: {
@@ -367,7 +447,10 @@ export interface operations {
                 };
             };
             400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+            500: components["responses"]["InternalServerError"];
         };
     };
     deleteUser: {
@@ -382,13 +465,19 @@ export interface operations {
         requestBody?: never;
         responses: {
             /** @description User deleted successfully */
-            204: {
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["User"];
+                };
             };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+            500: components["responses"]["InternalServerError"];
         };
     };
     listDrivers: {
@@ -417,6 +506,7 @@ export interface operations {
             };
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
+            500: components["responses"]["InternalServerError"];
         };
     };
     createDriver: {
@@ -442,6 +532,7 @@ export interface operations {
                 };
             };
             400: components["responses"]["BadRequest"];
+            500: components["responses"]["InternalServerError"];
         };
     };
     getDriver: {
@@ -464,7 +555,11 @@ export interface operations {
                     "application/json": components["schemas"]["Driver"];
                 };
             };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+            500: components["responses"]["InternalServerError"];
         };
     };
     updateDriver: {
@@ -492,7 +587,10 @@ export interface operations {
                 };
             };
             400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+            500: components["responses"]["InternalServerError"];
         };
     };
     deleteDriver: {
@@ -506,20 +604,26 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Driver deleted successfully */
-            204: {
+            /** @description User deleted successfully */
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["User"];
+                };
             };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+            500: components["responses"]["InternalServerError"];
         };
     };
     listPickups: {
         parameters: {
             query?: {
-                status?: "pending" | "assigned" | "completed" | "cancelled";
+                status?: ("pending" | "assigned" | "completed" | "in_progress" | "cancelled" | "deleted")[];
                 limit?: number;
                 cursor?: string;
             };
@@ -542,6 +646,8 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            500: components["responses"]["InternalServerError"];
         };
     };
     createPickup: {
@@ -567,11 +673,16 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            500: components["responses"]["InternalServerError"];
         };
     };
     getPickup: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Whether to include deleted pickups */
+                includeDeleted?: boolean;
+            };
             header?: never;
             path: {
                 pickupId: string;
@@ -589,7 +700,11 @@ export interface operations {
                     "application/json": components["schemas"]["Pickup"];
                 };
             };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+            500: components["responses"]["InternalServerError"];
         };
     };
     updatePickup: {
@@ -617,7 +732,10 @@ export interface operations {
                 };
             };
             400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+            500: components["responses"]["InternalServerError"];
         };
     };
     deletePickup: {
@@ -632,13 +750,115 @@ export interface operations {
         requestBody?: never;
         responses: {
             /** @description Pickup deleted successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Pickup deleted successfully */
             204: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content?: never;
             };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+            500: components["responses"]["InternalServerError"];
+        };
+    };
+    listAvailablePickups: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of available pickup requests */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Pickup"][];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            500: components["responses"]["InternalServerError"];
+        };
+    };
+    acceptPickup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pickupId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Pickup request accepted successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Pickup"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            500: components["responses"]["InternalServerError"];
+        };
+    };
+    cancelAcceptance: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pickupId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Acceptance cancelled successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Pickup"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            /** @description Not authorized to cancel this acceptance */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Pickup not found or not currently accepted */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            409: components["responses"]["Conflict"];
+            500: components["responses"]["InternalServerError"];
         };
     };
 }

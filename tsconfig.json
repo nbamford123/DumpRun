@@ -16,7 +16,8 @@
     "rootDir": "./src",
     "baseUrl": "./src",
     "paths": {
-      "@/schemas/*": ["schemas/*"]
+      "@/schemas/*": ["schemas/*"],
+      "@/utils/*": ["utils/*"]
     }
   },
   "include": ["src/**/*"],

@@ -9,6 +9,7 @@ const NewUser = z
     phone: z.string().regex(/^\+?[1-9]\d{1,14}$|^\d{3}-\d{3}-\d{4}$/),
     address: z.string(),
   })
+  .strict()
   .passthrough();
 const User = z
   .object({
@@ -21,10 +22,12 @@ const User = z
     updatedAt: z.string().datetime({ offset: true }),
   })
   .partial()
+  .strict()
   .passthrough();
 const Error = z
   .object({ code: z.string(), message: z.string() })
   .partial()
+  .strict()
   .passthrough();
 const UpdateUser = z
   .object({
@@ -34,6 +37,7 @@ const UpdateUser = z
     address: z.string(),
   })
   .partial()
+  .strict()
   .passthrough();
 const NewDriver = z
   .object({
@@ -46,6 +50,7 @@ const NewDriver = z
     vehicleModel: z.string(),
     vehicleYear: z.number(),
   })
+  .strict()
   .passthrough();
 const Driver = z
   .object({
@@ -61,6 +66,7 @@ const Driver = z
     updatedAt: z.string().datetime({ offset: true }),
   })
   .partial()
+  .strict()
   .passthrough();
 const UpdateDriver = z
   .object({
@@ -73,40 +79,60 @@ const UpdateDriver = z
     vehicleYear: z.number(),
   })
   .partial()
+  .strict()
   .passthrough();
 const NewPickup = z
   .object({
-    userId: z.string().optional(),
     location: z.string(),
     estimatedWeight: z.number(),
     wasteType: z.string(),
-    requestedTime: z.string().datetime({ offset: true }).optional(),
+    requestedTime: z.string().datetime({ offset: true }),
   })
+  .strict()
   .passthrough();
 const Pickup = z
   .object({
     id: z.string(),
     userId: z.string(),
-    driverId: z.string(),
-    status: z.enum(["pending", "assigned", "completed", "cancelled"]),
+    driverId: z.string().nullable(),
+    status: z.enum([
+      "pending",
+      "available",
+      "accepted",
+      "in_progress",
+      "completed",
+      "cancelled",
+      "deleted",
+    ]),
     location: z.string(),
-    estimatedWeight: z.number(),
-    wasteType: z.string(),
+    estimatedWeight: z.number().gte(1),
+    wasteType: z.enum(["household", "construction", "green", "electronic"]),
     requestedTime: z.string().datetime({ offset: true }),
     assignedTime: z.string().datetime({ offset: true }),
     completedTime: z.string().datetime({ offset: true }),
+    deletedAt: z.string().datetime({ offset: true }),
   })
   .partial()
+  .strict()
   .passthrough();
 const UpdatePickup = z
   .object({
     location: z.string(),
-    estimatedWeight: z.number(),
-    wasteType: z.string(),
+    estimatedWeight: z.number().gte(1),
+    wasteType: z.enum(["household", "construction", "green", "electronic"]),
     requestedTime: z.string().datetime({ offset: true }),
+    status: z.enum([
+      "pending",
+      "available",
+      "accepted",
+      "in_progress",
+      "completed",
+      "cancelled",
+      "deleted",
+    ]),
   })
   .partial()
-  .passthrough();
+  .strict();
 
 export const schemas = {
   NewUser,
@@ -141,6 +167,11 @@ const endpoints = makeApi([
         description: `Bad request`,
         schema: Error,
       },
+      {
+        status: 500,
+        description: `Internal Server Error`,
+        schema: Error,
+      },
     ],
   },
   {
@@ -163,6 +194,7 @@ const endpoints = makeApi([
     response: z
       .object({ users: z.array(Driver), total: z.number().int() })
       .partial()
+      .strict()
       .passthrough(),
     errors: [
       {
@@ -173,6 +205,11 @@ const endpoints = makeApi([
       {
         status: 403,
         description: `Access forbidden`,
+        schema: Error,
+      },
+      {
+        status: 500,
+        description: `Internal Server Error`,
         schema: Error,
       },
     ],
@@ -192,8 +229,28 @@ const endpoints = makeApi([
     response: Driver,
     errors: [
       {
+        status: 400,
+        description: `Bad request`,
+        schema: Error,
+      },
+      {
+        status: 401,
+        description: `Unauthorized`,
+        schema: Error,
+      },
+      {
+        status: 403,
+        description: `Access forbidden`,
+        schema: Error,
+      },
+      {
         status: 404,
         description: `Resource not found`,
+        schema: Error,
+      },
+      {
+        status: 500,
+        description: `Internal Server Error`,
         schema: Error,
       },
     ],
@@ -223,8 +280,23 @@ const endpoints = makeApi([
         schema: Error,
       },
       {
+        status: 401,
+        description: `Unauthorized`,
+        schema: Error,
+      },
+      {
+        status: 403,
+        description: `Access forbidden`,
+        schema: Error,
+      },
+      {
         status: 404,
         description: `Resource not found`,
+        schema: Error,
+      },
+      {
+        status: 500,
+        description: `Internal Server Error`,
         schema: Error,
       },
     ],
@@ -241,11 +313,31 @@ const endpoints = makeApi([
         schema: z.string(),
       },
     ],
-    response: z.void(),
+    response: User,
     errors: [
+      {
+        status: 400,
+        description: `Bad request`,
+        schema: Error,
+      },
+      {
+        status: 401,
+        description: `Unauthorized`,
+        schema: Error,
+      },
+      {
+        status: 403,
+        description: `Access forbidden`,
+        schema: Error,
+      },
       {
         status: 404,
         description: `Resource not found`,
+        schema: Error,
+      },
+      {
+        status: 500,
+        description: `Internal Server Error`,
         schema: Error,
       },
     ],
@@ -269,6 +361,16 @@ const endpoints = makeApi([
         description: `Unauthorized`,
         schema: Error,
       },
+      {
+        status: 403,
+        description: `Access forbidden`,
+        schema: Error,
+      },
+      {
+        status: 500,
+        description: `Internal Server Error`,
+        schema: Error,
+      },
     ],
   },
   {
@@ -281,7 +383,16 @@ const endpoints = makeApi([
         name: "status",
         type: "Query",
         schema: z
-          .enum(["pending", "assigned", "completed", "cancelled"])
+          .array(
+            z.enum([
+              "pending",
+              "assigned",
+              "completed",
+              "in_progress",
+              "cancelled",
+              "deleted",
+            ])
+          )
           .optional(),
       },
       {
@@ -298,6 +409,7 @@ const endpoints = makeApi([
     response: z
       .object({ pickups: z.array(Pickup), nextCursor: z.string() })
       .partial()
+      .strict()
       .passthrough(),
     errors: [
       {
@@ -305,11 +417,21 @@ const endpoints = makeApi([
         description: `Unauthorized`,
         schema: Error,
       },
+      {
+        status: 403,
+        description: `Access forbidden`,
+        schema: Error,
+      },
+      {
+        status: 500,
+        description: `Internal Server Error`,
+        schema: Error,
+      },
     ],
   },
   {
     method: "get",
-    path: "/v1/pikcups/:pickupId",
+    path: "/v1/pickups/:pickupId",
     alias: "getPickup",
     requestFormat: "json",
     parameters: [
@@ -318,19 +440,44 @@ const endpoints = makeApi([
         type: "Path",
         schema: z.string(),
       },
+      {
+        name: "includeDeleted",
+        type: "Query",
+        schema: z.boolean().optional(),
+      },
     ],
     response: Pickup,
     errors: [
       {
+        status: 400,
+        description: `Bad request`,
+        schema: Error,
+      },
+      {
+        status: 401,
+        description: `Unauthorized`,
+        schema: Error,
+      },
+      {
+        status: 403,
+        description: `Access forbidden`,
+        schema: Error,
+      },
+      {
         status: 404,
         description: `Resource not found`,
+        schema: Error,
+      },
+      {
+        status: 500,
+        description: `Internal Server Error`,
         schema: Error,
       },
     ],
   },
   {
     method: "put",
-    path: "/v1/pikcups/:pickupId",
+    path: "/v1/pickups/:pickupId",
     alias: "updatePickup",
     requestFormat: "json",
     parameters: [
@@ -353,15 +500,30 @@ const endpoints = makeApi([
         schema: Error,
       },
       {
+        status: 401,
+        description: `Unauthorized`,
+        schema: Error,
+      },
+      {
+        status: 403,
+        description: `Access forbidden`,
+        schema: Error,
+      },
+      {
         status: 404,
         description: `Resource not found`,
+        schema: Error,
+      },
+      {
+        status: 500,
+        description: `Internal Server Error`,
         schema: Error,
       },
     ],
   },
   {
     method: "delete",
-    path: "/v1/pikcups/:pickupId",
+    path: "/v1/pickups/:pickupId",
     alias: "deletePickup",
     requestFormat: "json",
     parameters: [
@@ -374,8 +536,144 @@ const endpoints = makeApi([
     response: z.void(),
     errors: [
       {
+        status: 400,
+        description: `Bad request`,
+        schema: Error,
+      },
+      {
+        status: 401,
+        description: `Unauthorized`,
+        schema: Error,
+      },
+      {
+        status: 403,
+        description: `Access forbidden`,
+        schema: Error,
+      },
+      {
         status: 404,
         description: `Resource not found`,
+        schema: Error,
+      },
+      {
+        status: 500,
+        description: `Internal Server Error`,
+        schema: Error,
+      },
+    ],
+  },
+  {
+    method: "post",
+    path: "/v1/pickups/:pickupId/accept",
+    alias: "acceptPickup",
+    requestFormat: "json",
+    parameters: [
+      {
+        name: "pickupId",
+        type: "Path",
+        schema: z.string(),
+      },
+    ],
+    response: Pickup,
+    errors: [
+      {
+        status: 400,
+        description: `Bad request`,
+        schema: Error,
+      },
+      {
+        status: 401,
+        description: `Unauthorized`,
+        schema: Error,
+      },
+      {
+        status: 403,
+        description: `Access forbidden`,
+        schema: Error,
+      },
+      {
+        status: 404,
+        description: `Resource not found`,
+        schema: Error,
+      },
+      {
+        status: 409,
+        description: `The request could not be completed due to a conflict with the current state of the target resource.`,
+        schema: Error,
+      },
+      {
+        status: 500,
+        description: `Internal Server Error`,
+        schema: Error,
+      },
+    ],
+  },
+  {
+    method: "post",
+    path: "/v1/pickups/:pickupId/cancel-acceptance",
+    alias: "cancelAcceptance",
+    requestFormat: "json",
+    parameters: [
+      {
+        name: "pickupId",
+        type: "Path",
+        schema: z.string(),
+      },
+    ],
+    response: Pickup,
+    errors: [
+      {
+        status: 400,
+        description: `Bad request`,
+        schema: Error,
+      },
+      {
+        status: 401,
+        description: `Unauthorized`,
+        schema: Error,
+      },
+      {
+        status: 403,
+        description: `Not authorized to cancel this acceptance`,
+        schema: z.void(),
+      },
+      {
+        status: 404,
+        description: `Pickup not found or not currently accepted`,
+        schema: z.void(),
+      },
+      {
+        status: 409,
+        description: `The request could not be completed due to a conflict with the current state of the target resource.`,
+        schema: Error,
+      },
+      {
+        status: 500,
+        description: `Internal Server Error`,
+        schema: Error,
+      },
+    ],
+  },
+  {
+    method: "get",
+    path: "/v1/pickups/available",
+    alias: "listAvailablePickups",
+    requestFormat: "json",
+    response: z.array(Pickup),
+    errors: [
+      {
+        status: 401,
+        description: `Unauthorized`,
+        schema: Error,
+      },
+      {
+        status: 403,
+        description: `Access forbidden`,
+        schema: Error,
+      },
+      {
+        status: 500,
+        description: `Internal Server Error`,
         schema: Error,
       },
     ],
@@ -397,6 +695,11 @@ const endpoints = makeApi([
       {
         status: 400,
         description: `Bad request`,
+        schema: Error,
+      },
+      {
+        status: 500,
+        description: `Internal Server Error`,
         schema: Error,
       },
     ],
@@ -421,6 +724,7 @@ const endpoints = makeApi([
     response: z
       .object({ users: z.array(User), total: z.number().int() })
       .partial()
+      .strict()
       .passthrough(),
     errors: [
       {
@@ -431,6 +735,11 @@ const endpoints = makeApi([
       {
         status: 403,
         description: `Access forbidden`,
+        schema: Error,
+      },
+      {
+        status: 500,
+        description: `Internal Server Error`,
         schema: Error,
       },
     ],
@@ -450,8 +759,28 @@ const endpoints = makeApi([
     response: User,
     errors: [
       {
+        status: 400,
+        description: `Bad request`,
+        schema: Error,
+      },
+      {
+        status: 401,
+        description: `Unauthorized`,
+        schema: Error,
+      },
+      {
+        status: 403,
+        description: `Access forbidden`,
+        schema: Error,
+      },
+      {
         status: 404,
         description: `Resource not found`,
+        schema: Error,
+      },
+      {
+        status: 500,
+        description: `Internal Server Error`,
         schema: Error,
       },
     ],
@@ -481,8 +810,23 @@ const endpoints = makeApi([
         schema: Error,
       },
       {
+        status: 401,
+        description: `Unauthorized`,
+        schema: Error,
+      },
+      {
+        status: 403,
+        description: `Access forbidden`,
+        schema: Error,
+      },
+      {
         status: 404,
         description: `Resource not found`,
+        schema: Error,
+      },
+      {
+        status: 500,
+        description: `Internal Server Error`,
         schema: Error,
       },
     ],
@@ -499,11 +843,31 @@ const endpoints = makeApi([
         schema: z.string(),
       },
     ],
-    response: z.void(),
+    response: User,
     errors: [
+      {
+        status: 400,
+        description: `Bad request`,
+        schema: Error,
+      },
+      {
+        status: 401,
+        description: `Unauthorized`,
+        schema: Error,
+      },
+      {
+        status: 403,
+        description: `Access forbidden`,
+        schema: Error,
+      },
       {
         status: 404,
         description: `Resource not found`,
+        schema: Error,
+      },
+      {
+        status: 500,
+        description: `Internal Server Error`,
         schema: Error,
       },
     ],

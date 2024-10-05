@@ -2,4 +2,5 @@
 secrets.txt
 node_modules
 dist
+dist-scripts
 .env

@@ -37,7 +37,7 @@ import { mock } from 'node:test';
 const USER_ID = 'user-id';
 const mockUser = {
   id: USER_ID,
-  address: "11382 High St. Northglenn, CO 80233",
+  address: '11382 High St. Northglenn, CO 80233',
   name: 'John Doe',
   email: 'john@example.com',
   password: 'password',
@@ -413,7 +413,7 @@ describe('user lambdas', () => {
 
     const event: DeepPartial<APIGatewayProxyEvent> = {
       pathParameters: { userId: USER_ID },
-      requestContext
+      requestContext,
     };
 
     const result = await getUser(
@@ -555,7 +555,7 @@ describe('user lambdas', () => {
     const event: DeepPartial<APIGatewayProxyEvent> = {
       pathParameters: { userId: USER_ID },
       body: JSON.stringify({ name: 'John Updated' }),
-      requestContext
+      requestContext,
     };
 
     const result = await updateUser(
@@ -697,7 +697,7 @@ describe('user lambdas', () => {
 
     const event: DeepPartial<APIGatewayProxyEvent> = {
       pathParameters: { userId: USER_ID },
-      requestContext
+      requestContext,
     };
 
     const result = await deleteUser(

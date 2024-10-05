@@ -1,7 +1,10 @@
 import type { APIGatewayProxyHandler } from 'aws-lambda';
 
 import { schemas } from '@/schemas/zodSchemas.js';
-import { AuthInfo, listDriversQuerySchema } from '@/schemas/zodSchemaHelpers.js';
+import {
+  AuthInfo,
+  listDriversQuerySchema,
+} from '@/schemas/zodSchemaHelpers.js';
 
 import {
   createDriverService,
@@ -40,9 +43,7 @@ export const createDriver: APIGatewayProxyHandler = async (event) => {
 
 export const getDrivers: APIGatewayProxyHandler = async (event) => {
   try {
-    const authInfo = AuthInfo.parse(
-      event.requestContext.authorizer?.claims,
-    );
+    const authInfo = AuthInfo.parse(event.requestContext.authorizer?.claims);
     // Fine-grained authorization
     if (authInfo['custom:role'] !== 'admin') {
       return {
@@ -74,9 +75,7 @@ export const getDrivers: APIGatewayProxyHandler = async (event) => {
 
 export const getDriver: APIGatewayProxyHandler = async (event) => {
   try {
-    const authInfo = AuthInfo.parse(
-      event.requestContext.authorizer?.claims,
-    );
+    const authInfo = AuthInfo.parse(event.requestContext.authorizer?.claims);
     const driverId = event.pathParameters?.driverId;
     if (!driverId) {
       return {
@@ -121,9 +120,7 @@ export const getDriver: APIGatewayProxyHandler = async (event) => {
 
 export const updateDriver: APIGatewayProxyHandler = async (event) => {
   try {
-    const authInfo = AuthInfo.parse(
-      event.requestContext.authorizer?.claims,
-    );
+    const authInfo = AuthInfo.parse(event.requestContext.authorizer?.claims);
 
     const driverId = event.pathParameters?.driverId;
     if (!driverId) {
@@ -181,9 +178,7 @@ export const updateDriver: APIGatewayProxyHandler = async (event) => {
 
 export const deleteDriver: APIGatewayProxyHandler = async (event) => {
   try {
-    const authInfo = AuthInfo.parse(
-      event.requestContext.authorizer?.claims,
-    );
+    const authInfo = AuthInfo.parse(event.requestContext.authorizer?.claims);
     const driverId = event.pathParameters?.driverId;
     if (!driverId) {
       return {

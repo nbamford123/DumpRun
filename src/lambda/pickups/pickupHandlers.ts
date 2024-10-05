@@ -1,7 +1,10 @@
 import type { APIGatewayProxyHandler } from 'aws-lambda';
 
 import { schemas } from '@/schemas/zodSchemas.js';
-import { AuthInfo, listPickupsQuerySchema } from '@/schemas/zodSchemaHelpers.js';
+import {
+  AuthInfo,
+  listPickupsQuerySchema,
+} from '@/schemas/zodSchemaHelpers.js';
 
 import {
   createPickupService,
@@ -18,9 +21,7 @@ export const createPickup: APIGatewayProxyHandler = async (event) => {
   try {
     // Parse and validate auth info-- should this be safeParse with a return instead
     // of the throw and 500?
-    const authInfo = AuthInfo.parse(
-      event.requestContext.authorizer?.claims,
-    );
+    const authInfo = AuthInfo.parse(event.requestContext.authorizer?.claims);
     // Fine-grained authorization
     if (!['user', 'admin'].includes(authInfo['custom:role'])) {
       return {
@@ -60,9 +61,7 @@ export const createPickup: APIGatewayProxyHandler = async (event) => {
 
 export const getPickups: APIGatewayProxyHandler = async (event) => {
   try {
-    const authInfo = AuthInfo.parse(
-      event.requestContext.authorizer?.claims,
-    );
+    const authInfo = AuthInfo.parse(event.requestContext.authorizer?.claims);
     // only admins are allowed to retrieve a list of pickups
     if (authInfo['custom:role'] !== 'admin') {
       return {
@@ -102,9 +101,7 @@ export const getPickup: APIGatewayProxyHandler = async (event) => {
     }
 
     const pickup = await getPickupService(pickupId);
-    const authInfo = AuthInfo.parse(
-      event.requestContext.authorizer?.claims,
-    );
+    const authInfo = AuthInfo.parse(event.requestContext.authorizer?.claims);
     // only admin can retrieve deleted pickups
     if (
       !pickup ||
@@ -151,9 +148,7 @@ export const updatePickup: APIGatewayProxyHandler = async (event) => {
       };
     }
 
-    const authInfo = AuthInfo.parse(
-      event.requestContext.authorizer?.claims,
-    );
+    const authInfo = AuthInfo.parse(event.requestContext.authorizer?.claims);
     // Only users and admins can update pickups
     if (!['admin', 'user'].includes(authInfo['custom:role'])) {
       return {
@@ -226,9 +221,7 @@ export const deletePickup: APIGatewayProxyHandler = async (event) => {
       };
     }
 
-    const authInfo = AuthInfo.parse(
-      event.requestContext.authorizer?.claims,
-    );
+    const authInfo = AuthInfo.parse(event.requestContext.authorizer?.claims);
 
     // Fetch the existing pickup
     const pickup = await getPickupService(pickupId);
@@ -296,9 +289,7 @@ export const deletePickup: APIGatewayProxyHandler = async (event) => {
 
 export const availablePickups: APIGatewayProxyHandler = async (event) => {
   try {
-    const authInfo = AuthInfo.parse(
-      event.requestContext.authorizer?.claims,
-    );
+    const authInfo = AuthInfo.parse(event.requestContext.authorizer?.claims);
     // I guess you have to be a driver to accept a pickup
     // Should we also check that you haven't scheduled another one at the same time?
     if (
@@ -330,9 +321,7 @@ export const availablePickups: APIGatewayProxyHandler = async (event) => {
 
 export const acceptPickup: APIGatewayProxyHandler = async (event) => {
   try {
-    const authInfo = AuthInfo.parse(
-      event.requestContext.authorizer?.claims,
-    );
+    const authInfo = AuthInfo.parse(event.requestContext.authorizer?.claims);
     // I guess you have to be a driver to accept a pickup
     // Should we also check that you haven't scheduled another one at the same time?
     if (
@@ -401,9 +390,7 @@ export const cancelAcceptedPickup: APIGatewayProxyHandler = async (event) => {
         }),
       };
     }
-    const authInfo = AuthInfo.parse(
-      event.requestContext.authorizer?.claims,
-    );
+    const authInfo = AuthInfo.parse(event.requestContext.authorizer?.claims);
     const pickup = await getPickupService(pickupId);
 
     // Can't cancel deleted pickup

@@ -813,9 +813,9 @@ describe('pickup lambdas', () => {
 
     expect(result?.statusCode).toBe(204);
     expect(deletePickupService).toHaveBeenCalledWith('123', true);
-    expect(JSON.parse((result as APIGatewayProxyResult).body)).toEqual(
-      {message: 'Pickup deleted successfully'}
-    );
+    expect(JSON.parse((result as APIGatewayProxyResult).body)).toEqual({
+      message: 'Pickup deleted successfully',
+    });
   });
 
   it('should return 400 for delete pickup missing pickup id', async () => {
@@ -1445,7 +1445,7 @@ it('should return 404 for deleted pickup for cancel accepted pickup', async () =
 it('should return 409 for a invalid pickup state cancel accept pickup', async () => {
   (
     getPickupService as vi.MockedFunction<typeof getPickupService>
-  ).mockResolvedValue({...mockAcceptedPickup, status: 'pending'});
+  ).mockResolvedValue({ ...mockAcceptedPickup, status: 'pending' });
   (
     updatePickupService as vi.MockedFunction<typeof updatePickupService>
   ).mockResolvedValue(mockCreatedPickup);
@@ -1462,9 +1462,9 @@ it('should return 409 for a invalid pickup state cancel accept pickup', async ()
   );
 
   expect(result?.statusCode).toBe(409);
-  expect(JSON.parse((result as APIGatewayProxyResult).body)).toEqual(
-    {message: 'Pickup can\'t be cancelled, current status is: pending'},
-  );
+  expect(JSON.parse((result as APIGatewayProxyResult).body)).toEqual({
+    message: "Pickup can't be cancelled, current status is: pending",
+  });
 });
 
 it('should return 500 for cancel accepted pickup internal server error', async () => {

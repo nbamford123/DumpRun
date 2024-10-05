@@ -40,9 +40,7 @@ export const createUser: APIGatewayProxyHandler = async (event) => {
 
 export const getUsers: APIGatewayProxyHandler = async (event) => {
   try {
-    const authInfo = AuthInfo.parse(
-      event.requestContext.authorizer?.claims,
-    );
+    const authInfo = AuthInfo.parse(event.requestContext.authorizer?.claims);
     // Fine-grained authorization
     if (authInfo['custom:role'] !== 'admin') {
       return {
@@ -74,9 +72,7 @@ export const getUsers: APIGatewayProxyHandler = async (event) => {
 
 export const getUser: APIGatewayProxyHandler = async (event) => {
   try {
-    const authInfo = AuthInfo.parse(
-      event.requestContext.authorizer?.claims,
-    );
+    const authInfo = AuthInfo.parse(event.requestContext.authorizer?.claims);
     const userId = event.pathParameters?.userId;
     if (!userId) {
       return {
@@ -117,9 +113,7 @@ export const getUser: APIGatewayProxyHandler = async (event) => {
 
 export const updateUser: APIGatewayProxyHandler = async (event) => {
   try {
-    const authInfo = AuthInfo.parse(
-      event.requestContext.authorizer?.claims,
-    );
+    const authInfo = AuthInfo.parse(event.requestContext.authorizer?.claims);
 
     const userId = event.pathParameters?.userId;
     if (!userId) {
@@ -174,9 +168,7 @@ export const updateUser: APIGatewayProxyHandler = async (event) => {
 
 export const deleteUser: APIGatewayProxyHandler = async (event) => {
   try {
-    const authInfo = AuthInfo.parse(
-      event.requestContext.authorizer?.claims,
-    );
+    const authInfo = AuthInfo.parse(event.requestContext.authorizer?.claims);
     const userId = event.pathParameters?.userId;
     if (!userId) {
       return {
@@ -200,7 +192,7 @@ export const deleteUser: APIGatewayProxyHandler = async (event) => {
       return {
         statusCode: 204,
         body: JSON.stringify(deletedUser),
-      }
+      };
     }
     return {
       statusCode: 403,

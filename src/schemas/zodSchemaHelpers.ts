@@ -31,7 +31,7 @@ export const listUsersQuerySchema = z.object(
     }, {}) || {},
 );
 
-const listDriversEndpoint = endpoints.find((e) => e.alias === 'listUsers');
+const listDriversEndpoint = endpoints.find((e) => e.alias === 'listDrivers');
 
 export const listDriversQuerySchema = z.object(
   listDriversEndpoint?.parameters

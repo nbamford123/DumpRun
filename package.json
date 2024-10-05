@@ -8,7 +8,7 @@
     "check-types": "tsc --noEmit",
     "format": "biome format --write .",
     "generate-types": "openapi-typescript ./api/dumprun_openapi.json -o ./src/schemas/apiSchema.d.ts",
-    "generate-zod": "./scripts/generate-zod-schemas.sh ./api/dumprun_openapi.json ./src/schemas/zodSchemas.ts",
+    "generate-zod": "openapi-zod-client ./api/dumprun_openapi.json -o ./src/schemas/zodSchemas.ts --strict-objects",
     "lint": "biome lint .",
     "lint:fix": "biome lint . --fix",
     "prepare": "husky install",

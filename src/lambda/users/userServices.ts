@@ -21,6 +21,26 @@ export const createUserService = async (user: NewUser): Promise<User> => {
   }
 };
 
+export const getUsersService = async (
+  limit = 10,
+  offset = 0,
+): Promise<User[]> => {
+  const prisma = new PrismaClient();
+  try {
+    const users = await prisma.user.findMany({
+      take: limit,
+      skip: offset,
+    });
+    return users.map((user) => ({
+      ...user,
+      createdAt: user?.createdAt.toISOString(),
+      updatedAt: user?.updatedAt.toISOString(),
+    }));
+  } finally {
+    await prisma.$disconnect();
+  }
+};
+
 export const getUserService = async (id: string): Promise<User | null> => {
   const prisma = new PrismaClient();
   try {

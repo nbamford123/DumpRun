@@ -39,6 +39,9 @@
           },
           "400": {
             "$ref": "#/components/responses/BadRequest"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       },
@@ -99,6 +102,9 @@
           },
           "403": {
             "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       }
@@ -110,7 +116,7 @@
         "tags": ["Users"],
         "security": [
           {
-            "CognitoAuth": []
+            "CognitoAuth": ["admin", "user"]
           }
         ],
         "parameters": [
@@ -134,8 +140,20 @@
               }
             }
           },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
           "404": {
             "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       },
@@ -145,7 +163,7 @@
         "tags": ["Users"],
         "security": [
           {
-            "CognitoAuth": []
+            "CognitoAuth": ["admin", "user"]
           }
         ],
         "parameters": [
@@ -182,8 +200,17 @@
           "400": {
             "$ref": "#/components/responses/BadRequest"
           },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
           "404": {
             "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       },
@@ -193,7 +220,7 @@
         "tags": ["Users"],
         "security": [
           {
-            "CognitoAuth": []
+            "CognitoAuth": ["admin", "user"]
           }
         ],
         "parameters": [
@@ -207,11 +234,30 @@
           }
         ],
         "responses": {
-          "204": {
-            "description": "User deleted successfully"
+          "200": {
+            "description": "User deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
           },
           "404": {
             "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       }
@@ -244,6 +290,9 @@
           },
           "400": {
             "$ref": "#/components/responses/BadRequest"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       },
@@ -260,6 +309,7 @@
           {
             "in": "query",
             "name": "limit",
+            "required": false,
             "schema": {
               "type": "integer",
               "minimum": 1,
@@ -270,6 +320,7 @@
           {
             "in": "query",
             "name": "offset",
+            "required": false,
             "schema": {
               "type": "integer",
               "minimum": 0,
@@ -304,6 +355,9 @@
           },
           "403": {
             "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       }
@@ -315,7 +369,7 @@
         "tags": ["Driver"],
         "security": [
           {
-            "CognitoAuth": []
+            "CognitoAuth": ["admin", "driver"]
           }
         ],
         "parameters": [
@@ -339,8 +393,20 @@
               }
             }
           },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
           "404": {
             "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       },
@@ -350,7 +416,7 @@
         "tags": ["Drivers"],
         "security": [
           {
-            "CognitoAuth": []
+            "CognitoAuth": ["admin", "driver"]
           }
         ],
         "parameters": [
@@ -387,8 +453,17 @@
           "400": {
             "$ref": "#/components/responses/BadRequest"
           },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
           "404": {
             "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       },
@@ -398,7 +473,7 @@
         "tags": ["Drivers"],
         "security": [
           {
-            "CognitoAuth": []
+            "CognitoAuth": ["admin", "driver"]
           }
         ],
         "parameters": [
@@ -412,11 +487,30 @@
           }
         ],
         "responses": {
-          "204": {
-            "description": "Driver deleted successfully"
+          "200": {
+            "description": "User deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
           },
           "404": {
             "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       }
@@ -428,7 +522,7 @@
         "tags": ["Pickups"],
         "security": [
           {
-            "cognitoAuth": ["openid"]
+            "CognitoAuth": ["user", "admin"]
           }
         ],
         "x-amazon-apigateway-auth": {
@@ -463,6 +557,12 @@
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       },
@@ -538,6 +638,12 @@
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       }
@@ -582,8 +688,20 @@
               }
             }
           },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
           "404": {
             "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       },
@@ -593,7 +711,7 @@
         "tags": ["Pickups"],
         "security": [
           {
-            "CognitoAuth": []
+            "CognitoAuth": ["admin", "user"]
           }
         ],
         "parameters": [
@@ -630,8 +748,17 @@
           "400": {
             "$ref": "#/components/responses/BadRequest"
           },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
           "404": {
             "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       },
@@ -641,7 +768,7 @@
         "tags": ["Pickups"],
         "security": [
           {
-            "CognitoAuth": []
+            "CognitoAuth": ["admin", "user"]
           }
         ],
         "parameters": [
@@ -655,11 +782,26 @@
           }
         ],
         "responses": {
+          "200": {
+            "description": "Pickup deleted successfully"
+          },
           "204": {
             "description": "Pickup deleted successfully"
           },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
           "404": {
             "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       }
@@ -671,7 +813,7 @@
         "tags": ["Pickups"],
         "security": [
           {
-            "CognitoAuth": ["driver"]
+            "CognitoAuth": ["admin", "driver"]
           }
         ],
         "responses": {
@@ -687,6 +829,15 @@
                 }
               }
             }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       }
@@ -721,6 +872,24 @@
                 }
               }
             }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       }
@@ -732,7 +901,7 @@
         "tags": ["Pickups"],
         "security": [
           {
-            "CognitoAuth": ["driver"]
+            "CognitoAuth": ["admin", "driver"]
           }
         ],
         "parameters": [
@@ -756,11 +925,23 @@
               }
             }
           },
-          "404": {
-            "description": "Pickup not found or not currently accepted"
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
           },
           "403": {
             "description": "Not authorized to cancel this acceptance"
+          },
+          "404": {
+            "description": "Pickup not found or not currently accepted"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       }
@@ -1109,6 +1290,16 @@
           }
         }
       },
+      "Conflict": {
+        "description": "The request could not be completed due to a conflict with the current state of the target resource.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
       "Unauthorized": {
         "description": "Unauthorized",
         "content": {
@@ -1131,6 +1322,16 @@
       },
       "NotFound": {
         "description": "Resource not found",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "InternalServerError": {
+        "description": "Internal Server Error",
         "content": {
           "application/json": {
             "schema": {

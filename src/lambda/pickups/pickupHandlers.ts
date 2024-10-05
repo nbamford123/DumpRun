@@ -1,5 +1,7 @@
 import type { APIGatewayProxyHandler } from 'aws-lambda';
-import { schemas, schemas_addons } from '@/schemas/zodSchemas.js';
+
+import { schemas } from '@/schemas/zodSchemas.js';
+import { AuthInfo, listPickupsQuerySchema } from '@/schemas/zodSchemaHelpers.js';
 
 import {
   createPickupService,
@@ -11,13 +13,12 @@ import {
   acceptPickupService,
 } from './pickupServices.js';
 import { validGetPickup } from './pickupHelpers.js';
-import { listPickupsQuerySchema } from '@/schemas/zodSchemaHelpers.js';
 
 export const createPickup: APIGatewayProxyHandler = async (event) => {
   try {
     // Parse and validate auth info-- should this be safeParse with a return instead
     // of the throw and 500?
-    const authInfo = schemas_addons.AuthInfo.parse(
+    const authInfo = AuthInfo.parse(
       event.requestContext.authorizer?.claims,
     );
     // Fine-grained authorization
@@ -25,7 +26,7 @@ export const createPickup: APIGatewayProxyHandler = async (event) => {
       return {
         statusCode: 403,
         body: JSON.stringify({
-          message: 'Forbidden: Insufficient permissions to create pickup',
+          message: 'Not authorized',
         }),
       };
     }
@@ -57,6 +58,37 @@ export const createPickup: APIGatewayProxyHandler = async (event) => {
   }
 };
 
+export const getPickups: APIGatewayProxyHandler = async (event) => {
+  try {
+    const authInfo = AuthInfo.parse(
+      event.requestContext.authorizer?.claims,
+    );
+    // only admins are allowed to retrieve a list of pickups
+    if (authInfo['custom:role'] !== 'admin') {
+      return {
+        statusCode: 403,
+        body: JSON.stringify({ message: 'Not authorized' }),
+      };
+    }
+    // Extract query parameters
+    const { status, limit, cursor } = listPickupsQuerySchema.parse(
+      event.queryStringParameters,
+    );
+
+    const pickups = await getPickupsService(limit, cursor, status);
+    return {
+      statusCode: 200,
+      body: JSON.stringify(pickups),
+    };
+  } catch (error) {
+    console.error('Error in getPickups:', error);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ message: 'Internal Server Error' }),
+    };
+  }
+};
+
 export const getPickup: APIGatewayProxyHandler = async (event) => {
   try {
     const pickupId = event.pathParameters?.pickupId;
@@ -70,7 +102,7 @@ export const getPickup: APIGatewayProxyHandler = async (event) => {
     }
 
     const pickup = await getPickupService(pickupId);
-    const authInfo = schemas_addons.AuthInfo.parse(
+    const authInfo = AuthInfo.parse(
       event.requestContext.authorizer?.claims,
     );
     // only admin can retrieve deleted pickups
@@ -107,37 +139,6 @@ export const getPickup: APIGatewayProxyHandler = async (event) => {
   }
 };
 
-export const getPickups: APIGatewayProxyHandler = async (event) => {
-  try {
-    const authInfo = schemas_addons.AuthInfo.parse(
-      event.requestContext.authorizer?.claims,
-    );
-    // only admins are allowed to retrieve a list of pickups
-    if (authInfo['custom:role'] !== 'admin') {
-      return {
-        statusCode: 403,
-        body: JSON.stringify({ message: 'Not authorized' }),
-      };
-    }
-    // Extract query parameters
-    const { status, limit, cursor } = listPickupsQuerySchema.parse(
-      event.queryStringParameters,
-    );
-
-    const pickup = await getPickupsService(limit, cursor, status);
-    return {
-      statusCode: 200,
-      body: JSON.stringify(pickup),
-    };
-  } catch (error) {
-    console.error('Error in getPickups:', error);
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ message: 'Internal Server Error' }),
-    };
-  }
-};
-
 export const updatePickup: APIGatewayProxyHandler = async (event) => {
   try {
     const pickupId = event.pathParameters?.pickupId;
@@ -150,7 +151,7 @@ export const updatePickup: APIGatewayProxyHandler = async (event) => {
       };
     }
 
-    const authInfo = schemas_addons.AuthInfo.parse(
+    const authInfo = AuthInfo.parse(
       event.requestContext.authorizer?.claims,
     );
     // Only users and admins can update pickups
@@ -225,7 +226,7 @@ export const deletePickup: APIGatewayProxyHandler = async (event) => {
       };
     }
 
-    const authInfo = schemas_addons.AuthInfo.parse(
+    const authInfo = AuthInfo.parse(
       event.requestContext.authorizer?.claims,
     );
 
@@ -245,8 +246,10 @@ export const deletePickup: APIGatewayProxyHandler = async (event) => {
       if (event.queryStringParameters?.hardDelete === 'true') {
         const deletedPickup = await deletePickupService(pickupId, true);
         return {
-          statusCode: 200,
-          body: JSON.stringify(deletedPickup),
+          statusCode: 204,
+          body: JSON.stringify({
+            message: 'Pickup deleted successfully',
+          }),
         };
       }
     } else if (
@@ -291,9 +294,43 @@ export const deletePickup: APIGatewayProxyHandler = async (event) => {
   }
 };
 
+export const availablePickups: APIGatewayProxyHandler = async (event) => {
+  try {
+    const authInfo = AuthInfo.parse(
+      event.requestContext.authorizer?.claims,
+    );
+    // I guess you have to be a driver to accept a pickup
+    // Should we also check that you haven't scheduled another one at the same time?
+    if (
+      authInfo['custom:role'] === 'driver' ||
+      authInfo['custom:role'] === 'admin'
+    ) {
+      const pickups = await availablePickupsService();
+      return {
+        statusCode: 200,
+        body: JSON.stringify(pickups),
+      };
+    }
+    return {
+      statusCode: 403,
+      body: JSON.stringify({
+        message: 'Not authorized to accept this pickup',
+      }),
+    };
+
+    // return error wrong role or whatever here. not a driver?
+  } catch (error) {
+    console.error('Error in acceptPickup:', error);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ message: 'Internal server error' }),
+    };
+  }
+};
+
 export const acceptPickup: APIGatewayProxyHandler = async (event) => {
   try {
-    const authInfo = schemas_addons.AuthInfo.parse(
+    const authInfo = AuthInfo.parse(
       event.requestContext.authorizer?.claims,
     );
     // I guess you have to be a driver to accept a pickup
@@ -364,7 +401,7 @@ export const cancelAcceptedPickup: APIGatewayProxyHandler = async (event) => {
         }),
       };
     }
-    const authInfo = schemas_addons.AuthInfo.parse(
+    const authInfo = AuthInfo.parse(
       event.requestContext.authorizer?.claims,
     );
     const pickup = await getPickupService(pickupId);
@@ -381,6 +418,14 @@ export const cancelAcceptedPickup: APIGatewayProxyHandler = async (event) => {
       authInfo['custom:role'] === 'admin' ||
       (authInfo['custom:role'] === 'driver' && pickup.driverId === authInfo.sub)
     ) {
+      if (pickup.status !== 'accepted') {
+        return {
+          statusCode: 409,
+          body: JSON.stringify({
+            message: `Pickup can't be cancelled, current status is: ${pickup.status}`,
+          }),
+        };
+      }
       // Is there any way a pickup could have a driverId and *not* the accepted state?
       const updateData = { status: 'available' as const, driverId: null };
       const returnVal = await updatePickupService(pickupId, updateData);
@@ -398,40 +443,6 @@ export const cancelAcceptedPickup: APIGatewayProxyHandler = async (event) => {
     };
   } catch (error) {
     console.error('Error cancelling pickup acceptance:', error);
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ message: 'Internal server error' }),
-    };
-  }
-};
-
-export const availablePickups: APIGatewayProxyHandler = async (event) => {
-  try {
-    const authInfo = schemas_addons.AuthInfo.parse(
-      event.requestContext.authorizer?.claims,
-    );
-    // I guess you have to be a driver to accept a pickup
-    // Should we also check that you haven't scheduled another one at the same time?
-    if (
-      authInfo['custom:role'] === 'driver' ||
-      authInfo['custom:role'] === 'admin'
-    ) {
-      const pickups = await availablePickupsService();
-      return {
-        statusCode: 200,
-        body: JSON.stringify(pickups),
-      };
-    }
-    return {
-      statusCode: 403,
-      body: JSON.stringify({
-        message: 'Not authorized to accept this pickup',
-      }),
-    };
-
-    // return error wrong role or whatever here. not a driver?
-  } catch (error) {
-    console.error('Error in acceptPickup:', error);
     return {
       statusCode: 500,
       body: JSON.stringify({ message: 'Internal server error' }),

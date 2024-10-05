@@ -4,799 +4,861 @@
  */
 
 export interface paths {
-  '/v1/users': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/v1/users": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List all users */
+        get: operations["listUsers"];
+        put?: never;
+        /** Create a new user account */
+        post: operations["createUser"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /** List all users */
-    get: operations['listUsers'];
-    put?: never;
-    /** Create a new user account */
-    post: operations['createUser'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/v1/users/{userId}': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/v1/users/{userId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a user by ID */
+        get: operations["getUser"];
+        /** Update a user */
+        put: operations["updateUser"];
+        post?: never;
+        /** Delete a user */
+        delete: operations["deleteUser"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /** Get a user by ID */
-    get: operations['getUser'];
-    /** Update a user */
-    put: operations['updateUser'];
-    post?: never;
-    /** Delete a user */
-    delete: operations['deleteUser'];
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/v1/drivers': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/v1/drivers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List all drivers */
+        get: operations["listDrivers"];
+        put?: never;
+        /** Create a new driver account */
+        post: operations["createDriver"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /** List all drivers */
-    get: operations['listDrivers'];
-    put?: never;
-    /** Create a new driver account */
-    post: operations['createDriver'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/v1/drivers/{driverId}': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/v1/drivers/{driverId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a driver by ID */
+        get: operations["getDriver"];
+        /** Update a driver */
+        put: operations["updateDriver"];
+        post?: never;
+        /** Delete a driver */
+        delete: operations["deleteDriver"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /** Get a driver by ID */
-    get: operations['getDriver'];
-    /** Update a driver */
-    put: operations['updateDriver'];
-    post?: never;
-    /** Delete a driver */
-    delete: operations['deleteDriver'];
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/v1/pickups': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/v1/pickups": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List pickup requests */
+        get: operations["listPickups"];
+        put?: never;
+        /** Create a new pickup request */
+        post: operations["createPickup"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /** List pickup requests */
-    get: operations['listPickups'];
-    put?: never;
-    /** Create a new pickup request */
-    post: operations['createPickup'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/v1/pickups/{pickupId}': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/v1/pickups/{pickupId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a pickup by ID */
+        get: operations["getPickup"];
+        /** Update a pickup */
+        put: operations["updatePickup"];
+        post?: never;
+        /** Delete a pickup */
+        delete: operations["deletePickup"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /** Get a pickup by ID */
-    get: operations['getPickup'];
-    /** Update a pickup */
-    put: operations['updatePickup'];
-    post?: never;
-    /** Delete a pickup */
-    delete: operations['deletePickup'];
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/v1/pickups/available': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/v1/pickups/available": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List available pickups for drivers */
+        get: operations["listAvailablePickups"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /** List available pickups for drivers */
-    get: operations['listAvailablePickups'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/v1/pickups/{pickupId}/accept': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/v1/pickups/{pickupId}/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Accept a pickup request */
+        post: operations["acceptPickup"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get?: never;
-    put?: never;
-    /** Accept a pickup request */
-    post: operations['acceptPickup'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/v1/pickups/{pickupId}/cancel-acceptance': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/v1/pickups/{pickupId}/cancel-acceptance": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cancel acceptance of a pickup */
+        post: operations["cancelAcceptance"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get?: never;
-    put?: never;
-    /** Cancel acceptance of a pickup */
-    post: operations['cancelAcceptance'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
-  schemas: {
-    NewUser: {
-      name: string;
-      /** Format: email */
-      email: string;
-      /** Format: password */
-      password: string;
-      phone: string;
-      address: string;
+    schemas: {
+        NewUser: {
+            name: string;
+            /** Format: email */
+            email: string;
+            /** Format: password */
+            password: string;
+            phone: string;
+            address: string;
+        };
+        UpdateUser: {
+            name?: string;
+            /** Format: password */
+            password?: string;
+            phone?: string;
+            address?: string;
+        };
+        User: {
+            id?: string;
+            name?: string;
+            email?: string;
+            phone?: string;
+            address?: string;
+            /** Format: date-time */
+            createdAt?: string;
+            /** Format: date-time */
+            updatedAt?: string;
+        };
+        NewDriver: {
+            name: string;
+            /** Format: email */
+            email: string;
+            /** Format: password */
+            password: string;
+            phone: string;
+            address: string;
+            vehicleMake: string;
+            vehicleModel: string;
+            vehicleYear: number;
+        };
+        UpdateDriver: {
+            name?: string;
+            /** Format: password */
+            password?: string;
+            phone?: string;
+            address?: string;
+            vehicleMake?: string;
+            vehicleModel?: string;
+            vehicleYear?: number;
+        };
+        Driver: {
+            id?: string;
+            name?: string;
+            email?: string;
+            phone?: string;
+            address?: string;
+            vehicleMake?: string;
+            vehicleModel?: string;
+            vehicleYear?: number;
+            /** Format: date-time */
+            createdAt?: string;
+            /** Format: date-time */
+            updatedAt?: string;
+        };
+        NewPickup: {
+            location: string;
+            /** Format: float */
+            estimatedWeight: number;
+            wasteType: string;
+            /** Format: date-time */
+            requestedTime: string;
+        };
+        UpdatePickup: {
+            location?: string;
+            /** Format: float */
+            estimatedWeight?: number;
+            /** @enum {string} */
+            wasteType?: "household" | "construction" | "green" | "electronic";
+            /** Format: date-time */
+            requestedTime?: string;
+            /** @enum {string} */
+            status?: "pending" | "available" | "accepted" | "in_progress" | "completed" | "cancelled" | "deleted";
+        };
+        Pickup: {
+            id?: string;
+            userId?: string;
+            driverId?: string | null;
+            /** @enum {string} */
+            status?: "pending" | "available" | "accepted" | "in_progress" | "completed" | "cancelled" | "deleted";
+            location?: string;
+            /** Format: float */
+            estimatedWeight?: number;
+            /** @enum {string} */
+            wasteType?: "household" | "construction" | "green" | "electronic";
+            /** Format: date-time */
+            requestedTime?: string;
+            /** Format: date-time */
+            assignedTime?: string;
+            /** Format: date-time */
+            completedTime?: string;
+            /** Format: date-time */
+            deletedAt?: string;
+        };
+        Error: {
+            code?: string;
+            message?: string;
+        };
     };
-    UpdateUser: {
-      name?: string;
-      /** Format: password */
-      password?: string;
-      phone?: string;
-      address?: string;
+    responses: {
+        /** @description Bad request */
+        BadRequest: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["Error"];
+            };
+        };
+        /** @description The request could not be completed due to a conflict with the current state of the target resource. */
+        Conflict: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["Error"];
+            };
+        };
+        /** @description Unauthorized */
+        Unauthorized: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["Error"];
+            };
+        };
+        /** @description Access forbidden */
+        Forbidden: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["Error"];
+            };
+        };
+        /** @description Resource not found */
+        NotFound: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["Error"];
+            };
+        };
+        /** @description Internal Server Error */
+        InternalServerError: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["Error"];
+            };
+        };
     };
-    User: {
-      id?: string;
-      name?: string;
-      email?: string;
-      phone?: string;
-      address?: string;
-      /** Format: date-time */
-      createdAt?: string;
-      /** Format: date-time */
-      updatedAt?: string;
-    };
-    NewDriver: {
-      name: string;
-      /** Format: email */
-      email: string;
-      /** Format: password */
-      password: string;
-      phone: string;
-      address: string;
-      vehicleMake: string;
-      vehicleModel: string;
-      vehicleYear: number;
-    };
-    UpdateDriver: {
-      name?: string;
-      /** Format: password */
-      password?: string;
-      phone?: string;
-      address?: string;
-      vehicleMake?: string;
-      vehicleModel?: string;
-      vehicleYear?: number;
-    };
-    Driver: {
-      id?: string;
-      name?: string;
-      email?: string;
-      phone?: string;
-      address?: string;
-      vehicleMake?: string;
-      vehicleModel?: string;
-      vehicleYear?: number;
-      /** Format: date-time */
-      createdAt?: string;
-      /** Format: date-time */
-      updatedAt?: string;
-    };
-    NewPickup: {
-      location: string;
-      /** Format: float */
-      estimatedWeight: number;
-      wasteType: string;
-      /** Format: date-time */
-      requestedTime: string;
-    };
-    UpdatePickup: {
-      location?: string;
-      /** Format: float */
-      estimatedWeight?: number;
-      /** @enum {string} */
-      wasteType?: 'household' | 'construction' | 'green' | 'electronic';
-      /** Format: date-time */
-      requestedTime?: string;
-      /** @enum {string} */
-      status?:
-        | 'pending'
-        | 'available'
-        | 'accepted'
-        | 'in_progress'
-        | 'completed'
-        | 'cancelled'
-        | 'deleted';
-    };
-    Pickup: {
-      id?: string;
-      userId?: string;
-      driverId?: string | null;
-      /** @enum {string} */
-      status?:
-        | 'pending'
-        | 'available'
-        | 'accepted'
-        | 'in_progress'
-        | 'completed'
-        | 'cancelled'
-        | 'deleted';
-      location?: string;
-      /** Format: float */
-      estimatedWeight?: number;
-      /** @enum {string} */
-      wasteType?: 'household' | 'construction' | 'green' | 'electronic';
-      /** Format: date-time */
-      requestedTime?: string;
-      /** Format: date-time */
-      assignedTime?: string;
-      /** Format: date-time */
-      completedTime?: string;
-      /** Format: date-time */
-      deletedAt?: string;
-    };
-    Error: {
-      code?: string;
-      message?: string;
-    };
-  };
-  responses: {
-    /** @description Bad request */
-    BadRequest: {
-      headers: {
-        [name: string]: unknown;
-      };
-      content: {
-        'application/json': components['schemas']['Error'];
-      };
-    };
-    /** @description Unauthorized */
-    Unauthorized: {
-      headers: {
-        [name: string]: unknown;
-      };
-      content: {
-        'application/json': components['schemas']['Error'];
-      };
-    };
-    /** @description Access forbidden */
-    Forbidden: {
-      headers: {
-        [name: string]: unknown;
-      };
-      content: {
-        'application/json': components['schemas']['Error'];
-      };
-    };
-    /** @description Resource not found */
-    NotFound: {
-      headers: {
-        [name: string]: unknown;
-      };
-      content: {
-        'application/json': components['schemas']['Error'];
-      };
-    };
-  };
-  parameters: never;
-  requestBodies: never;
-  headers: never;
-  pathItems: never;
+    parameters: never;
+    requestBodies: never;
+    headers: never;
+    pathItems: never;
 }
 export type $defs = Record<string, never>;
 export interface operations {
-  listUsers: {
-    parameters: {
-      query?: {
-        limit?: number;
-        offset?: number;
-      };
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description List of users */
-      200: {
-        headers: {
-          [name: string]: unknown;
+    listUsers: {
+        parameters: {
+            query?: {
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
         };
-        content: {
-          'application/json': {
-            users?: components['schemas']['User'][];
-            total?: number;
-          };
+        requestBody?: never;
+        responses: {
+            /** @description List of users */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        users?: components["schemas"]["User"][];
+                        total?: number;
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            500: components["responses"]["InternalServerError"];
         };
-      };
-      401: components['responses']['Unauthorized'];
-      403: components['responses']['Forbidden'];
     };
-  };
-  createUser: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['NewUser'];
-      };
-    };
-    responses: {
-      /** @description User created successfully */
-      201: {
-        headers: {
-          [name: string]: unknown;
+    createUser: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
         };
-        content: {
-          'application/json': components['schemas']['User'];
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NewUser"];
+            };
         };
-      };
-      400: components['responses']['BadRequest'];
-    };
-  };
-  getUser: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        userId: string;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description User details */
-      200: {
-        headers: {
-          [name: string]: unknown;
+        responses: {
+            /** @description User created successfully */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["User"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            500: components["responses"]["InternalServerError"];
         };
-        content: {
-          'application/json': components['schemas']['User'];
+    };
+    getUser: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                userId: string;
+            };
+            cookie?: never;
         };
-      };
-      404: components['responses']['NotFound'];
-    };
-  };
-  updateUser: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        userId: string;
-      };
-      cookie?: never;
-    };
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['UpdateUser'];
-      };
-    };
-    responses: {
-      /** @description User updated successfully */
-      200: {
-        headers: {
-          [name: string]: unknown;
+        requestBody?: never;
+        responses: {
+            /** @description User details */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["User"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            500: components["responses"]["InternalServerError"];
         };
-        content: {
-          'application/json': components['schemas']['User'];
+    };
+    updateUser: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                userId: string;
+            };
+            cookie?: never;
         };
-      };
-      400: components['responses']['BadRequest'];
-      404: components['responses']['NotFound'];
-    };
-  };
-  deleteUser: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        userId: string;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description User deleted successfully */
-      204: {
-        headers: {
-          [name: string]: unknown;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateUser"];
+            };
         };
-        content?: never;
-      };
-      404: components['responses']['NotFound'];
-    };
-  };
-  listDrivers: {
-    parameters: {
-      query?: {
-        limit?: number;
-        offset?: number;
-      };
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description List of drivers */
-      200: {
-        headers: {
-          [name: string]: unknown;
+        responses: {
+            /** @description User updated successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["User"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            500: components["responses"]["InternalServerError"];
         };
-        content: {
-          'application/json': {
-            users?: components['schemas']['Driver'][];
-            total?: number;
-          };
+    };
+    deleteUser: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                userId: string;
+            };
+            cookie?: never;
         };
-      };
-      401: components['responses']['Unauthorized'];
-      403: components['responses']['Forbidden'];
-    };
-  };
-  createDriver: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['NewDriver'];
-      };
-    };
-    responses: {
-      /** @description Driver created successfully */
-      201: {
-        headers: {
-          [name: string]: unknown;
+        requestBody?: never;
+        responses: {
+            /** @description User deleted successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["User"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            500: components["responses"]["InternalServerError"];
         };
-        content: {
-          'application/json': components['schemas']['Driver'];
+    };
+    listDrivers: {
+        parameters: {
+            query?: {
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
         };
-      };
-      400: components['responses']['BadRequest'];
-    };
-  };
-  getDriver: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        driverId: string;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Driver details */
-      200: {
-        headers: {
-          [name: string]: unknown;
+        requestBody?: never;
+        responses: {
+            /** @description List of drivers */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        users?: components["schemas"]["Driver"][];
+                        total?: number;
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            500: components["responses"]["InternalServerError"];
         };
-        content: {
-          'application/json': components['schemas']['Driver'];
+    };
+    createDriver: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
         };
-      };
-      404: components['responses']['NotFound'];
-    };
-  };
-  updateDriver: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        driverId: string;
-      };
-      cookie?: never;
-    };
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['UpdateDriver'];
-      };
-    };
-    responses: {
-      /** @description Driver updated successfully */
-      200: {
-        headers: {
-          [name: string]: unknown;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NewDriver"];
+            };
         };
-        content: {
-          'application/json': components['schemas']['Driver'];
+        responses: {
+            /** @description Driver created successfully */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Driver"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            500: components["responses"]["InternalServerError"];
         };
-      };
-      400: components['responses']['BadRequest'];
-      404: components['responses']['NotFound'];
     };
-  };
-  deleteDriver: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        driverId: string;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Driver deleted successfully */
-      204: {
-        headers: {
-          [name: string]: unknown;
+    getDriver: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                driverId: string;
+            };
+            cookie?: never;
         };
-        content?: never;
-      };
-      404: components['responses']['NotFound'];
-    };
-  };
-  listPickups: {
-    parameters: {
-      query?: {
-        status?: (
-          | 'pending'
-          | 'assigned'
-          | 'completed'
-          | 'in_progress'
-          | 'cancelled'
-          | 'deleted'
-        )[];
-        limit?: number;
-        cursor?: string;
-      };
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description List of pickup requests */
-      200: {
-        headers: {
-          [name: string]: unknown;
+        requestBody?: never;
+        responses: {
+            /** @description Driver details */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Driver"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            500: components["responses"]["InternalServerError"];
         };
-        content: {
-          'application/json': {
-            pickups?: components['schemas']['Pickup'][];
-            nextCursor?: string;
-          };
+    };
+    updateDriver: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                driverId: string;
+            };
+            cookie?: never;
         };
-      };
-      401: components['responses']['Unauthorized'];
-    };
-  };
-  createPickup: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['NewPickup'];
-      };
-    };
-    responses: {
-      /** @description Pickup request created successfully */
-      201: {
-        headers: {
-          [name: string]: unknown;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateDriver"];
+            };
         };
-        content: {
-          'application/json': components['schemas']['Pickup'];
+        responses: {
+            /** @description Driver updated successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Driver"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            500: components["responses"]["InternalServerError"];
         };
-      };
-      401: components['responses']['Unauthorized'];
     };
-  };
-  getPickup: {
-    parameters: {
-      query?: {
-        /** @description Whether to include deleted pickups */
-        includeDeleted?: boolean;
-      };
-      header?: never;
-      path: {
-        pickupId: string;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Pickup details */
-      200: {
-        headers: {
-          [name: string]: unknown;
+    deleteDriver: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                driverId: string;
+            };
+            cookie?: never;
         };
-        content: {
-          'application/json': components['schemas']['Pickup'];
+        requestBody?: never;
+        responses: {
+            /** @description User deleted successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["User"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            500: components["responses"]["InternalServerError"];
         };
-      };
-      404: components['responses']['NotFound'];
     };
-  };
-  updatePickup: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        pickupId: string;
-      };
-      cookie?: never;
-    };
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['UpdatePickup'];
-      };
-    };
-    responses: {
-      /** @description Pickup updated successfully */
-      200: {
-        headers: {
-          [name: string]: unknown;
+    listPickups: {
+        parameters: {
+            query?: {
+                status?: ("pending" | "assigned" | "completed" | "in_progress" | "cancelled" | "deleted")[];
+                limit?: number;
+                cursor?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
         };
-        content: {
-          'application/json': components['schemas']['Pickup'];
+        requestBody?: never;
+        responses: {
+            /** @description List of pickup requests */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        pickups?: components["schemas"]["Pickup"][];
+                        nextCursor?: string;
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            500: components["responses"]["InternalServerError"];
         };
-      };
-      400: components['responses']['BadRequest'];
-      404: components['responses']['NotFound'];
     };
-  };
-  deletePickup: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        pickupId: string;
-      };
-      cookie?: never;
+    createPickup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NewPickup"];
+            };
+        };
+        responses: {
+            /** @description Pickup request created successfully */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Pickup"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            500: components["responses"]["InternalServerError"];
+        };
     };
-    requestBody?: never;
-    responses: {
-      /** @description Pickup deleted successfully */
-      204: {
-        headers: {
-          [name: string]: unknown;
+    getPickup: {
+        parameters: {
+            query?: {
+                /** @description Whether to include deleted pickups */
+                includeDeleted?: boolean;
+            };
+            header?: never;
+            path: {
+                pickupId: string;
+            };
+            cookie?: never;
         };
-        content?: never;
-      };
-      404: components['responses']['NotFound'];
+        requestBody?: never;
+        responses: {
+            /** @description Pickup details */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Pickup"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            500: components["responses"]["InternalServerError"];
+        };
     };
-  };
-  listAvailablePickups: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    updatePickup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pickupId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdatePickup"];
+            };
+        };
+        responses: {
+            /** @description Pickup updated successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Pickup"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            500: components["responses"]["InternalServerError"];
+        };
     };
-    requestBody?: never;
-    responses: {
-      /** @description List of available pickup requests */
-      200: {
-        headers: {
-          [name: string]: unknown;
+    deletePickup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pickupId: string;
+            };
+            cookie?: never;
         };
-        content: {
-          'application/json': components['schemas']['Pickup'][];
+        requestBody?: never;
+        responses: {
+            /** @description Pickup deleted successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Pickup deleted successfully */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            500: components["responses"]["InternalServerError"];
         };
-      };
     };
-  };
-  acceptPickup: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        pickupId: string;
-      };
-      cookie?: never;
+    listAvailablePickups: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of available pickup requests */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Pickup"][];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            500: components["responses"]["InternalServerError"];
+        };
     };
-    requestBody?: never;
-    responses: {
-      /** @description Pickup request accepted successfully */
-      200: {
-        headers: {
-          [name: string]: unknown;
+    acceptPickup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pickupId: string;
+            };
+            cookie?: never;
         };
-        content: {
-          'application/json': components['schemas']['Pickup'];
+        requestBody?: never;
+        responses: {
+            /** @description Pickup request accepted successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Pickup"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            500: components["responses"]["InternalServerError"];
         };
-      };
     };
-  };
-  cancelAcceptance: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        pickupId: string;
-      };
-      cookie?: never;
+    cancelAcceptance: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pickupId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Acceptance cancelled successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Pickup"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            /** @description Not authorized to cancel this acceptance */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Pickup not found or not currently accepted */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            409: components["responses"]["Conflict"];
+            500: components["responses"]["InternalServerError"];
+        };
     };
-    requestBody?: never;
-    responses: {
-      /** @description Acceptance cancelled successfully */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['Pickup'];
-        };
-      };
-      /** @description Not authorized to cancel this acceptance */
-      403: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content?: never;
-      };
-      /** @description Pickup not found or not currently accepted */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content?: never;
-      };
-    };
-  };
 }

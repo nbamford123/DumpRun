@@ -1,8 +1,11 @@
 import type { APIGatewayProxyHandler } from 'aws-lambda';
+
 import { schemas } from '@/schemas/zodSchemas.js';
+import { AuthInfo, listUsersQuerySchema } from '@/schemas/zodSchemaHelpers.js';
 
 import {
   createUserService,
+  getUsersService,
   getUserService,
   updateUserService,
   deleteUserService,
@@ -35,8 +38,45 @@ export const createUser: APIGatewayProxyHandler = async (event) => {
   }
 };
 
+export const getUsers: APIGatewayProxyHandler = async (event) => {
+  try {
+    const authInfo = AuthInfo.parse(
+      event.requestContext.authorizer?.claims,
+    );
+    // Fine-grained authorization
+    if (authInfo['custom:role'] !== 'admin') {
+      return {
+        statusCode: 403,
+        body: JSON.stringify({
+          message: 'Not authorized',
+        }),
+      };
+    }
+    // Extract query parameters
+    const { limit, offset } = listUsersQuerySchema.parse(
+      event.queryStringParameters || {},
+    );
+
+    const users = await getUsersService(limit, offset);
+
+    return {
+      statusCode: 200,
+      body: JSON.stringify(users),
+    };
+  } catch (error) {
+    console.error('Error in getUser:', error);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ message: 'Internal Server Error' }),
+    };
+  }
+};
+
 export const getUser: APIGatewayProxyHandler = async (event) => {
   try {
+    const authInfo = AuthInfo.parse(
+      event.requestContext.authorizer?.claims,
+    );
     const userId = event.pathParameters?.userId;
     if (!userId) {
       return {
@@ -44,18 +84,27 @@ export const getUser: APIGatewayProxyHandler = async (event) => {
         body: JSON.stringify({ message: 'Missing userId in path parameters' }),
       };
     }
-
-    const user = await getUserService(userId);
-    if (!user) {
+    if (
+      authInfo['custom:role'] === 'admin' ||
+      (authInfo['custom:role'] === 'user' && authInfo.sub === userId)
+    ) {
+      const user = await getUserService(userId);
+      if (!user) {
+        return {
+          statusCode: 404,
+          body: JSON.stringify({ message: 'User not found' }),
+        };
+      }
       return {
-        statusCode: 404,
-        body: JSON.stringify({ message: 'User not found' }),
+        statusCode: 200,
+        body: JSON.stringify(user),
       };
     }
-
     return {
-      statusCode: 200,
-      body: JSON.stringify(user),
+      statusCode: 403,
+      body: JSON.stringify({
+        message: 'Not authorized',
+      }),
     };
   } catch (error) {
     console.error('Error in getUser:', error);
@@ -68,6 +117,10 @@ export const getUser: APIGatewayProxyHandler = async (event) => {
 
 export const updateUser: APIGatewayProxyHandler = async (event) => {
   try {
+    const authInfo = AuthInfo.parse(
+      event.requestContext.authorizer?.claims,
+    );
+
     const userId = event.pathParameters?.userId;
     if (!userId) {
       return {
@@ -75,30 +128,40 @@ export const updateUser: APIGatewayProxyHandler = async (event) => {
         body: JSON.stringify({ message: 'Missing userId in path parameters' }),
       };
     }
+    if (
+      authInfo['custom:role'] === 'admin' ||
+      (authInfo['custom:role'] === 'user' && authInfo.sub === userId)
+    ) {
+      const requestBody = JSON.parse(event.body || '{}');
+      const result = schemas.UpdateUser.safeParse(requestBody);
+      if (!result.success) {
+        return {
+          statusCode: 400,
+          body: JSON.stringify({
+            message: 'Invalid input',
+            errors: result.error.issues,
+          }),
+        };
+      }
 
-    const requestBody = JSON.parse(event.body || '{}');
-    const result = schemas.UpdateUser.safeParse(requestBody);
-    if (!result.success) {
+      const updatedUser = await updateUserService(userId, result.data);
+      if (!updatedUser) {
+        return {
+          statusCode: 404,
+          body: JSON.stringify({ message: 'User not found' }),
+        };
+      }
+
       return {
-        statusCode: 400,
-        body: JSON.stringify({
-          message: 'Invalid input',
-          errors: result.error.issues,
-        }),
+        statusCode: 200,
+        body: JSON.stringify(updatedUser),
       };
     }
-
-    const updatedUser = await updateUserService(userId, result.data);
-    if (!updatedUser) {
-      return {
-        statusCode: 404,
-        body: JSON.stringify({ message: 'User not found' }),
-      };
-    }
-
     return {
-      statusCode: 200,
-      body: JSON.stringify(updatedUser),
+      statusCode: 403,
+      body: JSON.stringify({
+        message: 'Not authorized',
+      }),
     };
   } catch (error) {
     console.error('Error in updateUser:', error);
@@ -111,6 +174,9 @@ export const updateUser: APIGatewayProxyHandler = async (event) => {
 
 export const deleteUser: APIGatewayProxyHandler = async (event) => {
   try {
+    const authInfo = AuthInfo.parse(
+      event.requestContext.authorizer?.claims,
+    );
     const userId = event.pathParameters?.userId;
     if (!userId) {
       return {
@@ -119,17 +185,28 @@ export const deleteUser: APIGatewayProxyHandler = async (event) => {
       };
     }
 
-    const deletedUser = await deleteUserService(userId);
+    if (
+      authInfo['custom:role'] === 'admin' ||
+      (authInfo['custom:role'] === 'user' && authInfo.sub === userId)
+    ) {
+      const deletedUser = await deleteUserService(userId);
 
-    if (!deletedUser) {
+      if (!deletedUser) {
+        return {
+          statusCode: 404,
+          body: JSON.stringify({ message: 'User not found' }),
+        };
+      }
       return {
-        statusCode: 404,
-        body: JSON.stringify({ message: 'User not found' }),
-      };
+        statusCode: 204,
+        body: JSON.stringify(deletedUser),
+      }
     }
     return {
-      statusCode: 204,
-      body: JSON.stringify(deletedUser),
+      statusCode: 403,
+      body: JSON.stringify({
+        message: 'Not authorized',
+      }),
     };
   } catch (error) {
     console.error('Error in deleteUser:', error);

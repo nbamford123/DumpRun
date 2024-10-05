@@ -167,6 +167,11 @@ const endpoints = makeApi([
         description: `Bad request`,
         schema: Error,
       },
+      {
+        status: 500,
+        description: `Internal Server Error`,
+        schema: Error,
+      },
     ],
   },
   {
@@ -202,6 +207,11 @@ const endpoints = makeApi([
         description: `Access forbidden`,
         schema: Error,
       },
+      {
+        status: 500,
+        description: `Internal Server Error`,
+        schema: Error,
+      },
     ],
   },
   {
@@ -219,8 +229,28 @@ const endpoints = makeApi([
     response: Driver,
     errors: [
       {
+        status: 400,
+        description: `Bad request`,
+        schema: Error,
+      },
+      {
+        status: 401,
+        description: `Unauthorized`,
+        schema: Error,
+      },
+      {
+        status: 403,
+        description: `Access forbidden`,
+        schema: Error,
+      },
+      {
         status: 404,
         description: `Resource not found`,
+        schema: Error,
+      },
+      {
+        status: 500,
+        description: `Internal Server Error`,
         schema: Error,
       },
     ],
@@ -250,8 +280,23 @@ const endpoints = makeApi([
         schema: Error,
       },
       {
+        status: 401,
+        description: `Unauthorized`,
+        schema: Error,
+      },
+      {
+        status: 403,
+        description: `Access forbidden`,
+        schema: Error,
+      },
+      {
         status: 404,
         description: `Resource not found`,
+        schema: Error,
+      },
+      {
+        status: 500,
+        description: `Internal Server Error`,
         schema: Error,
       },
     ],
@@ -268,11 +313,31 @@ const endpoints = makeApi([
         schema: z.string(),
       },
     ],
-    response: z.void(),
+    response: User,
     errors: [
+      {
+        status: 400,
+        description: `Bad request`,
+        schema: Error,
+      },
+      {
+        status: 401,
+        description: `Unauthorized`,
+        schema: Error,
+      },
+      {
+        status: 403,
+        description: `Access forbidden`,
+        schema: Error,
+      },
       {
         status: 404,
         description: `Resource not found`,
+        schema: Error,
+      },
+      {
+        status: 500,
+        description: `Internal Server Error`,
         schema: Error,
       },
     ],
@@ -294,6 +359,16 @@ const endpoints = makeApi([
       {
         status: 401,
         description: `Unauthorized`,
+        schema: Error,
+      },
+      {
+        status: 403,
+        description: `Access forbidden`,
+        schema: Error,
+      },
+      {
+        status: 500,
+        description: `Internal Server Error`,
         schema: Error,
       },
     ],
@@ -342,6 +417,16 @@ const endpoints = makeApi([
         description: `Unauthorized`,
         schema: Error,
       },
+      {
+        status: 403,
+        description: `Access forbidden`,
+        schema: Error,
+      },
+      {
+        status: 500,
+        description: `Internal Server Error`,
+        schema: Error,
+      },
     ],
   },
   {
@@ -364,8 +449,28 @@ const endpoints = makeApi([
     response: Pickup,
     errors: [
       {
+        status: 400,
+        description: `Bad request`,
+        schema: Error,
+      },
+      {
+        status: 401,
+        description: `Unauthorized`,
+        schema: Error,
+      },
+      {
+        status: 403,
+        description: `Access forbidden`,
+        schema: Error,
+      },
+      {
         status: 404,
         description: `Resource not found`,
+        schema: Error,
+      },
+      {
+        status: 500,
+        description: `Internal Server Error`,
         schema: Error,
       },
     ],
@@ -395,8 +500,23 @@ const endpoints = makeApi([
         schema: Error,
       },
       {
+        status: 401,
+        description: `Unauthorized`,
+        schema: Error,
+      },
+      {
+        status: 403,
+        description: `Access forbidden`,
+        schema: Error,
+      },
+      {
         status: 404,
         description: `Resource not found`,
+        schema: Error,
+      },
+      {
+        status: 500,
+        description: `Internal Server Error`,
         schema: Error,
       },
     ],
@@ -416,8 +536,28 @@ const endpoints = makeApi([
     response: z.void(),
     errors: [
       {
+        status: 400,
+        description: `Bad request`,
+        schema: Error,
+      },
+      {
+        status: 401,
+        description: `Unauthorized`,
+        schema: Error,
+      },
+      {
+        status: 403,
+        description: `Access forbidden`,
+        schema: Error,
+      },
+      {
         status: 404,
         description: `Resource not found`,
+        schema: Error,
+      },
+      {
+        status: 500,
+        description: `Internal Server Error`,
         schema: Error,
       },
     ],
@@ -435,6 +575,38 @@ const endpoints = makeApi([
       },
     ],
     response: Pickup,
+    errors: [
+      {
+        status: 400,
+        description: `Bad request`,
+        schema: Error,
+      },
+      {
+        status: 401,
+        description: `Unauthorized`,
+        schema: Error,
+      },
+      {
+        status: 403,
+        description: `Access forbidden`,
+        schema: Error,
+      },
+      {
+        status: 404,
+        description: `Resource not found`,
+        schema: Error,
+      },
+      {
+        status: 409,
+        description: `The request could not be completed due to a conflict with the current state of the target resource.`,
+        schema: Error,
+      },
+      {
+        status: 500,
+        description: `Internal Server Error`,
+        schema: Error,
+      },
+    ],
   },
   {
     method: "post",
@@ -451,6 +623,16 @@ const endpoints = makeApi([
     response: Pickup,
     errors: [
       {
+        status: 400,
+        description: `Bad request`,
+        schema: Error,
+      },
+      {
+        status: 401,
+        description: `Unauthorized`,
+        schema: Error,
+      },
+      {
         status: 403,
         description: `Not authorized to cancel this acceptance`,
         schema: z.void(),
@@ -460,6 +642,16 @@ const endpoints = makeApi([
         description: `Pickup not found or not currently accepted`,
         schema: z.void(),
       },
+      {
+        status: 409,
+        description: `The request could not be completed due to a conflict with the current state of the target resource.`,
+        schema: Error,
+      },
+      {
+        status: 500,
+        description: `Internal Server Error`,
+        schema: Error,
+      },
     ],
   },
   {
@@ -468,6 +660,23 @@ const endpoints = makeApi([
     alias: "listAvailablePickups",
     requestFormat: "json",
     response: z.array(Pickup),
+    errors: [
+      {
+        status: 401,
+        description: `Unauthorized`,
+        schema: Error,
+      },
+      {
+        status: 403,
+        description: `Access forbidden`,
+        schema: Error,
+      },
+      {
+        status: 500,
+        description: `Internal Server Error`,
+        schema: Error,
+      },
+    ],
   },
   {
     method: "post",
@@ -486,6 +695,11 @@ const endpoints = makeApi([
       {
         status: 400,
         description: `Bad request`,
+        schema: Error,
+      },
+      {
+        status: 500,
+        description: `Internal Server Error`,
         schema: Error,
       },
     ],
@@ -523,6 +737,11 @@ const endpoints = makeApi([
         description: `Access forbidden`,
         schema: Error,
       },
+      {
+        status: 500,
+        description: `Internal Server Error`,
+        schema: Error,
+      },
     ],
   },
   {
@@ -540,8 +759,28 @@ const endpoints = makeApi([
     response: User,
     errors: [
       {
+        status: 400,
+        description: `Bad request`,
+        schema: Error,
+      },
+      {
+        status: 401,
+        description: `Unauthorized`,
+        schema: Error,
+      },
+      {
+        status: 403,
+        description: `Access forbidden`,
+        schema: Error,
+      },
+      {
         status: 404,
         description: `Resource not found`,
+        schema: Error,
+      },
+      {
+        status: 500,
+        description: `Internal Server Error`,
         schema: Error,
       },
     ],
@@ -571,8 +810,23 @@ const endpoints = makeApi([
         schema: Error,
       },
       {
+        status: 401,
+        description: `Unauthorized`,
+        schema: Error,
+      },
+      {
+        status: 403,
+        description: `Access forbidden`,
+        schema: Error,
+      },
+      {
         status: 404,
         description: `Resource not found`,
+        schema: Error,
+      },
+      {
+        status: 500,
+        description: `Internal Server Error`,
         schema: Error,
       },
     ],
@@ -589,11 +843,31 @@ const endpoints = makeApi([
         schema: z.string(),
       },
     ],
-    response: z.void(),
+    response: User,
     errors: [
+      {
+        status: 400,
+        description: `Bad request`,
+        schema: Error,
+      },
+      {
+        status: 401,
+        description: `Unauthorized`,
+        schema: Error,
+      },
+      {
+        status: 403,
+        description: `Access forbidden`,
+        schema: Error,
+      },
       {
         status: 404,
         description: `Resource not found`,
+        schema: Error,
+      },
+      {
+        status: 500,
+        description: `Internal Server Error`,
         schema: Error,
       },
     ],
@@ -605,10 +879,3 @@ export const api = new Zodios(endpoints);
 export function createApiClient(baseUrl: string, options?: ZodiosOptions) {
   return new Zodios(baseUrl, endpoints, options);
 }
-
-export const schemas_addons = {
-  AuthInfo: z.object({
-    sub: z.string(),
-    'custom:role': z.enum(['user', 'driver', 'admin']),
-  })
-};

@@ -19,16 +19,6 @@ vi.mock('../pickupServices', () => ({
   cancelAcceptedPickup: vi.fn(),
 }));
 
-vi.mock('@/schemas/zodSchemas.js', async (importOriginal) => {
-  const originalModule = (await importOriginal()) as Record<string, unknown>;
-  return {
-    ...originalModule,
-    AuthInfoSchema: {
-      parse: vi.fn(),
-    },
-  };
-});
-
 // Import after mocking
 import {
   createPickup,
@@ -187,7 +177,7 @@ describe('pickup lambdas', () => {
     expect(result?.statusCode).toBe(403);
     expect(JSON.parse((result as APIGatewayProxyResult).body)).toHaveProperty(
       'message',
-      'Forbidden: Insufficient permissions to create pickup',
+      'Not authorized',
     );
   });
 
@@ -486,7 +476,7 @@ describe('pickup lambdas', () => {
     const mockPickups = [mockCreatedPickup, { ...mockCreatedPickup, id: 234 }];
     (
       getPickupsService as vi.MockedFunction<typeof getPickupsService>
-    ).mockResolvedValue(mockPickups);
+    ).mockResolvedValue({ pickups: mockPickups, nextCursor: 'def345' });
 
     const event: DeepPartial<APIGatewayProxyEvent> = {
       queryStringParameters: {
@@ -504,13 +494,14 @@ describe('pickup lambdas', () => {
     );
 
     expect(result?.statusCode).toBe(200);
-    expect(JSON.parse((result as APIGatewayProxyResult).body)).toEqual(
-      mockPickups,
-    );
     expect(getPickupsService).toHaveBeenCalledWith(22, 'abc123', [
       'pending',
       'assigned',
     ]);
+    expect(JSON.parse((result as APIGatewayProxyResult).body)).toEqual({
+      pickups: mockPickups,
+      nextCursor: 'def345',
+    });
   });
 
   it('should fail to get pickups when not admin', async () => {
@@ -797,7 +788,7 @@ describe('pickup lambdas', () => {
     );
   });
 
-  it('should return 200 for valid hard delete pickup when admin', async () => {
+  it('should return 204 for valid hard delete pickup when admin', async () => {
     // Update calls get pickup
     (
       getPickupService as vi.MockedFunction<typeof getPickupService>
@@ -820,10 +811,10 @@ describe('pickup lambdas', () => {
       {} as Callback,
     );
 
-    expect(result?.statusCode).toBe(200);
+    expect(result?.statusCode).toBe(204);
     expect(deletePickupService).toHaveBeenCalledWith('123', true);
     expect(JSON.parse((result as APIGatewayProxyResult).body)).toEqual(
-      mockCreatedPickup,
+      {message: 'Pickup deleted successfully'}
     );
   });
 
@@ -1332,7 +1323,7 @@ it('should return 200 for a valid cancel accept pickup', async () => {
   );
 });
 
-it('should return 200 for admin accept pickup', async () => {
+it('should return 200 for admin cancel pickup', async () => {
   (
     getPickupService as vi.MockedFunction<typeof getPickupService>
   ).mockResolvedValue(mockAcceptedPickup);
@@ -1451,6 +1442,31 @@ it('should return 404 for deleted pickup for cancel accepted pickup', async () =
   });
 });
 
+it('should return 409 for a invalid pickup state cancel accept pickup', async () => {
+  (
+    getPickupService as vi.MockedFunction<typeof getPickupService>
+  ).mockResolvedValue({...mockAcceptedPickup, status: 'pending'});
+  (
+    updatePickupService as vi.MockedFunction<typeof updatePickupService>
+  ).mockResolvedValue(mockCreatedPickup);
+
+  const event: DeepPartial<APIGatewayProxyEvent> = {
+    pathParameters: { pickupId: '123' },
+    requestContext: requestContextDriver,
+  };
+
+  const result = await cancelAcceptedPickup(
+    event as APIGatewayProxyEvent,
+    {} as Context,
+    {} as Callback,
+  );
+
+  expect(result?.statusCode).toBe(409);
+  expect(JSON.parse((result as APIGatewayProxyResult).body)).toEqual(
+    {message: 'Pickup can\'t be cancelled, current status is: pending'},
+  );
+});
+
 it('should return 500 for cancel accepted pickup internal server error', async () => {
   // Mock availablePickupsService to throw an error
   (
@@ -1473,7 +1489,3 @@ it('should return 500 for cancel accepted pickup internal server error', async (
     message: 'Internal server error',
   });
 });
-
-// 3. make sure we're testing all of the permission permutations
-// 4. check against openapi spec-- return codes, etc.
-// 5. Profit!

@@ -23,6 +23,26 @@ export const createDriverService = async (
   }
 };
 
+export const getDriversService = async (
+  limit = 10,
+  offset = 0,
+): Promise<Driver[]> => {
+  const prisma = new PrismaClient();
+  try {
+    const users = await prisma.driver.findMany({
+      take: limit,
+      skip: offset,
+    });
+    return users.map((driver) => ({
+      ...driver,
+      createdAt: driver?.createdAt.toISOString(),
+      updatedAt: driver?.updatedAt.toISOString(),
+    }));
+  } finally {
+    await prisma.$disconnect();
+  }
+};
+
 export const getDriverService = async (id: string): Promise<Driver | null> => {
   const prisma = new PrismaClient();
   try {

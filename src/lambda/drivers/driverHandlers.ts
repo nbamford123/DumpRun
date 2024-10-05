@@ -1,9 +1,12 @@
 import type { APIGatewayProxyHandler } from 'aws-lambda';
+
 import { schemas } from '@/schemas/zodSchemas.js';
+import { AuthInfo, listDriversQuerySchema } from '@/schemas/zodSchemaHelpers.js';
 
 import {
   createDriverService,
   getDriverService,
+  getDriversService,
   updateDriverService,
   deleteDriverService,
 } from './driverServices.js';
@@ -35,8 +38,45 @@ export const createDriver: APIGatewayProxyHandler = async (event) => {
   }
 };
 
+export const getDrivers: APIGatewayProxyHandler = async (event) => {
+  try {
+    const authInfo = AuthInfo.parse(
+      event.requestContext.authorizer?.claims,
+    );
+    // Fine-grained authorization
+    if (authInfo['custom:role'] !== 'admin') {
+      return {
+        statusCode: 403,
+        body: JSON.stringify({
+          message: 'Not authorized',
+        }),
+      };
+    }
+    // Extract query parameters
+    const { limit, offset } = listDriversQuerySchema.parse(
+      event.queryStringParameters || {},
+    );
+
+    const drivers = await getDriversService(limit, offset);
+
+    return {
+      statusCode: 200,
+      body: JSON.stringify(drivers),
+    };
+  } catch (error) {
+    console.error('Error in getUser:', error);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ message: 'Internal Server Error' }),
+    };
+  }
+};
+
 export const getDriver: APIGatewayProxyHandler = async (event) => {
   try {
+    const authInfo = AuthInfo.parse(
+      event.requestContext.authorizer?.claims,
+    );
     const driverId = event.pathParameters?.driverId;
     if (!driverId) {
       return {
@@ -47,17 +87,28 @@ export const getDriver: APIGatewayProxyHandler = async (event) => {
       };
     }
 
-    const driver = await getDriverService(driverId);
-    if (!driver) {
+    if (
+      authInfo['custom:role'] === 'admin' ||
+      (authInfo['custom:role'] === 'driver' && authInfo.sub === driverId)
+    ) {
+      const driver = await getDriverService(driverId);
+      if (!driver) {
+        return {
+          statusCode: 404,
+          body: JSON.stringify({ message: 'Driver not found' }),
+        };
+      }
+
       return {
-        statusCode: 404,
-        body: JSON.stringify({ message: 'Driver not found' }),
+        statusCode: 200,
+        body: JSON.stringify(driver),
       };
     }
-
     return {
-      statusCode: 200,
-      body: JSON.stringify(driver),
+      statusCode: 403,
+      body: JSON.stringify({
+        message: 'Not authorized',
+      }),
     };
   } catch (error) {
     console.error('Error in getDriver:', error);
@@ -70,6 +121,10 @@ export const getDriver: APIGatewayProxyHandler = async (event) => {
 
 export const updateDriver: APIGatewayProxyHandler = async (event) => {
   try {
+    const authInfo = AuthInfo.parse(
+      event.requestContext.authorizer?.claims,
+    );
+
     const driverId = event.pathParameters?.driverId;
     if (!driverId) {
       return {
@@ -80,29 +135,40 @@ export const updateDriver: APIGatewayProxyHandler = async (event) => {
       };
     }
 
-    const requestBody = JSON.parse(event.body || '{}');
-    const result = schemas.UpdateDriver.safeParse(requestBody);
-    if (!result.success) {
+    if (
+      authInfo['custom:role'] === 'admin' ||
+      (authInfo['custom:role'] === 'driver' && authInfo.sub === driverId)
+    ) {
+      const requestBody = JSON.parse(event.body || '{}');
+      const result = schemas.UpdateDriver.safeParse(requestBody);
+      if (!result.success) {
+        return {
+          statusCode: 400,
+          body: JSON.stringify({
+            message: 'Invalid input',
+            errors: result.error.issues,
+          }),
+        };
+      }
+
+      const updatedUDriver = await updateDriverService(driverId, result.data);
+      if (!updatedUDriver) {
+        return {
+          statusCode: 404,
+          body: JSON.stringify({ message: 'Driver not found' }),
+        };
+      }
+
       return {
-        statusCode: 400,
-        body: JSON.stringify({
-          message: 'Invalid input',
-          errors: result.error.issues,
-        }),
+        statusCode: 200,
+        body: JSON.stringify(updatedUDriver),
       };
     }
-
-    const updatedUDriver = await updateDriverService(driverId, result.data);
-    if (!updatedUDriver) {
-      return {
-        statusCode: 404,
-        body: JSON.stringify({ message: 'Driver not found' }),
-      };
-    }
-
     return {
-      statusCode: 200,
-      body: JSON.stringify(updatedUDriver),
+      statusCode: 403,
+      body: JSON.stringify({
+        message: 'Not authorized',
+      }),
     };
   } catch (error) {
     console.error('Error in updateDriver:', error);
@@ -115,6 +181,9 @@ export const updateDriver: APIGatewayProxyHandler = async (event) => {
 
 export const deleteDriver: APIGatewayProxyHandler = async (event) => {
   try {
+    const authInfo = AuthInfo.parse(
+      event.requestContext.authorizer?.claims,
+    );
     const driverId = event.pathParameters?.driverId;
     if (!driverId) {
       return {
@@ -125,17 +194,28 @@ export const deleteDriver: APIGatewayProxyHandler = async (event) => {
       };
     }
 
-    const deletedDriver = await deleteDriverService(driverId);
+    if (
+      authInfo['custom:role'] === 'admin' ||
+      (authInfo['custom:role'] === 'driver' && authInfo.sub === driverId)
+    ) {
+      const deletedDriver = await deleteDriverService(driverId);
 
-    if (!deletedDriver) {
+      if (!deletedDriver) {
+        return {
+          statusCode: 404,
+          body: JSON.stringify({ message: 'Driver not found' }),
+        };
+      }
       return {
-        statusCode: 404,
-        body: JSON.stringify({ message: 'Driver not found' }),
+        statusCode: 204,
+        body: JSON.stringify(deletedDriver),
       };
     }
     return {
-      statusCode: 204,
-      body: JSON.stringify(deletedDriver),
+      statusCode: 403,
+      body: JSON.stringify({
+        message: 'Not authorized',
+      }),
     };
   } catch (error) {
     console.error('Error in deleteDriver:', error);

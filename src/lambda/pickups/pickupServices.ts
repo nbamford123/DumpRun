@@ -1,20 +1,41 @@
-import { DynamoDB } from 'aws-sdk';
+import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
+import {
+  DynamoDBDocumentClient,
+  DeleteCommand,
+  GetCommand,
+  PutCommand,
+  ScanCommand,
+  UpdateCommand,
+} from '@aws-sdk/lib-dynamodb';
+
 import { v4 as uuidv4 } from 'uuid';
 
 import type { components } from '@/schemas/apiSchema.d.ts';
-import type { ExpressionAttributeNameMap } from 'aws-sdk/clients/dynamodb.js';
+
 // Somehow stored with the mongo schema?
 const TABLE_NAME = 'Pickups';
 
 type Pickup = components['schemas']['Pickup'];
 type NewPickup = components['schemas']['NewPickup'];
-type UpdatePickup = components['schemas']['UpdatePickup'];
+
+export const dynamoClient = () => {
+  const client = new DynamoDBClient({
+    region: process.env.DYNAMODB_REGION,
+    endpoint: process.env.DYNAMODB_ENDPOINT,
+    credentials: {
+      accessKeyId: process.env.DYNAMODB_ACCESS_KEY_ID || '',
+      secretAccessKey: process.env.DYNAMODB_SECRET_ACCESS_KEY || '',
+    },
+    tls: true,
+  });
+  return DynamoDBDocumentClient.from(client);
+};
 
 export const createPickupService = async (
   userId: string,
   pickup: NewPickup,
 ): Promise<Pickup> => {
-  const dynamoDB = new DynamoDB.DocumentClient();
+  const dynamoDB = dynamoClient();
   const pickupId = uuidv4();
 
   const params = {
@@ -29,7 +50,7 @@ export const createPickupService = async (
       requestedTime: pickup.requestedTime,
     },
   };
-  await dynamoDB.put(params).promise();
+  await dynamoDB.send(new PutCommand(params));
 
   return getPickupService(pickupId);
 };
@@ -39,9 +60,10 @@ export const getPickupsService = async (
   startKey?: string,
   status?: string[],
 ): Promise<{ pickups: Pickup[]; nextCursor: string | null }> => {
-  const dynamoDB = new DynamoDB.DocumentClient();
+  const dynamoDB = dynamoClient();
+
   // which of these can be undefined to just return everything?
-  const params: DynamoDB.DocumentClient.ScanInput = {
+  const params = {
     TableName: TABLE_NAME,
     Limit: limit,
     ExclusiveStartKey: startKey ? { id: startKey } : undefined,
@@ -51,7 +73,7 @@ export const getPickupsService = async (
       status && status.length > 0 ? { ':status': status } : undefined,
   };
 
-  const result = await dynamoDB.scan(params).promise();
+  const result = await dynamoDB.send(new ScanCommand(params));
 
   return {
     pickups: result.Items || [],
@@ -60,7 +82,7 @@ export const getPickupsService = async (
 };
 
 export const getPickupService = async (pickupId: string): Promise<Pickup> => {
-  const dynamoDB = new DynamoDB.DocumentClient();
+  const dynamoDB = dynamoClient();
 
   const getParams = {
     TableName: TABLE_NAME,
@@ -68,10 +90,10 @@ export const getPickupService = async (pickupId: string): Promise<Pickup> => {
       id: pickupId,
     },
   };
-  const result = await dynamoDB.get(getParams).promise();
+  const result = await dynamoDB.send(new GetCommand(getParams));
 
   if (!result.Item) {
-    throw new Error('Failed to retrieve the newly created pickup');
+    throw new Error('Failed to retrieve pickup');
   }
 
   return result.Item as Pickup;
@@ -81,12 +103,12 @@ export async function updatePickupService(
   pickupId: string,
   updateData: Partial<Pickup>,
 ): Promise<Pickup> {
-  const dynamoDB = new DynamoDB.DocumentClient();
+  const dynamoDB = dynamoClient();
 
   const setExpressions = [];
   const removeExpressions = [];
-  const expressionAttributeValues: ExpressionAttributeNameMap = {};
-  const expressionAttributeNames: ExpressionAttributeNameMap = {};
+  const expressionAttributeValues: Record<string, string> = {};
+  const expressionAttributeNames: Record<string, string> = {};
 
   for (const [key, value] of Object.entries(updateData)) {
     if (value !== undefined) {
@@ -111,15 +133,15 @@ export async function updatePickupService(
 
   const params = {
     TableName: TABLE_NAME,
-    Key: { pickupId },
+    Key: { id: pickupId },
     UpdateExpression: updateExpression,
     ExpressionAttributeValues: expressionAttributeValues,
     ExpressionAttributeNames: expressionAttributeNames,
-    ReturnValues: 'ALL_NEW',
-    ConditionExpression: 'attribute_exists(pickupId)',
+    ReturnValues: 'ALL_NEW' as const,
+    ConditionExpression: 'attribute_exists(id)',
   };
 
-  const result = await dynamoDB.update(params).promise();
+  const result = await dynamoDB.send(new UpdateCommand(params));
   return result.Attributes as Pickup;
 }
 
@@ -127,35 +149,38 @@ export const deletePickupService = async (
   pickupId: string,
   hardDelete = false,
 ): Promise<Pickup> => {
-  const dynamoDB = new DynamoDB.DocumentClient();
+  const dynamoDB = dynamoClient();
 
   if (hardDelete) {
     // Delete the item from DynamoDB
-    const result = await dynamoDB
-      .delete({
+    const result = await dynamoDB.send(
+      new DeleteCommand({
         TableName: TABLE_NAME,
         Key: { id: pickupId },
         ReturnValues: 'ALL_OLD',
-      })
-      .promise();
+      }),
+    );
     return result.Attributes as Pickup;
   }
   const params = {
     TableName: TABLE_NAME,
-    Key: { pickupId },
-    UpdateExpression: 'SET status = :status, deletedAt = :deletedAt',
+    Key: { id: pickupId },
+    UpdateExpression: 'SET #status = :status, deletedAt = :deletedAt',
+    ExpressionAttributeNames: {
+      '#status': 'status',
+    },
     ExpressionAttributeValues: {
       ':status': 'deleted',
       ':deletedAt': new Date().toISOString(),
-      ReturnValues: 'ALL_NEW',
     },
+    ReturnValues: 'ALL_NEW' as const,
   };
-  const result = await dynamoDB.update(params).promise();
+  const result = await dynamoDB.send(new UpdateCommand(params));
   return result.Attributes as Pickup;
 };
 
 export const availablePickupsService = async (): Promise<Pickup[]> => {
-  const dynamoDB = new DynamoDB.DocumentClient();
+  const dynamoDB = dynamoClient();
 
   const queryParams = {
     TableName: TABLE_NAME,
@@ -167,10 +192,10 @@ export const availablePickupsService = async (): Promise<Pickup[]> => {
       ':status': 'available',
     },
   };
-  const result = await dynamoDB.scan(queryParams).promise();
+  const result = await dynamoDB.send(new ScanCommand(queryParams));
 
   if (!result.Items) {
-    throw new Error('Failed to retrieve the newly created pickup');
+    throw new Error('Failed to retrieve available pickups');
   }
 
   return result.Items as Pickup[];
@@ -180,13 +205,14 @@ export const acceptPickupService = async (
   pickupId: string,
   driverId: string,
 ): Promise<Pickup> => {
-  const dynamoDB = new DynamoDB.DocumentClient();
+  const dynamoDB = dynamoClient();
   const updateParams = {
     TableName: TABLE_NAME,
     Key: {
       id: pickupId,
     },
     UpdateExpression: 'set #status = :status, driverId = :driverId',
+    ConditionExpression: 'attribute_exists(id)', // Ensure the item exists
     ExpressionAttributeNames: {
       '#status': 'status',
     },
@@ -194,13 +220,19 @@ export const acceptPickupService = async (
       ':status': 'accepted',
       ':driverId': driverId,
     },
-    ReturnValues: 'ALL_NEW',
+    ReturnValues: 'ALL_NEW' as const,
   };
-  const result = await dynamoDB.update(updateParams).promise();
+  try {
+    const result = await dynamoDB.send(new UpdateCommand(updateParams));
 
-  if (!result.Attributes) {
-    throw new Error('Failed to update pickup status');
+    if (!result.Attributes) {
+      throw new Error('Failed to update pickup status');
+    }
+    return result.Attributes as Pickup;
+  } catch (error) {
+    if ((error as Error).name === 'ConditionalCheckFailedException') {
+      throw new Error('Pickup not found');
+    }
+    throw error;
   }
-
-  return result.Attributes as Pickup;
 };

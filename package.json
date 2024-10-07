@@ -14,7 +14,7 @@
     "prepare": "husky install",
     "pre-commit": "pnpm format && pnpm validate",
     "test": "vitest run src",
-    "test-integration": "vitest run integration-tests",
+    "test-integration": "docker-compose up -d --build && vitest run integration-tests; EXIT_CODE=$?; docker-compose down -v; exit $EXIT_CODE",
     "validate": "pnpm lint && pnpm check-types && pnpm test",
     "validate-openapi": "pnpm swagger-cli validate api/dumprun_openapi.json",
     "validate-and-generate": "pnpm validate-openapi && pnpm generate-types && pnpm generate-zod"
@@ -28,6 +28,7 @@
     "@types/aws-lambda": "^8.10.145",
     "@types/node": "^22.5.4",
     "@types/uuid": "^10.0.0",
+    "dotenv": "^16.4.5",
     "glob": "^11.0.0",
     "globals": "^15.9.0",
     "husky": "^8.0.0",
@@ -41,9 +42,10 @@
     "zod": "^3.23.8"
   },
   "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.665.0",
+    "@aws-sdk/lib-dynamodb": "^3.665.0",
     "@prisma/client": "^5.19.1",
     "@zodios/core": "^10.9.6",
-    "aws-sdk": "^2.1691.0",
     "uuid": "^10.0.0"
   }
 }

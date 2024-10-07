@@ -1,5 +1,28 @@
-version: '3.8'
 services:
+  dynamodb-local:
+    image: amazon/dynamodb-local
+    ports:
+      - "8000:8000"
+    command: "-jar DynamoDBLocal.jar -sharedDb -inMemory" # -dbPath ./data"
+#    volumes:
+#      - "./docker/dynamodb:/home/dynamodblocal/data"
+    working_dir: /home/dynamodblocal
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -X POST http://localhost:8000 -H 'Content-Type: application/x-amz-json-1.0' -H 'X-Amz-Target: DynamoDB_20120810.ListTables' -H 'Authorization: AWS4-HMAC-SHA256 Credential=fakeMyKeyId/20211005/us-east-1/dynamodb/aws4_request, SignedHeaders=content-type;host;x-amz-date;x-amz-target, Signature=fakeSignature' -H 'x-amz-date: $$(date -u +%Y%m%dT%H%M%SZ)' -d '{}' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3 
+  dynamodb-setup:
+    build:
+      context: .
+      dockerfile: ./dynamodb/Dockerfile.dynamodb-local-setup
+    depends_on:
+      dynamodb-local:
+        condition: service_healthy
+    networks:
+      - app-network
   postgres:
     image: postgres:13
     environment:
@@ -8,8 +31,30 @@ services:
       POSTGRES_DB: testdb
     ports:
       - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U testuser -d testdb"]
+      interval: 10s
+      timeout: 5s
+      retries: 5    
+    networks:
+      - app-network
+    # volumes:
+    #   - postgres_data:/var/lib/postgresql/data
+  prisma:
+    image: node:20-alpine
+    working_dir: /app
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - .:/app
+    command: sh -c "npx prisma migrate deploy && npx prisma generate"
+    depends_on:
+      - postgres
+    environment:
+      DATABASE_URL: "postgresql://testuser:testpassword@postgres:5432/testdb"
+    networks:
+      - app-network
+networks:
+  app-network:
+    driver: bridge
 
-volumes:
-  postgres_data:
+#volumes:
+#  postgres_data:

@@ -1,21 +1,44 @@
-import type { components } from '@/schemas/apiSchema.d.ts';
+import { CognitoIdentityProvider } from '@aws-sdk/client-cognito-identity-provider';
 import { Prisma, PrismaClient } from '@prisma/client';
+
+import type { components } from '@/schemas/apiSchema.d.ts';
 
 type User = components['schemas']['User'];
 type NewUser = components['schemas']['NewUser'];
 type UpdateUser = components['schemas']['UpdateUser'];
 
-export const createUserService = async (user: NewUser): Promise<User> => {
-  const prisma = new PrismaClient();
+const cognito = new CognitoIdentityProvider();
+const prisma = new PrismaClient();
+
+export const createUserService = async (
+  cognitoUserId: string,
+  userData: NewUser,
+): Promise<User> => {
   try {
-    const newUser = await prisma.user.create({
-      data: user, // Prisma will automatically handle createdAt and updatedAt
+    // Verify Cognito user exists
+    await cognito.adminGetUser({
+      UserPoolId: process.env.COGNITO_USER_POOL_ID || '',
+      Username: cognitoUserId,
     });
+
+    // If the above doesn't throw, the user exists in Cognito
+    const dbUser = await prisma.user.create({
+      data: {
+        id: cognitoUserId,
+        ...userData,
+      },
+    });
+
     return {
-      ...newUser,
-      createdAt: newUser.createdAt.toISOString(),
-      updatedAt: newUser.createdAt.toISOString(),
+      ...dbUser,
+      createdAt: dbUser.createdAt.toISOString(),
+      updatedAt: dbUser.updatedAt.toISOString(),
     };
+  } catch (error) {
+    if ((error as Error & { code: string }).code === 'UserNotFoundException') {
+      throw new Error(`Cognito user with ID ${cognitoUserId} not found`);
+    }
+    throw error; // Re-throw other errors
   } finally {
     await prisma.$disconnect();
   }

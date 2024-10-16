@@ -1,17 +1,30 @@
-import type { components } from '@/schemas/apiSchema.d.ts';
+import { CognitoIdentityProvider } from '@aws-sdk/client-cognito-identity-provider';
 import { Prisma, PrismaClient } from '@prisma/client';
+
+import type { components } from '@/schemas/apiSchema.d.ts';
 
 type Driver = components['schemas']['Driver'];
 type NewDriver = components['schemas']['NewDriver'];
 type UpdateDriver = components['schemas']['UpdateDriver'];
 
+const cognito = new CognitoIdentityProvider();
+const prisma = new PrismaClient();
+
 export const createDriverService = async (
+  cognitoUserId: string,
   driver: NewDriver,
 ): Promise<Driver> => {
-  const prisma = new PrismaClient();
   try {
+    // Verify Cognito user exists
+    await cognito.adminGetUser({
+      UserPoolId: process.env.COGNITO_USER_POOL_ID || '',
+      Username: cognitoUserId,
+    });
     const newDriver = await prisma.driver.create({
-      data: driver, // Prisma will automatically handle createdAt and updatedAt
+      data: {
+        id: cognitoUserId,
+        ...driver, // Prisma will automatically handle createdAt and updatedAt
+      },
     });
     return {
       ...newDriver,
@@ -27,7 +40,6 @@ export const getDriversService = async (
   limit = 10,
   offset = 0,
 ): Promise<Driver[]> => {
-  const prisma = new PrismaClient();
   try {
     const users = await prisma.driver.findMany({
       take: limit,
@@ -44,7 +56,6 @@ export const getDriversService = async (
 };
 
 export const getDriverService = async (id: string): Promise<Driver | null> => {
-  const prisma = new PrismaClient();
   try {
     const driver = await prisma.driver.findUnique({
       where: { id: id },
@@ -65,7 +76,6 @@ export const updateDriverService = async (
   id: string,
   driver: UpdateDriver,
 ): Promise<Driver | null> => {
-  const prisma = new PrismaClient();
   try {
     const updatedDriver = await prisma.driver.update({
       where: { id: id },
@@ -95,7 +105,6 @@ export const updateDriverService = async (
 export const deleteDriverService = async (
   id: string,
 ): Promise<Driver | null> => {
-  const prisma = new PrismaClient();
   try {
     const driver = await prisma.driver.delete({
       where: {

@@ -174,15 +174,11 @@ export interface components {
       name: string;
       /** Format: email */
       email: string;
-      /** Format: password */
-      password: string;
       phone: string;
       address: string;
     };
     UpdateUser: {
       name?: string;
-      /** Format: password */
-      password?: string;
       phone?: string;
       address?: string;
     };
@@ -201,8 +197,6 @@ export interface components {
       name: string;
       /** Format: email */
       email: string;
-      /** Format: password */
-      password: string;
       phone: string;
       address: string;
       vehicleMake: string;
@@ -211,8 +205,6 @@ export interface components {
     };
     UpdateDriver: {
       name?: string;
-      /** Format: password */
-      password?: string;
       phone?: string;
       address?: string;
       vehicleMake?: string;

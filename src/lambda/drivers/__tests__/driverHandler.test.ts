@@ -18,13 +18,11 @@ vi.mock('../driverServices', () => ({
 }));
 
 // Import after mocking
-import {
-  createDriver,
-  getDriver,
-  getDrivers,
-  updateDriver,
-  deleteDriver,
-} from '../driverHandlers.js';
+import { createDriver } from '../createDriver.js';
+import { getDriver } from '../getDriver.js';
+import { getDrivers } from '../getDrivers.js';
+import { updateDriver } from '../updateDriver.js';
+import { deleteDriver } from '../deleteDriver.js';
 import {
   createDriverService,
   getDriverService,
@@ -89,20 +87,17 @@ describe('driver lambdas', () => {
       createDriverService as vi.MockedFunction<typeof createDriverService>
     ).mockResolvedValue(mockCreatedDriver);
 
-    const event: Partial<APIGatewayProxyEvent> = {
+    const event: DeepPartial<APIGatewayProxyEvent> = {
+      requestContext,
       body: JSON.stringify(mockDriver),
     };
 
-    const result = await createDriver(
-      event as APIGatewayProxyEvent,
-      {} as Context,
-      {} as Callback,
-    );
+    const result = await createDriver(event, {} as Context, {} as Callback);
     expect(result?.statusCode).toBe(201);
     expect(JSON.parse((result as APIGatewayProxyResult).body)).toEqual(
       mockCreatedDriver,
     );
-    expect(createDriverService).toHaveBeenCalledWith(mockDriver);
+    expect(createDriverService).toHaveBeenCalledWith(DRIVER_ID, mockDriver);
   });
 
   it('should return 400 for invalid create driver input', async () => {
@@ -111,15 +106,12 @@ describe('driver lambdas', () => {
       // Missing required fields
     };
 
-    const event: Partial<APIGatewayProxyEvent> = {
+    const event: DeepPartial<APIGatewayProxyEvent> = {
+      requestContext,
       body: JSON.stringify(invalidDriver),
     };
 
-    const result = await createDriver(
-      event as APIGatewayProxyEvent,
-      {} as Context,
-      {} as Callback,
-    );
+    const result = await createDriver(event, {} as Context, {} as Callback);
 
     expect(result?.statusCode).toBe(400);
     expect(JSON.parse((result as APIGatewayProxyResult).body)).toHaveProperty(

@@ -1,13 +1,19 @@
 # Temporary ToDo File
 
+- dynamodb needs different environment variables, different script? Script flag? This script is getting kind of complex
+- probably should give them all 10sec and 256MB by default?
+- should users and drivers be soft deleted like pickups?
+- the build script is building the services too, how can we leave them out? Maybe an index file that contains the lambdas but not support files like services?
+- we have to have the email on the cognito user so they can interact with it, but what if someone wants to be a driver and a user? Different emails?
+- should probably take email out of postgres
+- try and figure out a way to not include the entire zod schemas bundle in every built file. Maybe some settings on the generator?
+- go through various documents in drive and extract important considerations-- there's a lot of good stuff there, but not worth killing momentum at this point.
 - when can you delete a pickup? Current statuses are: pending" | "available" | "accepted" | "in_progress" | "completed" | "cancelled" | "deleted. For now I'm saying it has to be pending, available or cancelled
 - does it make any sense to have an "in_progress" pickup state? Once you pick up a load and the user pays, isn't it over? Maybe for taking stuff from home depot or wherever...
 - what about pending? What does that even mean?
 - should pickups have an accepted timestamp? Probably.
-- go through openapi spec and compare against lambdas, especially return codes
-- Drivers or admin can get the list of available pickups (constrained by geographic location?   We might want this to be constrained by truck size vs. load size too.
+- Drivers or admin can get the list of available pickups (constrained by geographic location?   We might want this to be constrained by truck size vs. load size too).
 - should a user be able to have more than one pickup scheduled? If so "list pickups" ought to differentiate between admin and user (only list pickups for that user id)
-- we need claims in cognito for "user" and "driver" (and probably "admin") to determine which api calls they can make, doublechecked in the lambdas
 - put prisma/docker setup tasks in readme-- when to run integration tests? How can they be run on github? Probably they can't
 - logging for the lambda functions? https://docs.aws.amazon.com/lambda/latest/dg/typescript-logging.html
 - Make sure the update AWS github action validates the openapi spec
@@ -21,159 +27,77 @@
 - Documentation will become an issue soon enough, too. Confluence?
 - For admin frontend, does Next make the most sense?
 
-1. Implement Lambda Functions
-# Lambda Implementation Plan
-
-   1. Group Lambda functions by resource:
-      - Users
-      - Drivers
-      - Pickups
-
-   2. For each resource group:
-      a. Implement CRUD operations
-      b. Implement any additional operations (e.g., list all)
-      c. Write unit tests for each function
-      d. Mock any database calls or external services
-
-   3. Implement any shared utilities or middleware:
-      - Error handling
-      - Input validation
-      - Authentication checks
-
-   4. Create a local testing environment:
-      - Set up environment variables
-      - Create mock event payloads
-
-   5. Implement integration tests:
-      - Test API Gateway to Lambda integration
-      - Test Lambda to Lambda communication (if applicable)
-
-   6. Document each Lambda function:
-      - Input/output schema
-      - Expected behavior
-      - Error scenarios
-      
-2. Mock Database Interactions:
-  While implementing your Lambda functions, use mocks for database interactions. This allows you to define the expected behavior of your data layer without actually implementing it yet. You can use a library like jest for mocking in your unit tests.
-3. Set Up Local Testing Environment:
-  Create a local environment for testing your Lambda functions. You can use tools like aws-sam-cli or serverless-offline to simulate the AWS environment locally.
-4. Implement Shared Utilities:
-  Develop shared utilities for common tasks such as input validation, error handling, and authentication checks. These can be used across your Lambda functions to ensure consistency and reduce code duplication.
-5. API Gateway Integration:
-  Once your Lambda functions are implemented and tested, set up the integration with API Gateway. This involves configuring the routes defined in your OpenAPI spec to trigger the appropriate Lambda functions.
-6. Database Design and Implementation:
-  After your Lambda functions are working correctly with mocked data, start designing your database schema. Consider using a NoSQL database like DynamoDB for flexibility and easy integration with AWS services. Implement your data access layer and replace the mocks in your Lambda functions with actual database calls.
-7. Integration Testing:
+1. API Gateway Integration:
+  Once your Lambda function are implemented and tested, set up the integration with API Gateway. This involves configuring the routes defined in your OpenAPI spec to trigger the appropriate Lambda functions.
+  You can do this manually in the console or use Infrastructure as Code (IaC) tools like AWS SAM, CloudFormation, or Terraform.
+2. Testing:
   Develop integration tests that cover the entire flow from API Gateway through your Lambda functions and to the database. This ensures that all components of your system work together as expected.
-8. Set Up CI/CD Pipeline:
+  Create API tests to verify end-to-end functionality.
+  Conduct security testing, especially around your authentication setup.
+3. Set Up CI/CD Pipeline:
   Create a CI/CD pipeline using a service like AWS CodePipeline or GitHub Actions. This should automate the process of testing, building, and deploying your application.
-9. Monitoring and Logging:
+4. Monitoring and Logging:
   Implement logging in your Lambda functions and set up monitoring using AWS CloudWatch. This will help you track the performance and behavior of your application in production.
-
-1. Set up your database:
-   For PostgreSQL: Set up an RDS instance or use a local PostgreSQL for development.
-   For DynamoDB: Create your tables in AWS or use DynamoDB Local for development.
-
-2. Start writing Lambda functions:
-
-Begin with simple functions that don't require database access.
-Implement unit tests for these functions.
-Gradually add database interactions and more complex logic.
-
-3. Integrate Lambda with API Gateway:
-
-Update your API Gateway configuration to point to your Lambda functions.
-You can do this manually in the console or use Infrastructure as Code (IaC) tools like AWS SAM, CloudFormation, or Terraform.
-
-4. Implement authentication and authorization:
-
-Integrate your Cognito user pool with API Gateway.
-Add authentication checks in your Lambda functions where necessary.
-
-5. Set up your CI/CD pipeline:
-
-Create GitHub Actions workflows for automated testing and deployment.
-
-6. Expand your testing:
-
-Implement integration tests for database interactions.
-Create API tests to verify end-to-end functionality.
-Conduct security testing, especially around your authentication setup.
-
-7. Optimize and scale:
-
-Based on your testing results, optimize your Lambda functions and database queries.
-Consider implementing caching if needed (e.g., API Gateway caching, DAX for DynamoDB).
-
-8. Documentation and monitoring:
-
-Update your API documentation.
-Set up CloudWatch alarms and logs for monitoring.
-
-When a user or driver authenticates, they receive a JSON Web Token (JWT) from Cognito.
-This JWT contains claims, which can include custom attributes like "user_type" (e.g., "driver" or "user").
-When making an API call, the client includes this JWT in the Authorization header.
-API Gateway, configured with a Cognito authorizer, validates the token with Cognito.
-If valid, API Gateway can use the claims in the JWT to make authorization decisions.
+5. Optimize and scale:
+  Based on your testing results, optimize your Lambda functions and database queries.
+  Consider implementing caching if needed (e.g., API Gateway caching, DAX for DynamoDB).
+6. Documentation and monitoring:
+  Update your API documentation.
+  Set up CloudWatch alarms and logs for monitoring.
 
 
-Implementing Authorization:
+### Implementing Authorization:
 You have a few options for implementing the driver/user role-based access:
-a. API Gateway Resource Policies:
 
+1. API Gateway Resource Policies:
 You can set up resource policies in API Gateway that check the claims in the JWT.
 For example, you could allow access to /v1/pickups/available only if the "user_type" claim is "driver".
-
-b. Lambda Authorizer:
-
+2. Lambda Authorizer:
 Instead of the built-in Cognito authorizer, you can use a custom Lambda authorizer.
 This Lambda function would receive the JWT, decode it, check the claims, and return an IAM policy dynamically.
-
-c. In Your Lambda Functions:
-
+3. In Your Lambda Functions:
 The Lambda functions receive the decoded JWT claims in the event object.
 You can add logic in your Lambdas to check these claims and authorize actions accordingly.
 
-
-Lambda Function Assumptions:
-
-In general, if you've set up your API Gateway and authorizers correctly, your Lambda functions can assume that incoming requests are from authenticated users.
-However, it's still a good practice to double-check the claims or user information in your Lambda functions, especially for sensitive operations.
-
-
-Recommended Approach:
+**Recommended Approach**:
 
 Use Cognito groups to categorize users and drivers.
 Set up API Gateway resource policies or a Lambda authorizer to enforce coarse-grained access control.
 Implement fine-grained access control in your Lambda functions by checking the Cognito groups or custom claims.
 
-```typescript
-exports.handler = async (event, context) => {
-  // The user's claims are available in the event object
-  const userClaims = event.requestContext.authorizer.claims;
-  
-  // Check if the user is a driver
-  const isDriver = userClaims['custom:user_type'] === 'driver';
-  
-  if (event.resource === '/v1/pickups/available' && !isDriver) {
-    return {
-      statusCode: 403,
-      body: JSON.stringify({ message: 'Access denied. Drivers only.' })
-    };
-  }
-  
-  // Proceed with the main logic of your Lambda function
-  // ...
+### Plan for Reviewing AWS Permissions
 
-  return {
-    statusCode: 200,
-    body: JSON.stringify({ message: 'Success' })
-  };
-};
-```
-This approach allows you to have a layered security model:
+1. Current Stage (Development):
 
-API Gateway handles authentication and coarse-grained authorization.
-Lambda functions can perform additional, fine-grained authorization if needed.
+Use the current permissive policy to set up and test your AWS resources.
+Document all AWS actions your application actually performs.
 
-By implementing security this way, you can ensure that your Lambda functions only receive valid, authenticated requests, but you still have the flexibility to add more detailed authorization logic within the functions themselves.
+
+2. Pre-Production Review:
+
+Review the documented AWS actions.
+Create a new, more restrictive policy based on these actual needs.
+Test the new policy thoroughly in a staging environment.
+
+
+3. Production Preparation:
+
+Implement the principle of least privilege:
+
+Scope down Resource fields to specific ARNs where possible.
+Replace wildcard permissions with specific actions.
+
+
+Consider creating separate roles for different functions if they have distinct permission needs.
+Implement AWS Organizations and Service Control Policies if dealing with multiple accounts or teams.
+
+
+4. Ongoing Maintenance:
+
+Regularly audit and update permissions as your application evolves.
+Use AWS IAM Access Analyzer to identify unused permissions and external access.
+Keep your team informed about the importance of AWS security best practices.
+
+
+
+TODO: Schedule permission review before moving to production. Target date: [Insert Date Here]

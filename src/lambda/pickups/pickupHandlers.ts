@@ -1,10 +1,8 @@
 import type { APIGatewayProxyHandler } from 'aws-lambda';
 
 import { schemas } from '@/schemas/zodSchemas.js';
-import {
-  AuthInfo,
-  listPickupsQuerySchema,
-} from '@/schemas/zodSchemaHelpers.js';
+import { AuthInfo } from '@/schemas/authInfoSchema.js';
+import { listPickupsQuerySchema } from '@/schemas/zodSchemaHelpers.js';
 
 import {
   createPickupService,

@@ -18,13 +18,11 @@ vi.mock('../userServices', () => ({
 }));
 
 // Import after mocking
-import {
-  createUser,
-  getUser,
-  getUsers,
-  updateUser,
-  deleteUser,
-} from '../userHandlers.js';
+import { handler as createUser } from '../createUser.js';
+import { handler as getUser } from '../getUser.js';
+import { handler as getUsers } from '../getUsers.js';
+import { handler as updateUser } from '../updateUser.js';
+import { handler as deleteUser } from '../deleteUser.js';
 import {
   createUserService,
   getUserService,
@@ -32,7 +30,6 @@ import {
   updateUserService,
   deleteUserService,
 } from '../userServices.js';
-import { mock } from 'node:test';
 
 const USER_ID = 'user-id';
 const mockUser = {
@@ -40,7 +37,6 @@ const mockUser = {
   address: '11382 High St. Northglenn, CO 80233',
   name: 'John Doe',
   email: 'john@example.com',
-  password: 'password',
   phone: '303-451-5978',
   createdAt: '2023-09-23T12:00:00Z',
   updatedAt: '2023-09-23T12:00:00Z',
@@ -89,20 +85,17 @@ describe('user lambdas', () => {
       createUserService as vi.MockedFunction<typeof createUserService>
     ).mockResolvedValue(mockCreatedUser);
 
-    const event: Partial<APIGatewayProxyEvent> = {
+    const event: DeepPartial<APIGatewayProxyEvent> = {
+      requestContext,
       body: JSON.stringify(mockUser),
     };
 
-    const result = await createUser(
-      event as APIGatewayProxyEvent,
-      {} as Context,
-      {} as Callback,
-    );
+    const result = await createUser(event, {} as Context, {} as Callback);
     expect(result?.statusCode).toBe(201);
     expect(JSON.parse((result as APIGatewayProxyResult).body)).toEqual(
       mockCreatedUser,
     );
-    expect(createUserService).toHaveBeenCalledWith(mockUser);
+    expect(createUserService).toHaveBeenCalledWith(USER_ID, mockUser);
   });
 
   it('should return 400 for invalid create user input', async () => {
@@ -111,15 +104,12 @@ describe('user lambdas', () => {
       // Missing required fields
     };
 
-    const event: Partial<APIGatewayProxyEvent> = {
+    const event: DeepPartial<APIGatewayProxyEvent> = {
+      requestContext,
       body: JSON.stringify(invalidUser),
     };
 
-    const result = await createUser(
-      event as APIGatewayProxyEvent,
-      {} as Context,
-      {} as Callback,
-    );
+    const result = await createUser(event, {} as Context, {} as Callback);
 
     expect(result?.statusCode).toBe(400);
     expect(JSON.parse((result as APIGatewayProxyResult).body)).toHaveProperty(
@@ -242,11 +232,7 @@ describe('user lambdas', () => {
       requestContext: requestContextAdmin,
     };
 
-    const result = await getUsers(
-      event as APIGatewayProxyEvent,
-      {} as Context,
-      {} as Callback,
-    );
+    const result = await getUsers(event, {} as Context, {} as Callback);
 
     expect(result?.statusCode).toBe(500);
     expect(JSON.parse((result as APIGatewayProxyResult).body)).toEqual({

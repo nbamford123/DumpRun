@@ -965,7 +965,7 @@
     "schemas": {
       "NewUser": {
         "type": "object",
-        "required": ["name", "email", "password", "phone", "address"],
+        "required": ["name", "email", "phone", "address"],
         "properties": {
           "name": {
             "type": "string",
@@ -975,11 +975,6 @@
           "email": {
             "type": "string",
             "format": "email"
-          },
-          "password": {
-            "type": "string",
-            "format": "password",
-            "minLength": 8
           },
           "phone": {
             "type": "string",
@@ -997,11 +992,6 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 100
-          },
-          "password": {
-            "type": "string",
-            "format": "password",
-            "minLength": 8
           },
           "phone": {
             "type": "string",
@@ -1045,7 +1035,6 @@
         "required": [
           "name",
           "email",
-          "password",
           "phone",
           "address",
           "vehicleMake",
@@ -1061,11 +1050,6 @@
           "email": {
             "type": "string",
             "format": "email"
-          },
-          "password": {
-            "type": "string",
-            "format": "password",
-            "minLength": 8
           },
           "phone": {
             "type": "string",
@@ -1092,11 +1076,6 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 100
-          },
-          "password": {
-            "type": "string",
-            "format": "password",
-            "minLength": 8
           },
           "phone": {
             "type": "string",

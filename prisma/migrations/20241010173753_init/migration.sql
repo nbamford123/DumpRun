@@ -5,7 +5,6 @@ CREATE TABLE "User" (
     "email" TEXT NOT NULL,
     "phone" TEXT NOT NULL,
     "address" TEXT NOT NULL,
-    "password" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -19,7 +18,6 @@ CREATE TABLE "Driver" (
     "email" TEXT NOT NULL,
     "phone" TEXT NOT NULL,
     "address" TEXT NOT NULL,
-    "password" TEXT NOT NULL,
     "vehicleMake" TEXT NOT NULL,
     "vehicleModel" TEXT NOT NULL,
     "vehicleYear" INTEGER NOT NULL,

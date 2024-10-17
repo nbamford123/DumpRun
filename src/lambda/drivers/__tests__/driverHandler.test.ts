@@ -18,11 +18,11 @@ vi.mock('../driverServices', () => ({
 }));
 
 // Import after mocking
-import { createDriver } from '../createDriver.js';
-import { getDriver } from '../getDriver.js';
-import { getDrivers } from '../getDrivers.js';
-import { updateDriver } from '../updateDriver.js';
-import { deleteDriver } from '../deleteDriver.js';
+import { handler as createDriver } from '../createDriver.js';
+import { handler as getDriver } from '../getDriver.js';
+import { handler as getDrivers } from '../getDrivers.js';
+import { handler as updateDriver } from '../updateDriver.js';
+import { handler as deleteDriver } from '../deleteDriver.js';
 import {
   createDriverService,
   getDriverService,
@@ -39,7 +39,6 @@ const mockDriver = {
   name: 'Test User',
   phone: '303-555-1212',
   address: '11382 High St. Northglenn, CO 80233',
-  password: 'password',
   vehicleMake: 'Ford',
   vehicleModel: 'F150',
   vehicleYear: 1998,

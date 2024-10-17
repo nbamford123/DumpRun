@@ -18,3 +18,4 @@
   driver1: 28e1a370-90d1-7093-6940-2d9e1794750b
   driver2: 48211350-8051-70cf-ebd7-7fb7436b0a21
   
+scripts/create-or-update-lambda.sh "update-user" "index.handler" "" "dist/users/updateUser.zip"

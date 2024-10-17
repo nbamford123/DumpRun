@@ -1,0 +1,38 @@
+{
+  "get-drivers": {
+    "handler": "index.handler",
+    "role_name": "lambda-basic-role",
+    "zip_file": "../dist/drivers/getDrivers.zip",
+    "environment": "DATABASE_URL=postgresql://postgres:KtcowvSZFUYxciLjrMwNPKVmGEPEfNxn@junction.proxy.rlwy.net:42852/railway,NODE_PATH=/opt/nodejs/node_modules,PRISMA_QUERY_ENGINE_LIBRARY=/opt/nodejs/node_modules/.prisma/client/libquery_engine-rhel-openssl-3.0.x.so.node",
+    "managed_policies": [
+      "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+    ]
+  },
+  "get-driver": {
+    "handler": "index.handler",
+    "role_name": "lambda-basic-role",
+    "zip_file": "../dist/drivers/getDriver.zip",
+    "environment": "DATABASE_URL=postgresql://postgres:KtcowvSZFUYxciLjrMwNPKVmGEPEfNxn@junction.proxy.rlwy.net:42852/railway,NODE_PATH=/opt/nodejs/node_modules,PRISMA_QUERY_ENGINE_LIBRARY=/opt/nodejs/node_modules/.prisma/client/libquery_engine-rhel-openssl-3.0.x.so.node",
+    "managed_policies": [
+      "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+    ]
+  },
+  "update-driver": {
+    "handler": "index.handler",
+    "role_name": "lambda-basic-role",
+    "zip_file": "../dist/drivers/updateDriver.zip",
+    "environment": "DATABASE_URL=postgresql://postgres:KtcowvSZFUYxciLjrMwNPKVmGEPEfNxn@junction.proxy.rlwy.net:42852/railway,NODE_PATH=/opt/nodejs/node_modules,PRISMA_QUERY_ENGINE_LIBRARY=/opt/nodejs/node_modules/.prisma/client/libquery_engine-rhel-openssl-3.0.x.so.node",
+    "managed_policies": [
+      "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+    ]
+  },
+  "delete-driver": {
+    "handler": "index.handler",
+    "role_name": "lambda-basic-role",
+    "zip_file": "../dist/drivers/deleteDriver.zip",
+    "environment": "DATABASE_URL=postgresql://postgres:KtcowvSZFUYxciLjrMwNPKVmGEPEfNxn@junction.proxy.rlwy.net:42852/railway,NODE_PATH=/opt/nodejs/node_modules,PRISMA_QUERY_ENGINE_LIBRARY=/opt/nodejs/node_modules/.prisma/client/libquery_engine-rhel-openssl-3.0.x.so.node",
+    "managed_policies": [
+      "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+    ]
+  }
+}

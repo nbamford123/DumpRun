@@ -39,7 +39,10 @@ export const handler: APIGatewayProxyHandler = async (event) => {
         };
       }
 
-      const acceptedPickup = await pickupService.acceptPickup(driverId, pickupId);
+      const acceptedPickup = await pickupService.acceptPickup(
+        driverId,
+        pickupId,
+      );
       if (!acceptedPickup) {
         throw new Error('Failed to accept pickup');
       }

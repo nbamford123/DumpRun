@@ -11,7 +11,7 @@ import { mockPickupService } from '../__mocks__/pickupServices.js';
 
 // Mock the module before importing anything that uses it
 vi.mock('../pickupServices', () => ({
-  getPickupService: vi.fn().mockReturnValue(mockPickupService)
+  getPickupService: vi.fn().mockReturnValue(mockPickupService),
 }));
 
 // Import after mocking
@@ -430,9 +430,7 @@ describe('pickup lambdas', () => {
   });
 
   it('should return 500 for get pickup internal server error', async () => {
-    mockPickupService.getPickup.mockRejectedValue(
-      new Error('Database error'),
-    );
+    mockPickupService.getPickup.mockRejectedValue(new Error('Database error'));
 
     const event: Partial<APIGatewayProxyEvent> = {
       pathParameters: { pickupId: 'nonexistent' },
@@ -473,11 +471,10 @@ describe('pickup lambdas', () => {
     );
 
     expect(result?.statusCode).toBe(200);
-    expect(mockPickupService.getPickups).toHaveBeenCalledWith(
-      22,
-      'abc123',
-      ['pending', 'assigned'],
-    );
+    expect(mockPickupService.getPickups).toHaveBeenCalledWith(22, 'abc123', [
+      'pending',
+      'assigned',
+    ]);
     expect(JSON.parse((result as APIGatewayProxyResult).body)).toEqual({
       pickups: mockPickups,
       nextCursor: 'def345',
@@ -510,9 +507,7 @@ describe('pickup lambdas', () => {
   });
 
   it('should return 500 for get pickups internal server error', async () => {
-    mockPickupService.getPickups.mockRejectedValue(
-      new Error('Database error'),
-    );
+    mockPickupService.getPickups.mockRejectedValue(new Error('Database error'));
 
     const event: DeepPartial<APIGatewayProxyEvent> = {
       queryStringParameters: {
@@ -767,10 +762,7 @@ describe('pickup lambdas', () => {
     );
 
     expect(result?.statusCode).toBe(204);
-    expect(mockPickupService.deletePickup).toHaveBeenCalledWith(
-      '123',
-      true,
-    );
+    expect(mockPickupService.deletePickup).toHaveBeenCalledWith('123', true);
     expect(JSON.parse((result as APIGatewayProxyResult).body)).toEqual({
       message: 'Pickup deleted successfully',
     });
@@ -1109,9 +1101,7 @@ it('should return 500 for accept pickup internal server error', async () => {
   // accept calls get pickup
   mockPickupService.getPickup.mockResolvedValue(mockCreatedPickup);
   // Mock deletePickupService to throw an error
-  mockPickupService.acceptPickup.mockRejectedValue(
-    new Error('Database error'),
-  );
+  mockPickupService.acceptPickup.mockRejectedValue(new Error('Database error'));
 
   const event: DeepPartial<APIGatewayProxyEvent> = {
     pathParameters: { pickupId: '123' },
@@ -1380,9 +1370,7 @@ it('should return 409 for a invalid pickup state cancel accept pickup', async ()
 
 it('should return 500 for cancel accepted pickup internal server error', async () => {
   // Mock availablePickupsService to throw an error
-  mockPickupService.getPickup.mockRejectedValue(
-    new Error('Database error'),
-  );
+  mockPickupService.getPickup.mockRejectedValue(new Error('Database error'));
 
   const event: DeepPartial<APIGatewayProxyEvent> = {
     pathParameters: { pickupId: '123' },

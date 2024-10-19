@@ -63,7 +63,10 @@ export const handler: APIGatewayProxyHandler = async (event) => {
     }
 
     // Update the pickup
-    const updatedPickup = await pickupService.updatePickup(pickupId, result.data);
+    const updatedPickup = await pickupService.updatePickup(
+      pickupId,
+      result.data,
+    );
 
     return {
       statusCode: 200,

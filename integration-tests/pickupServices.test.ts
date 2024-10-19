@@ -153,7 +153,10 @@ it('should hard delete a pickup', async () => {
   };
 
   const createdPickup = await pickupService.createPickup(userId, newPickup);
-  const deletedPickup = await pickupService.deletePickup(createdPickup.id, true);
+  const deletedPickup = await pickupService.deletePickup(
+    createdPickup.id,
+    true,
+  );
   expect(deletedPickup).toEqual(createdPickup);
 
   // Perform a get operation to verify the status in the database
@@ -212,7 +215,7 @@ it('should accept a pickup', async () => {
 });
 
 it('should fail to accept a pickup that doesnt exist', async () => {
-  await expect(pickupService.acceptPickup('fakeid', 'driver123')).rejects.toThrow(
-    'Pickup not found',
-  );
+  await expect(
+    pickupService.acceptPickup('fakeid', 'driver123'),
+  ).rejects.toThrow('Pickup not found');
 });

@@ -34,10 +34,7 @@ export class PickupService {
     this.dynamoDB = DynamoDBDocumentClient.from(client);
     this.tableName = tableName;
   }
-  createPickup = async (
-    userId: string,
-    pickup: NewPickup,
-  ): Promise<Pickup> => {
+  createPickup = async (userId: string, pickup: NewPickup): Promise<Pickup> => {
     const pickupId = uuidv4();
 
     const params = {

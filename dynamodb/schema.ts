@@ -5,15 +5,15 @@ import { config } from 'dotenv';
 
 // Load environment variables from .env.test
 config({ path: '.env.test' });
-
+// How are we going to run the integration test? Somehow need to differentiate between testing and prod,
+// although I guess prod only needs to be run once.
 const client = new DynamoDBClient({
   region: process.env.DYNAMODB_REGION,
-  endpoint: process.env.DYNAMODB_ENDPOINT,
+  endpoint: 'http://dynamodb-local:8000',
   credentials: {
     accessKeyId: process.env.DYNAMODB_ACCESS_KEY_ID || '',
     secretAccessKey: process.env.DYNAMODB_SECRET_ACCESS_KEY || '',
   },
-  tls: !!process.env.DYNAMODB_TLS,
 });
 // const client = new DynamoDBClient({
 //   region: 'local',

@@ -1,15 +1,19 @@
 #!/bin/bash
 set -e
 
-# Prisma layer ARN
-PRISMA_LAYER_ARN='arn:aws:lambda:us-west-2:369547265320:layer:prisma-engine:2'
-
 # Configuration file
-CONFIG_FILE="lambda-config-test.json"
+CONFIG_FILE="lambda-config-pickups.json"
 
 # Function to read JSON config
 parse_json() {
     echo $(jq -r "$1" $CONFIG_FILE)
+}
+
+wait_for_function_update() {
+    local func_name="$1"
+    echo "Waiting for function $func_name to finish updating..."
+    aws lambda wait function-updated --function-name "$func_name"
+    echo "Function $func_name update completed."
 }
 
 # Function to create IAM role
@@ -58,8 +62,7 @@ deploy_lambda() {
     local handler="$2"
     local role_name="$3"
     local zip_file="$4"
-    local ENV="Variables={$5}"
-    # local environment="$5"
+
     local managed_policies
     managed_policies=$(parse_json ".\"$func_name\".managed_policies[]")
     
@@ -70,32 +73,55 @@ deploy_lambda() {
     local role_arn
     role_arn=$(create_or_update_role "$role_name" "$managed_policies" "$inline_policies")
     echo $role_arn
+    
     # Create or update Lambda function
+ # Prepare base parameters
+    local parameters=(
+        --function-name "$func_name"
+        --handler "$handler"
+        --role "$role_arn"
+        --timeout 10
+        --memory-size 256
+    )
+
+   # Add environment variables if they exist
+    if [[ -n "$environment" ]]; then
+        echo "Environment variables: $environment"
+        local env_json
+        env_json=$(echo "$environment" | jq -R -s '
+            split(",") | 
+            map(split("=") | {key: .[0], value: (.[1:]|join("=")|rtrimstr("\n"))}) | 
+            from_entries
+        ')
+        echo "Formatted environment JSON: $env_json"
+        # Use jq to create the correct JSON structure
+        env_json_formatted=$(echo "$env_json" | jq -c '{Variables: .}')
+        parameters+=(--environment "$env_json_formatted")
+    fi
+    # Add layer if it exists and is not null
+    if [[ -n "$layer" && "$layer" != "null" ]]; then
+        echo "Adding layer: $layer"
+        parameters+=(--layers "$layer")
+    else
+        echo "No layer specified or layer is null. Skipping layer configuration."
+    fi
+
+    echo "PARAMETERS: ${parameters[@]}"
+    
     if aws lambda get-function --function-name "$func_name" &>/dev/null; then
         echo "Updating existing Lambda function $func_name..."
-        aws lambda update-function-configuration \
-            --function-name "$func_name" \
-            --handler "$handler" \
-            --role "$role_arn" \
-            --environment "$ENV" \
-            --layers $PRISMA_LAYER_ARN \
-            --timeout 10 \
-            --memory-size 256        
+        aws lambda update-function-configuration "${parameters[@]}"
+        wait_for_function_update "$func_name"
         aws lambda update-function-code \
             --function-name "$func_name" \
             --zip-file "fileb://$zip_file"
+        wait_for_function_update "$func_name"
     else
         echo "Creating new Lambda function $func_name..."
-        aws lambda create-function \
-            --function-name "$func_name" \
-            --handler "$handler" \
+        aws lambda create-function "${parameters[@]}" \
             --runtime nodejs20.x \
-            --role "$role_arn" \
-            --zip-file "fileb://$zip_file" \
-            --environment "$ENV" \
-            --layers $PRISMA_LAYER_ARN \
-            --timeout 10 \
-            --memory-size 256        
+            --zip-file "fileb://$zip_file"
+        wait_for_function_update "$func_name"
     fi
 
     # Add Cognito permission if necessary
@@ -119,8 +145,9 @@ while IFS= read -r func; do
     handler=$(parse_json ".\"$func\".handler")
     role_name=$(parse_json ".\"$func\".role_name")
     zip_file=$(parse_json ".\"$func\".zip_file")
+    layer=$(parse_json ".\"$func\".layer")
     environment=$(parse_json ".\"$func\".environment")
-    deploy_lambda "$func" "$handler" "$role_name" "$zip_file" "$environment"
+    deploy_lambda "$func" "$handler" "$role_name" "$zip_file" "$environment" "$layer"
 done < <(echo "$lambda_functions")
 
 echo "Lambda functions deployed successfully!"

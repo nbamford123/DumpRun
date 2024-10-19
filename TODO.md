@@ -1,7 +1,12 @@
 # Temporary ToDo File
 
-- dynamodb needs different environment variables, different script? Script flag? This script is getting kind of complex
-- probably should give them all 10sec and 256MB by default?
+- need to figure out a way to use the dynamodb schema in both test and prod, right now I'm swapping out the configs, that sux
+- dynamo table name needs to be defined somewhere rather than sprinkled everywhere throughout the code, probably ENV
+- is a 200 return from soft delete pickup correct?
+- getPickups returns 500 with zod error
+- acceptPickup returns 500 with not found message
+- VPC Configuration: If your DynamoDB is accessed via VPC endpoints, you'll need to configure VPC settings for your Lambda.
+- X-Ray Tracing: Consider adding X-Ray tracing for better insights into your Lambda and DynamoDB interactions.
 - should users and drivers be soft deleted like pickups?
 - the build script is building the services too, how can we leave them out? Maybe an index file that contains the lambdas but not support files like services?
 - we have to have the email on the cognito user so they can interact with it, but what if someone wants to be a driver and a user? Different emails?

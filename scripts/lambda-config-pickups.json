@@ -1,0 +1,226 @@
+{
+  "create-pickup": {
+    "handler": "index.handler",
+    "role_name": "lambda-dynamodb-role",
+    "zip_file": "../dist/pickups/createPickup.zip",
+    "environment": "TABLE_NAME=Pickups,NODE_PATH=/opt/nodejs/node_modules",
+    "managed_policies": [
+      "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+    ],
+    "inline_policies": {
+      "DynamoDBAccess": {
+        "Version": "2012-10-17",
+        "Statement": [
+          {
+            "Effect": "Allow",
+            "Action": [
+              "dynamodb:GetItem",
+              "dynamodb:PutItem",
+              "dynamodb:UpdateItem",
+              "dynamodb:DeleteItem",
+              "dynamodb:Query",
+              "dynamodb:Scan"
+            ],
+            "Resource": "arn:aws:dynamodb:us-west-2:369547265320:table/Pickups"
+          }
+        ]
+      }
+    }
+  },
+  "get-pickups": {
+    "handler": "index.handler",
+    "role_name": "lambda-dynamodb-role",
+    "zip_file": "../dist/pickups/getPickups.zip",
+    "environment": "TABLE_NAME=Pickups,NODE_PATH=/opt/nodejs/node_modules",
+    "managed_policies": [
+      "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+    ],
+    "inline_policies": {
+      "DynamoDBAccess": {
+        "Version": "2012-10-17",
+        "Statement": [
+          {
+            "Effect": "Allow",
+            "Action": [
+              "dynamodb:GetItem",
+              "dynamodb:PutItem",
+              "dynamodb:UpdateItem",
+              "dynamodb:DeleteItem",
+              "dynamodb:Query",
+              "dynamodb:Scan"
+            ],
+            "Resource": "arn:aws:dynamodb:us-west-2:369547265320:table/Pickups"
+          }
+        ]
+      }
+    }
+  },
+  "get-pickup": {
+    "handler": "index.handler",
+    "role_name": "lambda-dynamodb-role",
+    "zip_file": "../dist/pickups/getPickup.zip",
+    "environment": "TABLE_NAME=Pickups,NODE_PATH=/opt/nodejs/node_modules",
+    "managed_policies": [
+      "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+    ],
+    "inline_policies": {
+      "DynamoDBAccess": {
+        "Version": "2012-10-17",
+        "Statement": [
+          {
+            "Effect": "Allow",
+            "Action": [
+              "dynamodb:GetItem",
+              "dynamodb:PutItem",
+              "dynamodb:UpdateItem",
+              "dynamodb:DeleteItem",
+              "dynamodb:Query",
+              "dynamodb:Scan"
+            ],
+            "Resource": "arn:aws:dynamodb:us-west-2:369547265320:table/Pickups"
+          }
+        ]
+      }
+    }
+  },
+  "update-pickup": {
+    "handler": "index.handler",
+    "role_name": "lambda-dynamodb-role",
+    "zip_file": "../dist/pickups/updatePickup.zip",
+    "environment": "TABLE_NAME=Pickups,NODE_PATH=/opt/nodejs/node_modules",
+    "managed_policies": [
+      "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+    ],
+    "inline_policies": {
+      "DynamoDBAccess": {
+        "Version": "2012-10-17",
+        "Statement": [
+          {
+            "Effect": "Allow",
+            "Action": [
+              "dynamodb:GetItem",
+              "dynamodb:PutItem",
+              "dynamodb:UpdateItem",
+              "dynamodb:DeleteItem",
+              "dynamodb:Query",
+              "dynamodb:Scan"
+            ],
+            "Resource": "arn:aws:dynamodb:us-west-2:369547265320:table/Pickups"
+          }
+        ]
+      }
+    }
+  },
+  "delete-pickup": {
+    "handler": "index.handler",
+    "role_name": "lambda-dynamodb-role",
+    "zip_file": "../dist/pickups/deletePickup.zip",
+    "environment": "TABLE_NAME=Pickups,NODE_PATH=/opt/nodejs/node_modules",
+    "managed_policies": [
+      "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+    ],
+    "inline_policies": {
+      "DynamoDBAccess": {
+        "Version": "2012-10-17",
+        "Statement": [
+          {
+            "Effect": "Allow",
+            "Action": [
+              "dynamodb:GetItem",
+              "dynamodb:PutItem",
+              "dynamodb:UpdateItem",
+              "dynamodb:DeleteItem",
+              "dynamodb:Query",
+              "dynamodb:Scan"
+            ],
+            "Resource": "arn:aws:dynamodb:us-west-2:369547265320:table/Pickups"
+          }
+        ]
+      }
+    }
+  },
+  "available-pickups": {
+    "handler": "index.handler",
+    "role_name": "lambda-dynamodb-role",
+    "zip_file": "../dist/pickups/availablePickups.zip",
+    "environment": "TABLE_NAME=Pickups,NODE_PATH=/opt/nodejs/node_modules",
+    "managed_policies": [
+      "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+    ],
+    "inline_policies": {
+      "DynamoDBAccess": {
+        "Version": "2012-10-17",
+        "Statement": [
+          {
+            "Effect": "Allow",
+            "Action": [
+              "dynamodb:GetItem",
+              "dynamodb:PutItem",
+              "dynamodb:UpdateItem",
+              "dynamodb:DeleteItem",
+              "dynamodb:Query",
+              "dynamodb:Scan"
+            ],
+            "Resource": "arn:aws:dynamodb:us-west-2:369547265320:table/Pickups"
+          }
+        ]
+      }
+    }
+  },
+  "accept-pickup": {
+    "handler": "index.handler",
+    "role_name": "lambda-dynamodb-role",
+    "zip_file": "../dist/pickups/acceptPickup.zip",
+    "environment": "TABLE_NAME=Pickups,NODE_PATH=/opt/nodejs/node_modules",
+    "managed_policies": [
+      "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+    ],
+    "inline_policies": {
+      "DynamoDBAccess": {
+        "Version": "2012-10-17",
+        "Statement": [
+          {
+            "Effect": "Allow",
+            "Action": [
+              "dynamodb:GetItem",
+              "dynamodb:PutItem",
+              "dynamodb:UpdateItem",
+              "dynamodb:DeleteItem",
+              "dynamodb:Query",
+              "dynamodb:Scan"
+            ],
+            "Resource": "arn:aws:dynamodb:us-west-2:369547265320:table/Pickups"
+          }
+        ]
+      }
+    }
+  },
+  "cancel-accepted-pickup": {
+    "handler": "index.handler",
+    "role_name": "lambda-dynamodb-role",
+    "zip_file": "../dist/pickups/cancelAcceptedPickup.zip",
+    "environment": "TABLE_NAME=Pickups,NODE_PATH=/opt/nodejs/node_modules",
+    "managed_policies": [
+      "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+    ],
+    "inline_policies": {
+      "DynamoDBAccess": {
+        "Version": "2012-10-17",
+        "Statement": [
+          {
+            "Effect": "Allow",
+            "Action": [
+              "dynamodb:GetItem",
+              "dynamodb:PutItem",
+              "dynamodb:UpdateItem",
+              "dynamodb:DeleteItem",
+              "dynamodb:Query",
+              "dynamodb:Scan"
+            ],
+            "Resource": "arn:aws:dynamodb:us-west-2:369547265320:table/Pickups"
+          }
+        ]
+      }
+    }
+  }
+}

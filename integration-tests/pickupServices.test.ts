@@ -1,4 +1,4 @@
-import 'dotenv/config'; // This will automatically load the .env file
+import { config } from 'dotenv';
 import {
   describe,
   it,
@@ -14,28 +14,26 @@ import {
   DeleteCommand,
   ScanCommand,
 } from '@aws-sdk/lib-dynamodb';
-import {
-  createPickupService,
-  getPickupService,
-  deletePickupService,
-  updatePickupService,
-  availablePickupsService,
-  acceptPickupService,
-} from '@/lambda/pickups/pickupServices';
+import { PickupService } from '@/lambda/pickups/pickupServices';
+
+// Load environment variables from .env.test
+config({ path: '.env.test' });
+
+const dynamoConfig = {
+  region: process.env.DYNAMODB_REGION,
+  endpoint: process.env.DYNAMODB_ENDPOINT,
+  credentials: {
+    accessKeyId: process.env.DYNAMODB_ACCESS_KEY_ID || '',
+    secretAccessKey: process.env.DYNAMODB_SECRET_ACCESS_KEY || '',
+  },
+};
+const pickupService = new PickupService('Pickups', dynamoConfig);
 
 describe('Pickup Service Integration Tests', () => {
   let dynamoDB: DynamoDBDocumentClient;
 
   beforeAll(async () => {
-    const client = new DynamoDBClient({
-      region: process.env.DYNAMODB_REGION,
-      endpoint: process.env.DYNAMODB_ENDPOINT,
-      credentials: {
-        accessKeyId: process.env.DYNAMODB_ACCESS_KEY_ID || '',
-        secretAccessKey: process.env.DYNAMODB_SECRET_ACCESS_KEY || '',
-      },
-      tls: true,
-    });
+    const client = new DynamoDBClient(dynamoConfig);
     dynamoDB = DynamoDBDocumentClient.from(client);
   });
 
@@ -70,7 +68,7 @@ describe('Pickup Service Integration Tests', () => {
       requestedTime: '2023-04-01T10:00:00Z',
     };
 
-    const createdPickup = await createPickupService(userId, newPickup);
+    const createdPickup = await pickupService.createPickup(userId, newPickup);
 
     expect(createdPickup).toBeDefined();
     expect(createdPickup.id).toBeDefined();
@@ -82,7 +80,7 @@ describe('Pickup Service Integration Tests', () => {
     expect(createdPickup.requestedTime).toBe(newPickup.requestedTime);
 
     // Verify the pickup was actually created in the database
-    const retrievedPickup = await getPickupService(createdPickup.id);
+    const retrievedPickup = await pickupService.getPickup(createdPickup.id);
     expect(retrievedPickup).toEqual(createdPickup);
   });
 
@@ -95,8 +93,8 @@ describe('Pickup Service Integration Tests', () => {
       requestedTime: '2023-04-01T10:00:00Z',
     };
 
-    await createPickupService(userId, newPickup);
-    await expect(getPickupService('nonExistentId')).rejects.toThrow(
+    await pickupService.createPickup(userId, newPickup);
+    await expect(pickupService.getPickup('nonExistentId')).rejects.toThrow(
       'Failed to retrieve pickup',
     );
   });
@@ -110,11 +108,11 @@ describe('Pickup Service Integration Tests', () => {
       requestedTime: '2023-04-01T10:00:00Z',
     };
 
-    const createdPickup = await createPickupService(userId, newPickup);
+    const createdPickup = await pickupService.createPickup(userId, newPickup);
     const updateData = {
       estimatedWeight: 250,
     };
-    const updatedPickup = await updatePickupService(
+    const updatedPickup = await pickupService.updatePickup(
       createdPickup.id,
       updateData,
     );
@@ -130,8 +128,8 @@ describe('Pickup Service Integration Tests', () => {
       requestedTime: '2023-04-01T10:00:00Z',
     };
 
-    const createdPickup = await createPickupService(userId, newPickup);
-    const deletedPickup = await deletePickupService(createdPickup.id);
+    const createdPickup = await pickupService.createPickup(userId, newPickup);
+    const deletedPickup = await pickupService.deletePickup(createdPickup.id);
     expect(deletedPickup.id).toEqual(createdPickup.id);
     expect(deletedPickup.status).toEqual('deleted');
     expect(deletedPickup).toHaveProperty('deletedAt');
@@ -140,7 +138,7 @@ describe('Pickup Service Integration Tests', () => {
     );
 
     // Perform a get operation to verify the status in the database
-    const retrievedPickup = await getPickupService(createdPickup.id);
+    const retrievedPickup = await pickupService.getPickup(createdPickup.id);
     expect(deletedPickup).toEqual(retrievedPickup);
   });
 });
@@ -154,12 +152,12 @@ it('should hard delete a pickup', async () => {
     requestedTime: '2023-04-01T10:00:00Z',
   };
 
-  const createdPickup = await createPickupService(userId, newPickup);
-  const deletedPickup = await deletePickupService(createdPickup.id, true);
+  const createdPickup = await pickupService.createPickup(userId, newPickup);
+  const deletedPickup = await pickupService.deletePickup(createdPickup.id, true);
   expect(deletedPickup).toEqual(createdPickup);
 
   // Perform a get operation to verify the status in the database
-  await expect(getPickupService(createdPickup.id)).rejects.toThrow(
+  await expect(pickupService.getPickup(createdPickup.id)).rejects.toThrow(
     'Failed to retrieve pickup',
   );
 });
@@ -172,17 +170,17 @@ it('should get available pickups', async () => {
     wasteType: 'recyclable',
     requestedTime: '2023-04-01T10:00:00Z',
   };
-  const p1 = await createPickupService(userId, pickup);
-  const p2 = await createPickupService(userId, pickup);
-  const p3 = await createPickupService(userId, pickup);
-  const p4 = await createPickupService(userId, pickup);
+  const p1 = await pickupService.createPickup(userId, pickup);
+  const p2 = await pickupService.createPickup(userId, pickup);
+  const p3 = await pickupService.createPickup(userId, pickup);
+  const p4 = await pickupService.createPickup(userId, pickup);
   const update = {
     status: 'available',
   };
-  const p2a = await updatePickupService(p2.id, update);
-  const p4a = await updatePickupService(p4.id, update);
+  const p2a = await pickupService.updatePickup(p2.id, update);
+  const p4a = await pickupService.updatePickup(p4.id, update);
 
-  const avail = await availablePickupsService();
+  const avail = await pickupService.availablePickups();
   const srt = (a, b) => a.id.localeCompare(b.id);
   expect(avail.sort(srt)).toEqual([p2a, p4a].sort(srt));
 });
@@ -195,17 +193,17 @@ it('should accept a pickup', async () => {
     wasteType: 'recyclable',
     requestedTime: '2023-04-01T10:00:00Z',
   };
-  const p1 = await createPickupService(userId, pickup);
-  const p2 = await createPickupService(userId, pickup);
-  const p3 = await createPickupService(userId, pickup);
-  const p4 = await createPickupService(userId, pickup);
+  const p1 = await pickupService.createPickup(userId, pickup);
+  const p2 = await pickupService.createPickup(userId, pickup);
+  const p3 = await pickupService.createPickup(userId, pickup);
+  const p4 = await pickupService.createPickup(userId, pickup);
   const update = {
     status: 'available',
   };
-  const p2a = await updatePickupService(p2.id, update);
-  const p4a = await updatePickupService(p4.id, update);
+  const p2a = await pickupService.updatePickup(p2.id, update);
+  const p4a = await pickupService.updatePickup(p4.id, update);
 
-  const accepted = await acceptPickupService(p2.id, 'driver123');
+  const accepted = await pickupService.acceptPickup(p2.id, 'driver123');
   expect(accepted).toEqual({
     ...p2,
     driverId: 'driver123',
@@ -214,7 +212,7 @@ it('should accept a pickup', async () => {
 });
 
 it('should fail to accept a pickup that doesnt exist', async () => {
-  await expect(acceptPickupService('fakeid', 'driver123')).rejects.toThrow(
+  await expect(pickupService.acceptPickup('fakeid', 'driver123')).rejects.toThrow(
     'Pickup not found',
   );
 });

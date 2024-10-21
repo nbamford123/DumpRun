@@ -7,38 +7,22 @@ import type {
 } from 'aws-lambda';
 import type { DeepPartial } from '@/utils/DeepPartial.js';
 
-// Mock the entire userServices module
+import { mockPickupService } from '../__mocks__/pickupServices.js';
+
+// Mock the module before importing anything that uses it
 vi.mock('../pickupServices', () => ({
-  createPickupService: vi.fn(),
-  getPickupService: vi.fn(),
-  getPickupsService: vi.fn(),
-  updatePickupService: vi.fn(),
-  deletePickupService: vi.fn(),
-  availablePickupsService: vi.fn(),
-  acceptPickupService: vi.fn(),
-  cancelAcceptedPickup: vi.fn(),
+  getPickupService: vi.fn().mockReturnValue(mockPickupService),
 }));
 
 // Import after mocking
-import {
-  createPickup,
-  getPickup,
-  getPickups,
-  updatePickup,
-  deletePickup,
-  availablePickups,
-  acceptPickup,
-  cancelAcceptedPickup,
-} from '../pickupHandlers.js';
-import {
-  createPickupService,
-  getPickupService,
-  getPickupsService,
-  updatePickupService,
-  deletePickupService,
-  availablePickupsService,
-  acceptPickupService,
-} from '../pickupServices.js';
+import { handler as createPickup } from '../createPickup.js';
+import { handler as getPickup } from '../getPickup.js';
+import { handler as getPickups } from '../getPickups.js';
+import { handler as updatePickup } from '../updatePickup.js';
+import { handler as deletePickup } from '../deletePickup.js';
+import { handler as availablePickups } from '../availablePickups.js';
+import { handler as acceptPickup } from '../acceptPickup.js';
+import { handler as cancelAcceptedPickup } from '../cancelAcceptedPickup.js';
 
 const USER_ID = 'user-id';
 const DRIVER_ID = 'driver-id';
@@ -86,15 +70,13 @@ const requestContextAdmin = {
 };
 
 describe('pickup lambdas', () => {
-  beforeEach(() => {
-    vi.resetAllMocks();
-  });
+  // beforeEach(() => {
+  //   vi.resetAllMocks();
+  // });
 
   it('should create a pickup successfully', async () => {
     // Mock createPickupService
-    (
-      createPickupService as vi.MockedFunction<typeof createPickupService>
-    ).mockResolvedValue(mockCreatedPickup);
+    mockPickupService.createPickup.mockResolvedValue(mockCreatedPickup);
 
     const event: DeepPartial<APIGatewayProxyEvent> = {
       body: JSON.stringify(mockPickup),
@@ -110,7 +92,10 @@ describe('pickup lambdas', () => {
     expect(JSON.parse((result as APIGatewayProxyResult).body)).toEqual(
       mockCreatedPickup,
     );
-    expect(createPickupService).toHaveBeenCalledWith('user-id', mockPickup);
+    expect(mockPickupService.createPickup).toHaveBeenCalledWith(
+      'user-id',
+      mockPickup,
+    );
   });
 
   it('should return 400 for invalid create pickup input', async () => {
@@ -141,9 +126,7 @@ describe('pickup lambdas', () => {
 
   it('should create a pickup successfully as admin', async () => {
     // Mock createPickupService
-    (
-      createPickupService as vi.MockedFunction<typeof createPickupService>
-    ).mockResolvedValue(mockCreatedPickup);
+    mockPickupService.createPickup.mockResolvedValue(mockCreatedPickup);
 
     const event: DeepPartial<APIGatewayProxyEvent> = {
       body: JSON.stringify(mockPickup),
@@ -159,7 +142,10 @@ describe('pickup lambdas', () => {
     expect(JSON.parse((result as APIGatewayProxyResult).body)).toEqual(
       mockCreatedPickup,
     );
-    expect(createPickupService).toHaveBeenCalledWith('user-id', mockPickup);
+    expect(mockPickupService.createPickup).toHaveBeenCalledWith(
+      'user-id',
+      mockPickup,
+    );
   });
 
   it('should return 403 for createPickup invalid custom role', async () => {
@@ -183,9 +169,9 @@ describe('pickup lambdas', () => {
 
   it('should return 500 for create pickup internal server error', async () => {
     // Mock createDriverService to throw an error
-    (
-      createPickupService as vi.MockedFunction<typeof createPickupService>
-    ).mockRejectedValue(new Error('Database error'));
+    mockPickupService.createPickup.mockRejectedValue(
+      new Error('Database error'),
+    );
 
     const event: DeepPartial<APIGatewayProxyEvent> = {
       body: JSON.stringify(mockPickup),
@@ -205,9 +191,7 @@ describe('pickup lambdas', () => {
   });
 
   it('should get a pickup successfully as admin', async () => {
-    (
-      getPickupService as vi.MockedFunction<typeof getPickupService>
-    ).mockResolvedValue(mockCreatedPickup);
+    mockPickupService.getPickup.mockResolvedValue(mockCreatedPickup);
 
     const event: DeepPartial<APIGatewayProxyEvent> = {
       pathParameters: { pickupId: '123' },
@@ -224,13 +208,11 @@ describe('pickup lambdas', () => {
     expect(JSON.parse((result as APIGatewayProxyResult).body)).toEqual(
       mockCreatedPickup,
     );
-    expect(getPickupService).toHaveBeenCalledWith('123');
+    expect(mockPickupService.getPickup).toHaveBeenCalledWith('123');
   });
 
   it('should get a pickup successfully', async () => {
-    (
-      getPickupService as vi.MockedFunction<typeof getPickupService>
-    ).mockResolvedValue(mockCreatedPickup);
+    mockPickupService.getPickup.mockResolvedValue(mockCreatedPickup);
 
     const event: DeepPartial<APIGatewayProxyEvent> = {
       pathParameters: { pickupId: '123' },
@@ -247,14 +229,12 @@ describe('pickup lambdas', () => {
     expect(JSON.parse((result as APIGatewayProxyResult).body)).toEqual(
       mockCreatedPickup,
     );
-    expect(getPickupService).toHaveBeenCalledWith('123');
+    expect(mockPickupService.getPickup).toHaveBeenCalledWith('123');
   });
 
   it('should get a deleted pickup successfully as admin', async () => {
     const mockDeletedPickup = { ...mockCreatedPickup, status: 'deleted' };
-    (
-      getPickupService as vi.MockedFunction<typeof getPickupService>
-    ).mockResolvedValue(mockDeletedPickup);
+    mockPickupService.getPickup.mockResolvedValue(mockDeletedPickup);
 
     const event: DeepPartial<APIGatewayProxyEvent> = {
       pathParameters: { pickupId: '123', includeDeleted: true },
@@ -271,14 +251,12 @@ describe('pickup lambdas', () => {
     expect(JSON.parse((result as APIGatewayProxyResult).body)).toEqual(
       mockDeletedPickup,
     );
-    expect(getPickupService).toHaveBeenCalledWith('123');
+    expect(mockPickupService.getPickup).toHaveBeenCalledWith('123');
   });
 
   it('should get a pickup successfully as driver when assigned', async () => {
     const mockAcceptedPickup = { ...mockCreatedPickup, driverId: DRIVER_ID };
-    (
-      getPickupService as vi.MockedFunction<typeof getPickupService>
-    ).mockResolvedValue(mockAcceptedPickup);
+    mockPickupService.getPickup.mockResolvedValue(mockAcceptedPickup);
 
     const event: DeepPartial<APIGatewayProxyEvent> = {
       pathParameters: { pickupId: '123' },
@@ -295,14 +273,12 @@ describe('pickup lambdas', () => {
     expect(JSON.parse((result as APIGatewayProxyResult).body)).toEqual(
       mockAcceptedPickup,
     );
-    expect(getPickupService).toHaveBeenCalledWith('123');
+    expect(mockPickupService.getPickup).toHaveBeenCalledWith('123');
   });
 
   it('should get a pickup successfully as driver when available', async () => {
     const mockAcceptedPickup = { ...mockCreatedPickup, driverId: DRIVER_ID };
-    (
-      getPickupService as vi.MockedFunction<typeof getPickupService>
-    ).mockResolvedValue(mockAcceptedPickup);
+    mockPickupService.getPickup.mockResolvedValue(mockAcceptedPickup);
 
     const event: DeepPartial<APIGatewayProxyEvent> = {
       pathParameters: { pickupId: '123' },
@@ -319,13 +295,14 @@ describe('pickup lambdas', () => {
     expect(JSON.parse((result as APIGatewayProxyResult).body)).toEqual(
       mockAcceptedPickup,
     );
-    expect(getPickupService).toHaveBeenCalledWith('123');
+    expect(mockPickupService.getPickup).toHaveBeenCalledWith('123');
   });
 
   it('should fail to get a pickup successfully as driver when not available or assigned', async () => {
-    (
-      getPickupService as vi.MockedFunction<typeof getPickupService>
-    ).mockResolvedValue({ ...mockCreatedPickup, status: 'in_progress' });
+    mockPickupService.getPickup.mockResolvedValue({
+      ...mockCreatedPickup,
+      status: 'in_progress',
+    });
 
     const event: DeepPartial<APIGatewayProxyEvent> = {
       pathParameters: { pickupId: '123' },
@@ -345,9 +322,10 @@ describe('pickup lambdas', () => {
   });
 
   it('should fail to get a pickup successfully as driver when deleted', async () => {
-    (
-      getPickupService as vi.MockedFunction<typeof getPickupService>
-    ).mockResolvedValue({ ...mockAcceptedPickup, status: 'deleted' });
+    mockPickupService.getPickup.mockResolvedValue({
+      ...mockAcceptedPickup,
+      status: 'deleted',
+    });
 
     const event: DeepPartial<APIGatewayProxyEvent> = {
       pathParameters: { pickupId: '123', includeDeleted: true },
@@ -364,13 +342,14 @@ describe('pickup lambdas', () => {
     expect(JSON.parse((result as APIGatewayProxyResult).body)).toEqual({
       message: 'Pickup not found',
     });
-    expect(getPickupService).toHaveBeenCalledWith('123');
+    expect(mockPickupService.getPickup).toHaveBeenCalledWith('123');
   });
 
   it('should fail to get a pickup successfully as user when deleted', async () => {
-    (
-      getPickupService as vi.MockedFunction<typeof getPickupService>
-    ).mockResolvedValue({ ...mockCreatedPickup, status: 'deleted' });
+    mockPickupService.getPickup.mockResolvedValue({
+      ...mockCreatedPickup,
+      status: 'deleted',
+    });
 
     const event: DeepPartial<APIGatewayProxyEvent> = {
       pathParameters: { pickupId: '123', includeDeleted: true },
@@ -387,13 +366,14 @@ describe('pickup lambdas', () => {
     expect(JSON.parse((result as APIGatewayProxyResult).body)).toEqual({
       message: 'Pickup not found',
     });
-    expect(getPickupService).toHaveBeenCalledWith('123');
+    expect(mockPickupService.getPickup).toHaveBeenCalledWith('123');
   });
 
   it('should fail to get a pickup successfully as user when wrong id', async () => {
-    (
-      getPickupService as vi.MockedFunction<typeof getPickupService>
-    ).mockResolvedValue({ ...mockCreatedPickup, userId: '456' });
+    mockPickupService.getPickup.mockResolvedValue({
+      ...mockCreatedPickup,
+      userId: '456',
+    });
 
     const event: DeepPartial<APIGatewayProxyEvent> = {
       pathParameters: { pickupId: '123' },
@@ -413,9 +393,7 @@ describe('pickup lambdas', () => {
   });
 
   it('should return 404 for get non-existent pickup', async () => {
-    (
-      getPickupService as vi.MockedFunction<typeof getPickupService>
-    ).mockResolvedValue(null);
+    mockPickupService.getPickup.mockResolvedValue(null);
 
     const event: DeepPartial<APIGatewayProxyEvent> = {
       pathParameters: { pickupId: 'nonexistent' },
@@ -452,9 +430,7 @@ describe('pickup lambdas', () => {
   });
 
   it('should return 500 for get pickup internal server error', async () => {
-    (
-      getPickupService as vi.MockedFunction<typeof getPickupService>
-    ).mockRejectedValue(new Error('Database error'));
+    mockPickupService.getPickup.mockRejectedValue(new Error('Database error'));
 
     const event: Partial<APIGatewayProxyEvent> = {
       pathParameters: { pickupId: 'nonexistent' },
@@ -474,13 +450,14 @@ describe('pickup lambdas', () => {
 
   it('should get pickups successfully when admin', async () => {
     const mockPickups = [mockCreatedPickup, { ...mockCreatedPickup, id: 234 }];
-    (
-      getPickupsService as vi.MockedFunction<typeof getPickupsService>
-    ).mockResolvedValue({ pickups: mockPickups, nextCursor: 'def345' });
+    mockPickupService.getPickups.mockResolvedValue({
+      pickups: mockPickups,
+      nextCursor: 'def345',
+    });
 
     const event: DeepPartial<APIGatewayProxyEvent> = {
       queryStringParameters: {
-        status: ['pending', 'assigned'],
+        status: 'pending',
         limit: 22,
         cursor: 'abc123',
       },
@@ -494,10 +471,13 @@ describe('pickup lambdas', () => {
     );
 
     expect(result?.statusCode).toBe(200);
-    expect(getPickupsService).toHaveBeenCalledWith(22, 'abc123', [
+    expect(mockPickupService.getPickups).toHaveBeenCalledWith(
       'pending',
-      'assigned',
-    ]);
+      22,
+      'abc123',
+      undefined,
+      undefined,
+    );
     expect(JSON.parse((result as APIGatewayProxyResult).body)).toEqual({
       pickups: mockPickups,
       nextCursor: 'def345',
@@ -506,9 +486,7 @@ describe('pickup lambdas', () => {
 
   it('should fail to get pickups when not admin', async () => {
     const mockPickups = [mockCreatedPickup, { ...mockCreatedPickup, id: 234 }];
-    (
-      getPickupsService as vi.MockedFunction<typeof getPickupsService>
-    ).mockResolvedValue(mockPickups);
+    mockPickupService.getPickups.mockResolvedValue(mockPickups);
 
     const event: DeepPartial<APIGatewayProxyEvent> = {
       queryStringParameters: {
@@ -532,9 +510,7 @@ describe('pickup lambdas', () => {
   });
 
   it('should return 500 for get pickups internal server error', async () => {
-    (
-      getPickupsService as vi.MockedFunction<typeof getPickupsService>
-    ).mockRejectedValue(new Error('Database error'));
+    mockPickupService.getPickups.mockRejectedValue(new Error('Database error'));
 
     const event: DeepPartial<APIGatewayProxyEvent> = {
       queryStringParameters: {
@@ -565,13 +541,9 @@ describe('pickup lambdas', () => {
       updatedAt: '2023-09-24T12:00:00Z',
     };
     // Update calls get pickup
-    (
-      getPickupService as vi.MockedFunction<typeof getPickupService>
-    ).mockResolvedValue(mockCreatedPickup);
+    mockPickupService.getPickup.mockResolvedValue(mockCreatedPickup);
 
-    (
-      updatePickupService as vi.MockedFunction<typeof updatePickupService>
-    ).mockResolvedValue(mockUpdatedPickup);
+    mockPickupService.updatePickup.mockResolvedValue(mockUpdatedPickup);
 
     const event: DeepPartial<APIGatewayProxyEvent> = {
       pathParameters: { pickupId: '123' },
@@ -588,7 +560,7 @@ describe('pickup lambdas', () => {
     expect(JSON.parse((result as APIGatewayProxyResult).body)).toEqual(
       mockUpdatedPickup,
     );
-    expect(updatePickupService).toHaveBeenCalledWith('123', {
+    expect(mockPickupService.updatePickup).toHaveBeenCalledWith('123', {
       estimatedWeight: 200,
     });
   });
@@ -599,9 +571,7 @@ describe('pickup lambdas', () => {
       requestContext,
       body: JSON.stringify({ estimatedWeight: -100 }),
     };
-    (
-      getPickupService as vi.MockedFunction<typeof getPickupService>
-    ).mockResolvedValue(mockCreatedPickup);
+    mockPickupService.getPickup.mockResolvedValue(mockCreatedPickup);
 
     const result = await updatePickup(
       event as APIGatewayProxyEvent,
@@ -622,9 +592,7 @@ describe('pickup lambdas', () => {
       requestContext,
       body: JSON.stringify({ userdId: 234 }),
     };
-    (
-      getPickupService as vi.MockedFunction<typeof getPickupService>
-    ).mockResolvedValue(mockCreatedPickup);
+    mockPickupService.getPickup.mockResolvedValue(mockCreatedPickup);
 
     const result = await updatePickup(
       event as APIGatewayProxyEvent,
@@ -660,9 +628,7 @@ describe('pickup lambdas', () => {
 
   it('should return 404 for update pickup non-existent pickup', async () => {
     // Update calls get pickup
-    (
-      getPickupService as vi.MockedFunction<typeof getPickupService>
-    ).mockResolvedValue(null);
+    mockPickupService.getPickup.mockResolvedValue(null);
 
     const event: DeepPartial<APIGatewayProxyEvent> = {
       pathParameters: { pickupId: 'invalid' },
@@ -684,9 +650,10 @@ describe('pickup lambdas', () => {
 
   it('should return 404 for update pickup with deleted pickup', async () => {
     // Update calls get pickup
-    (
-      getPickupService as vi.MockedFunction<typeof getPickupService>
-    ).mockResolvedValue({ ...mockCreatedPickup, status: 'deleted' });
+    mockPickupService.getPickup.mockResolvedValue({
+      ...mockCreatedPickup,
+      status: 'deleted',
+    });
 
     const event: DeepPartial<APIGatewayProxyEvent> = {
       pathParameters: { pickupId: 123 },
@@ -708,14 +675,12 @@ describe('pickup lambdas', () => {
 
   it('should return 500 for update pickup internal server error', async () => {
     // Update calls get pickup
-    (
-      getPickupService as vi.MockedFunction<typeof getPickupService>
-    ).mockResolvedValue(mockCreatedPickup);
+    mockPickupService.getPickup.mockResolvedValue(mockCreatedPickup);
 
-    // Mock updateDriverService to throw an error
-    (
-      updatePickupService as vi.MockedFunction<typeof updatePickupService>
-    ).mockRejectedValue(new Error('Database error'));
+    // Mock updatePickups to throw an error
+    mockPickupService.updatePickup.mockRejectedValue(
+      new Error('Database error'),
+    );
 
     const event: DeepPartial<APIGatewayProxyEvent> = {
       pathParameters: { pickupId: '123' },
@@ -736,12 +701,8 @@ describe('pickup lambdas', () => {
 
   it('should return 200 for valid delete pickup', async () => {
     const mockDeletedPickup = { ...mockCreatedPickup, status: 'deleted' };
-    (
-      getPickupService as vi.MockedFunction<typeof getPickupService>
-    ).mockResolvedValue(mockCreatedPickup);
-    (
-      deletePickupService as vi.MockedFunction<typeof deletePickupService>
-    ).mockResolvedValue(mockDeletedPickup);
+    mockPickupService.getPickup.mockResolvedValue(mockCreatedPickup);
+    mockPickupService.deletePickup.mockResolvedValue(mockDeletedPickup);
 
     const event: DeepPartial<APIGatewayProxyEvent> = {
       pathParameters: { pickupId: '123' },
@@ -755,7 +716,7 @@ describe('pickup lambdas', () => {
     );
 
     expect(result?.statusCode).toBe(200);
-    expect(deletePickupService).toHaveBeenCalledWith('123');
+    expect(mockPickupService.deletePickup).toHaveBeenCalledWith('123');
     expect(JSON.parse((result as APIGatewayProxyResult).body)).toEqual(
       mockDeletedPickup,
     );
@@ -763,12 +724,8 @@ describe('pickup lambdas', () => {
 
   it('should return 200 for valid delete pickup when admin', async () => {
     const mockDeletedPickup = { ...mockCreatedPickup, status: 'deleted' };
-    (
-      getPickupService as vi.MockedFunction<typeof getPickupService>
-    ).mockResolvedValue(mockCreatedPickup);
-    (
-      deletePickupService as vi.MockedFunction<typeof deletePickupService>
-    ).mockResolvedValue(mockDeletedPickup);
+    mockPickupService.getPickup.mockResolvedValue(mockCreatedPickup);
+    mockPickupService.deletePickup.mockResolvedValue(mockDeletedPickup);
 
     const event: DeepPartial<APIGatewayProxyEvent> = {
       pathParameters: { pickupId: '123' },
@@ -782,20 +739,16 @@ describe('pickup lambdas', () => {
     );
 
     expect(result?.statusCode).toBe(200);
-    expect(deletePickupService).toHaveBeenCalledWith('123');
+    expect(mockPickupService.deletePickup).toHaveBeenCalledWith('123');
     expect(JSON.parse((result as APIGatewayProxyResult).body)).toEqual(
       mockDeletedPickup,
     );
   });
 
   it('should return 204 for valid hard delete pickup when admin', async () => {
-    // Update calls get pickup
-    (
-      getPickupService as vi.MockedFunction<typeof getPickupService>
-    ).mockResolvedValue(mockCreatedPickup);
-    (
-      deletePickupService as vi.MockedFunction<typeof deletePickupService>
-    ).mockResolvedValue(mockCreatedPickup);
+    // delete calls get pickup
+    mockPickupService.getPickup.mockResolvedValue(mockCreatedPickup);
+    mockPickupService.deletePickup.mockResolvedValue(mockCreatedPickup);
 
     const event: DeepPartial<APIGatewayProxyEvent> = {
       pathParameters: { pickupId: '123' },
@@ -812,16 +765,14 @@ describe('pickup lambdas', () => {
     );
 
     expect(result?.statusCode).toBe(204);
-    expect(deletePickupService).toHaveBeenCalledWith('123', true);
+    expect(mockPickupService.deletePickup).toHaveBeenCalledWith('123', true);
     expect(JSON.parse((result as APIGatewayProxyResult).body)).toEqual({
       message: 'Pickup deleted successfully',
     });
   });
 
   it('should return 400 for delete pickup missing pickup id', async () => {
-    (
-      deletePickupService as vi.MockedFunction<typeof deletePickupService>
-    ).mockResolvedValue(null);
+    mockPickupService.deletePickup.mockResolvedValue(null);
 
     const event: DeepPartial<APIGatewayProxyEvent> = {
       requestContext,
@@ -840,9 +791,7 @@ describe('pickup lambdas', () => {
   });
 
   it('should return 404 for delete pickup non-existent pickup', async () => {
-    (
-      deletePickupService as vi.MockedFunction<typeof deletePickupService>
-    ).mockResolvedValue(null);
+    mockPickupService.getPickup.mockResolvedValue(null);
 
     const event: DeepPartial<APIGatewayProxyEvent> = {
       pathParameters: { pickupId: 'nonexistent' },
@@ -862,9 +811,10 @@ describe('pickup lambdas', () => {
   });
 
   it('should return 404 for delete pickup deleted pickup', async () => {
-    (
-      getPickupService as vi.MockedFunction<typeof getPickupService>
-    ).mockResolvedValue({ ...mockCreatedPickup, status: 'deleted' });
+    mockPickupService.getPickup.mockResolvedValue({
+      ...mockCreatedPickup,
+      status: 'deleted',
+    });
 
     const event: DeepPartial<APIGatewayProxyEvent> = {
       pathParameters: { pickupId: '123' },
@@ -885,12 +835,8 @@ describe('pickup lambdas', () => {
 
   it('should return 403 for delete pickup with driver role', async () => {
     // Update calls get pickup
-    (
-      getPickupService as vi.MockedFunction<typeof getPickupService>
-    ).mockResolvedValue(mockCreatedPickup);
-    (
-      deletePickupService as vi.MockedFunction<typeof deletePickupService>
-    ).mockResolvedValue(mockCreatedPickup);
+    mockPickupService.getPickup.mockResolvedValue(mockCreatedPickup);
+    mockPickupService.deletePickup.mockResolvedValue(mockCreatedPickup);
 
     const event: DeepPartial<APIGatewayProxyEvent> = {
       pathParameters: { pickupId: '123' },
@@ -911,9 +857,10 @@ describe('pickup lambdas', () => {
 
   it('should return 403 for delete pickup with improper pickup status', async () => {
     // delete calls get pickup
-    (
-      getPickupService as vi.MockedFunction<typeof getPickupService>
-    ).mockResolvedValue({ ...mockCreatedPickup, status: 'in_progress' });
+    mockPickupService.getPickup.mockResolvedValue({
+      ...mockCreatedPickup,
+      status: 'in_progress',
+    });
 
     const event: DeepPartial<APIGatewayProxyEvent> = {
       pathParameters: { pickupId: '123' },
@@ -931,9 +878,10 @@ describe('pickup lambdas', () => {
       message: 'Cannot delete pickup with status in_progress',
     });
 
-    (
-      getPickupService as vi.MockedFunction<typeof getPickupService>
-    ).mockResolvedValue({ ...mockCreatedPickup, status: 'completed' });
+    mockPickupService.getPickup.mockResolvedValue({
+      ...mockCreatedPickup,
+      status: 'completed',
+    });
 
     const result2 = await deletePickup(
       event as APIGatewayProxyEvent,
@@ -946,9 +894,10 @@ describe('pickup lambdas', () => {
       message: 'Cannot delete pickup with status completed',
     });
 
-    (
-      getPickupService as vi.MockedFunction<typeof getPickupService>
-    ).mockResolvedValue({ ...mockCreatedPickup, status: 'pending' });
+    mockPickupService.getPickup.mockResolvedValue({
+      ...mockCreatedPickup,
+      status: 'pending',
+    });
 
     const result4 = await deletePickup(
       event as APIGatewayProxyEvent,
@@ -963,14 +912,13 @@ describe('pickup lambdas', () => {
   });
 
   it('should return 500 for delete pickup internal server error', async () => {
-    // Update calls get pickup
-    (
-      getPickupService as vi.MockedFunction<typeof getPickupService>
-    ).mockResolvedValue(mockCreatedPickup);
+    // delete calls get pickup
+    mockPickupService.getPickup.mockResolvedValue(mockCreatedPickup);
+
     // Mock deletePickupService to throw an error
-    (
-      deletePickupService as vi.MockedFunction<typeof deletePickupService>
-    ).mockRejectedValue(new Error('Database error'));
+    mockPickupService.deletePickup.mockRejectedValue(
+      new Error('Database error'),
+    );
 
     const event: DeepPartial<APIGatewayProxyEvent> = {
       pathParameters: { pickupId: '123' },
@@ -991,14 +939,10 @@ describe('pickup lambdas', () => {
 });
 
 it('should return 200 for a valid accept pickup', async () => {
-  // Update calls get pickup
-  (
-    getPickupService as vi.MockedFunction<typeof getPickupService>
-  ).mockResolvedValue(mockCreatedPickup);
+  // accept calls get pickup
+  mockPickupService.getPickup.mockResolvedValue(mockCreatedPickup);
 
-  (
-    acceptPickupService as vi.MockedFunction<typeof acceptPickupService>
-  ).mockResolvedValue(mockAcceptedPickup);
+  mockPickupService.acceptPickup.mockResolvedValue(mockAcceptedPickup);
 
   const event: DeepPartial<APIGatewayProxyEvent> = {
     pathParameters: { pickupId: '123' },
@@ -1015,17 +959,14 @@ it('should return 200 for a valid accept pickup', async () => {
   expect(JSON.parse((result as APIGatewayProxyResult).body)).toEqual(
     mockAcceptedPickup,
   );
+  expect(mockPickupService.acceptPickup).toHaveBeenCalledWith('123', DRIVER_ID);
 });
 
 it('should return 200 for admin accept pickup', async () => {
-  // Update calls get pickup
-  (
-    getPickupService as vi.MockedFunction<typeof getPickupService>
-  ).mockResolvedValue(mockCreatedPickup);
+  // accept calls get pickup
+  mockPickupService.getPickup.mockResolvedValue(mockCreatedPickup);
 
-  (
-    acceptPickupService as vi.MockedFunction<typeof acceptPickupService>
-  ).mockResolvedValue(mockAcceptedPickup);
+  mockPickupService.acceptPickup.mockResolvedValue(mockAcceptedPickup);
 
   const event: DeepPartial<APIGatewayProxyEvent> = {
     pathParameters: { pickupId: '123' },
@@ -1045,10 +986,8 @@ it('should return 200 for admin accept pickup', async () => {
 });
 
 it('should return 400 for acceptPickup with an invalid pickupId', async () => {
-  // Update calls get pickup
-  (
-    acceptPickupService as vi.MockedFunction<typeof acceptPickupService>
-  ).mockResolvedValue(null);
+  // Accept calls get pickup
+  mockPickupService.getPickup.mockResolvedValue(mockCreatedPickup);
 
   const event: DeepPartial<APIGatewayProxyEvent> = {
     requestContext: requestContextDriver,
@@ -1067,14 +1006,10 @@ it('should return 400 for acceptPickup with an invalid pickupId', async () => {
 });
 
 it('should return 403 for an invalid role for accept pickup', async () => {
-  // Update calls get pickup
-  (
-    getPickupService as vi.MockedFunction<typeof getPickupService>
-  ).mockResolvedValue(mockCreatedPickup);
+  // Accept calls get pickup
+  mockPickupService.getPickup.mockResolvedValue(mockCreatedPickup);
 
-  (
-    acceptPickupService as vi.MockedFunction<typeof acceptPickupService>
-  ).mockResolvedValue(mockAcceptedPickup);
+  mockPickupService.acceptPickup.mockResolvedValue(mockAcceptedPickup);
 
   const event: DeepPartial<APIGatewayProxyEvent> = {
     pathParameters: { pickupId: '123' },
@@ -1095,13 +1030,9 @@ it('should return 403 for an invalid role for accept pickup', async () => {
 
 it('should return 404 for pickup not found for accept pickup', async () => {
   // Update calls get pickup
-  (
-    getPickupService as vi.MockedFunction<typeof getPickupService>
-  ).mockResolvedValue(null);
+  mockPickupService.getPickup.mockResolvedValue(null);
 
-  (
-    acceptPickupService as vi.MockedFunction<typeof acceptPickupService>
-  ).mockResolvedValue(mockAcceptedPickup);
+  mockPickupService.acceptPickup.mockResolvedValue(mockAcceptedPickup);
 
   const event: DeepPartial<APIGatewayProxyEvent> = {
     pathParameters: { pickupId: '123' },
@@ -1122,9 +1053,10 @@ it('should return 404 for pickup not found for accept pickup', async () => {
 
 it('should return 404 for deleted pickup for accept pickup', async () => {
   // Update calls get pickup
-  (
-    getPickupService as vi.MockedFunction<typeof getPickupService>
-  ).mockResolvedValue({ ...mockCreatedPickup, status: 'deleted' });
+  mockPickupService.getPickup.mockResolvedValue({
+    ...mockCreatedPickup,
+    status: 'deleted',
+  });
 
   const event: DeepPartial<APIGatewayProxyEvent> = {
     pathParameters: { pickupId: '123' },
@@ -1145,13 +1077,12 @@ it('should return 404 for deleted pickup for accept pickup', async () => {
 
 it('should return 409 for a pickup not in available state for accept pickup', async () => {
   // accept calls get pickup
-  (
-    getPickupService as vi.MockedFunction<typeof getPickupService>
-  ).mockResolvedValue({ ...mockCreatedPickup, status: 'cancelled' });
+  mockPickupService.getPickup.mockResolvedValue({
+    ...mockCreatedPickup,
+    status: 'cancelled',
+  });
 
-  (
-    acceptPickupService as vi.MockedFunction<typeof acceptPickupService>
-  ).mockResolvedValue(mockAcceptedPickup);
+  mockPickupService.acceptPickup.mockResolvedValue(mockAcceptedPickup);
 
   const event: DeepPartial<APIGatewayProxyEvent> = {
     pathParameters: { pickupId: '123' },
@@ -1171,14 +1102,10 @@ it('should return 409 for a pickup not in available state for accept pickup', as
 });
 
 it('should return 500 for accept pickup internal server error', async () => {
-  // Update calls get pickup
-  (
-    getPickupService as vi.MockedFunction<typeof getPickupService>
-  ).mockResolvedValue(mockCreatedPickup);
+  // accept calls get pickup
+  mockPickupService.getPickup.mockResolvedValue(mockCreatedPickup);
   // Mock deletePickupService to throw an error
-  (
-    acceptPickupService as vi.MockedFunction<typeof acceptPickupService>
-  ).mockRejectedValue(new Error('Database error'));
+  mockPickupService.acceptPickup.mockRejectedValue(new Error('Database error'));
 
   const event: DeepPartial<APIGatewayProxyEvent> = {
     pathParameters: { pickupId: '123' },
@@ -1203,9 +1130,7 @@ it('should return 200 for a valid admin  get available pickups', async () => {
     { ...mockCreatedPickup, pickupId: 234 },
     { ...mockCreatedPickup, pickupId: 456 },
   ];
-  (
-    availablePickupsService as vi.MockedFunction<typeof availablePickupsService>
-  ).mockResolvedValue(pickups);
+  mockPickupService.availablePickups.mockResolvedValue(pickups);
 
   const event: DeepPartial<APIGatewayProxyEvent> = {
     requestContext: requestContextAdmin,
@@ -1227,9 +1152,7 @@ it('should return 200 for a valid get available pickups', async () => {
     { ...mockCreatedPickup, pickupId: 234 },
     { ...mockCreatedPickup, pickupId: 456 },
   ];
-  (
-    availablePickupsService as vi.MockedFunction<typeof availablePickupsService>
-  ).mockResolvedValue(pickups);
+  mockPickupService.availablePickups.mockResolvedValue(pickups);
 
   const event: DeepPartial<APIGatewayProxyEvent> = {
     requestContext: requestContextDriver,
@@ -1251,9 +1174,7 @@ it('should return 403 for a user get available pickups', async () => {
     { ...mockCreatedPickup, pickupId: 234 },
     { ...mockCreatedPickup, pickupId: 456 },
   ];
-  (
-    availablePickupsService as vi.MockedFunction<typeof availablePickupsService>
-  ).mockResolvedValue(pickups);
+  mockPickupService.availablePickups.mockResolvedValue(pickups);
 
   const event: DeepPartial<APIGatewayProxyEvent> = {
     requestContext: requestContext,
@@ -1273,9 +1194,9 @@ it('should return 403 for a user get available pickups', async () => {
 
 it('should return 500 for available pickups internal server error', async () => {
   // Mock availablePickupsService to throw an error
-  (
-    availablePickupsService as vi.MockedFunction<typeof availablePickupsService>
-  ).mockRejectedValue(new Error('Database error'));
+  mockPickupService.availablePickups.mockRejectedValue(
+    new Error('Database error'),
+  );
 
   const event: DeepPartial<APIGatewayProxyEvent> = {
     pathParameters: { pickupId: '123' },
@@ -1295,12 +1216,8 @@ it('should return 500 for available pickups internal server error', async () => 
 });
 
 it('should return 200 for a valid cancel accept pickup', async () => {
-  (
-    getPickupService as vi.MockedFunction<typeof getPickupService>
-  ).mockResolvedValue(mockAcceptedPickup);
-  (
-    updatePickupService as vi.MockedFunction<typeof updatePickupService>
-  ).mockResolvedValue(mockCreatedPickup);
+  mockPickupService.getPickup.mockResolvedValue(mockAcceptedPickup);
+  mockPickupService.updatePickup.mockResolvedValue(mockCreatedPickup);
 
   const event: DeepPartial<APIGatewayProxyEvent> = {
     pathParameters: { pickupId: '123' },
@@ -1314,7 +1231,7 @@ it('should return 200 for a valid cancel accept pickup', async () => {
   );
 
   expect(result?.statusCode).toBe(200);
-  expect(updatePickupService).toHaveBeenCalledWith('123', {
+  expect(mockPickupService.updatePickup).toHaveBeenCalledWith('123', {
     driverId: null,
     status: 'available',
   });
@@ -1324,12 +1241,8 @@ it('should return 200 for a valid cancel accept pickup', async () => {
 });
 
 it('should return 200 for admin cancel pickup', async () => {
-  (
-    getPickupService as vi.MockedFunction<typeof getPickupService>
-  ).mockResolvedValue(mockAcceptedPickup);
-  (
-    updatePickupService as vi.MockedFunction<typeof updatePickupService>
-  ).mockResolvedValue(mockCreatedPickup);
+  mockPickupService.getPickup.mockResolvedValue(mockAcceptedPickup);
+  mockPickupService.updatePickup.mockResolvedValue(mockCreatedPickup);
 
   const event: DeepPartial<APIGatewayProxyEvent> = {
     pathParameters: { pickupId: '123' },
@@ -1343,7 +1256,7 @@ it('should return 200 for admin cancel pickup', async () => {
   );
 
   expect(result?.statusCode).toBe(200);
-  expect(updatePickupService).toHaveBeenCalledWith('123', {
+  expect(mockPickupService.updatePickup).toHaveBeenCalledWith('123', {
     driverId: null,
     status: 'available',
   });
@@ -1370,14 +1283,8 @@ it('should return 400 for cancelAcceptedPickup without pickupId', async () => {
 });
 
 it('should return 403 for an invalid role for cancel accepted pickup', async () => {
-  // Update calls get pickup
-  (
-    getPickupService as vi.MockedFunction<typeof getPickupService>
-  ).mockResolvedValue(mockCreatedPickup);
-
-  (
-    acceptPickupService as vi.MockedFunction<typeof acceptPickupService>
-  ).mockResolvedValue(mockAcceptedPickup);
+  // cancel calls get pickup
+  mockPickupService.getPickup.mockResolvedValue(mockCreatedPickup);
 
   const event: DeepPartial<APIGatewayProxyEvent> = {
     pathParameters: { pickupId: '123' },
@@ -1397,10 +1304,8 @@ it('should return 403 for an invalid role for cancel accepted pickup', async () 
 });
 
 it('should return 404 for pickup not found for cancel accepted pickup', async () => {
-  // Update calls get pickup
-  (
-    getPickupService as vi.MockedFunction<typeof getPickupService>
-  ).mockResolvedValue(null);
+  // cancel calls get pickup
+  mockPickupService.getPickup.mockResolvedValue(null);
 
   const event: DeepPartial<APIGatewayProxyEvent> = {
     pathParameters: { pickupId: '123' },
@@ -1421,9 +1326,10 @@ it('should return 404 for pickup not found for cancel accepted pickup', async ()
 
 it('should return 404 for deleted pickup for cancel accepted pickup', async () => {
   // Update calls get pickup
-  (
-    getPickupService as vi.MockedFunction<typeof getPickupService>
-  ).mockResolvedValue({ ...mockAcceptedPickup, status: 'deleted' });
+  mockPickupService.getPickup.mockResolvedValue({
+    ...mockAcceptedPickup,
+    status: 'deleted',
+  });
 
   const event: DeepPartial<APIGatewayProxyEvent> = {
     pathParameters: { pickupId: '123' },
@@ -1443,12 +1349,11 @@ it('should return 404 for deleted pickup for cancel accepted pickup', async () =
 });
 
 it('should return 409 for a invalid pickup state cancel accept pickup', async () => {
-  (
-    getPickupService as vi.MockedFunction<typeof getPickupService>
-  ).mockResolvedValue({ ...mockAcceptedPickup, status: 'pending' });
-  (
-    updatePickupService as vi.MockedFunction<typeof updatePickupService>
-  ).mockResolvedValue(mockCreatedPickup);
+  mockPickupService.getPickup.mockResolvedValue({
+    ...mockAcceptedPickup,
+    status: 'pending',
+  });
+  mockPickupService.updatePickup.mockResolvedValue(mockCreatedPickup);
 
   const event: DeepPartial<APIGatewayProxyEvent> = {
     pathParameters: { pickupId: '123' },
@@ -1469,9 +1374,7 @@ it('should return 409 for a invalid pickup state cancel accept pickup', async ()
 
 it('should return 500 for cancel accepted pickup internal server error', async () => {
   // Mock availablePickupsService to throw an error
-  (
-    getPickupService as vi.MockedFunction<typeof getPickupService>
-  ).mockRejectedValue(new Error('Database error'));
+  mockPickupService.getPickup.mockRejectedValue(new Error('Database error'));
 
   const event: DeepPartial<APIGatewayProxyEvent> = {
     pathParameters: { pickupId: '123' },

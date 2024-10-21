@@ -9,7 +9,26 @@ import {
 
 import type { NewDriver, UpdateDriver } from '@/schemas/apiSchema.d.ts';
 
+vi.mock('@aws-sdk/client-cognito-identity-provider');
+
+// Mock cognito
+const mockCognito = {
+  adminGetUser: vi.fn(),
+};
+mockCognito.adminGetUser.mockResolvedValue({});
+
 const prisma = new PrismaClient();
+
+const mockCognitoUserId = 'test-cognito-id';
+const mockDriverData = {
+  name: 'John Doe',
+  email: 'john@example.com',
+  phone: '303-555-1212',
+  address: '11382 High St. Northglenn, CO 80233',
+  vehicleMake: 'Ford',
+  vehicleModel: 'f150',
+  vehicleYear: 1998,
+};
 
 beforeAll(async () => {
   // Connect to the test database
@@ -29,26 +48,22 @@ beforeEach(async () => {
 describe('Driver Service Integration Tests', () => {
   it('should create a new Driver', async () => {
     const newDriver: NewDriver = {
-      name: 'John Doe',
-      email: 'john@example.com',
-      phone: '303-555-1212',
-      address: '11382 High St. Northglenn, CO 80233',
-      password: 'password123!',
-      vehicleMake: 'Ford',
-      vehicleModel: 'f150',
-      vehicleYear: 1998,
+      ...mockDriverData,
     };
 
-    const createdDriver = await createDriverService(newDriver);
+    const createdDriver = await createDriverService(
+      mockCognitoUserId,
+      newDriver,
+    );
 
-    expect(createdDriver).toHaveProperty('id');
-    expect(createdDriver.name).toBe(newDriver.name);
-    expect(createdDriver.email).toBe(newDriver.email);
-    expect(createdDriver.phone).toBe(newDriver.phone);
-    expect(createdDriver.address).toBe(newDriver.address);
-    expect(createdDriver.vehicleMake).toBe(newDriver.vehicleMake);
-    expect(createdDriver.vehicleModel).toBe(newDriver.vehicleModel);
-    expect(createdDriver.vehicleYear).toBe(newDriver.vehicleYear);
+    expect(createdDriver.id).toEqual(mockCognitoUserId);
+    expect(createdDriver.name).toBe(mockDriverData.name);
+    expect(createdDriver.email).toBe(mockDriverData.email);
+    expect(createdDriver.phone).toBe(mockDriverData.phone);
+    expect(createdDriver.address).toBe(mockDriverData.address);
+    expect(createdDriver.vehicleMake).toBe(mockDriverData.vehicleMake);
+    expect(createdDriver.vehicleModel).toBe(mockDriverData.vehicleModel);
+    expect(createdDriver.vehicleYear).toBe(mockDriverData.vehicleYear);
     expect(createdDriver).toHaveProperty('createdAt');
     expect(createdDriver).toHaveProperty('updatedAt');
 
@@ -67,14 +82,8 @@ describe('Driver Service Integration Tests', () => {
   it('should retrieve an existing driver', async () => {
     const newDriver = await prisma.driver.create({
       data: {
-        name: 'John Doe',
-        email: 'john@example.com',
-        phone: '303-555-1212',
-        address: '11382 High St. Northglenn, CO 80233',
-        password: 'password123!',
-        vehicleMake: 'Ford',
-        vehicleModel: 'f150',
-        vehicleYear: 1998,
+        id: mockCognitoUserId,
+        ...mockDriverData,
       },
     });
 
@@ -95,14 +104,8 @@ describe('Driver Service Integration Tests', () => {
   it('should update an existing driver', async () => {
     const newDriver = await prisma.driver.create({
       data: {
-        name: 'John Doe',
-        email: 'john@example.com',
-        phone: '303-555-1212',
-        address: '11382 High St. Northglenn, CO 80233',
-        password: 'password123!',
-        vehicleMake: 'Ford',
-        vehicleModel: 'f150',
-        vehicleYear: 1998,
+        id: mockCognitoUserId,
+        ...mockDriverData,
       },
     });
     const updateData: UpdateDriver = {
@@ -135,14 +138,8 @@ describe('Driver Service Integration Tests', () => {
   it('should delete an existing driver', async () => {
     const newDriver = await prisma.driver.create({
       data: {
-        name: 'John Doe',
-        email: 'john@example.com',
-        phone: '303-555-1212',
-        address: '11382 High St. Northglenn, CO 80233',
-        password: 'password123!',
-        vehicleMake: 'Ford',
-        vehicleModel: 'f150',
-        vehicleYear: 1998,
+        id: mockCognitoUserId,
+        ...mockDriverData,
       },
     });
 

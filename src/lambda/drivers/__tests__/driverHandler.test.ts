@@ -18,13 +18,11 @@ vi.mock('../driverServices', () => ({
 }));
 
 // Import after mocking
-import {
-  createDriver,
-  getDriver,
-  getDrivers,
-  updateDriver,
-  deleteDriver,
-} from '../driverHandlers.js';
+import { handler as createDriver } from '../createDriver.js';
+import { handler as getDriver } from '../getDriver.js';
+import { handler as getDrivers } from '../getDrivers.js';
+import { handler as updateDriver } from '../updateDriver.js';
+import { handler as deleteDriver } from '../deleteDriver.js';
 import {
   createDriverService,
   getDriverService,
@@ -41,7 +39,6 @@ const mockDriver = {
   name: 'Test User',
   phone: '303-555-1212',
   address: '11382 High St. Northglenn, CO 80233',
-  password: 'password',
   vehicleMake: 'Ford',
   vehicleModel: 'F150',
   vehicleYear: 1998,
@@ -89,20 +86,17 @@ describe('driver lambdas', () => {
       createDriverService as vi.MockedFunction<typeof createDriverService>
     ).mockResolvedValue(mockCreatedDriver);
 
-    const event: Partial<APIGatewayProxyEvent> = {
+    const event: DeepPartial<APIGatewayProxyEvent> = {
+      requestContext,
       body: JSON.stringify(mockDriver),
     };
 
-    const result = await createDriver(
-      event as APIGatewayProxyEvent,
-      {} as Context,
-      {} as Callback,
-    );
+    const result = await createDriver(event, {} as Context, {} as Callback);
     expect(result?.statusCode).toBe(201);
     expect(JSON.parse((result as APIGatewayProxyResult).body)).toEqual(
       mockCreatedDriver,
     );
-    expect(createDriverService).toHaveBeenCalledWith(mockDriver);
+    expect(createDriverService).toHaveBeenCalledWith(DRIVER_ID, mockDriver);
   });
 
   it('should return 400 for invalid create driver input', async () => {
@@ -111,15 +105,12 @@ describe('driver lambdas', () => {
       // Missing required fields
     };
 
-    const event: Partial<APIGatewayProxyEvent> = {
+    const event: DeepPartial<APIGatewayProxyEvent> = {
+      requestContext,
       body: JSON.stringify(invalidDriver),
     };
 
-    const result = await createDriver(
-      event as APIGatewayProxyEvent,
-      {} as Context,
-      {} as Callback,
-    );
+    const result = await createDriver(event, {} as Context, {} as Callback);
 
     expect(result?.statusCode).toBe(400);
     expect(JSON.parse((result as APIGatewayProxyResult).body)).toHaveProperty(

@@ -16,6 +16,7 @@
     "rootDir": "./src",
     "baseUrl": "./src",
     "paths": {
+      "@/*": ["src/*"],
       "@/schemas/*": ["schemas/*"],
       "@/utils/*": ["utils/*"]
     }

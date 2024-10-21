@@ -7,7 +7,7 @@
   },
   "files": {
     "ignoreUnknown": false,
-    "ignore": ["src/schemas/zodSchemas.ts"]
+    "ignore": ["src/schemas/zodSchemas.ts", "dist"]
   },
   "formatter": {
     "enabled": true,

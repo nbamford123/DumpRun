@@ -174,15 +174,11 @@ export interface components {
       name: string;
       /** Format: email */
       email: string;
-      /** Format: password */
-      password: string;
       phone: string;
       address: string;
     };
     UpdateUser: {
       name?: string;
-      /** Format: password */
-      password?: string;
       phone?: string;
       address?: string;
     };
@@ -201,8 +197,6 @@ export interface components {
       name: string;
       /** Format: email */
       email: string;
-      /** Format: password */
-      password: string;
       phone: string;
       address: string;
       vehicleMake: string;
@@ -211,8 +205,6 @@ export interface components {
     };
     UpdateDriver: {
       name?: string;
-      /** Format: password */
-      password?: string;
       phone?: string;
       address?: string;
       vehicleMake?: string;
@@ -636,17 +628,23 @@ export interface operations {
   };
   listPickups: {
     parameters: {
-      query?: {
-        status?: (
+      query: {
+        /** @description The status of pickups to retrieve */
+        status:
           | 'pending'
           | 'assigned'
           | 'completed'
           | 'in_progress'
           | 'cancelled'
-          | 'deleted'
-        )[];
+          | 'deleted';
+        /** @description The maximum number of pickups to return */
         limit?: number;
+        /** @description Pagination cursor for fetching next set of results */
         cursor?: string;
+        /** @description Start of the requested time range for filtering pickups (inclusive) */
+        startRequestedTime?: string;
+        /** @description End of the requested time range for filtering pickups (inclusive) */
+        endRequestedTime?: string;
       };
       header?: never;
       path?: never;

@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 import { PrismaClient } from '@prisma/client';
+
 import {
   createUserService,
   getUserService,
@@ -9,7 +10,23 @@ import {
 
 import type { NewUser, UpdateUser } from '@/schemas/apiSchema.d.ts';
 
+vi.mock('@aws-sdk/client-cognito-identity-provider');
+
+// Mock cognito
+const mockCognito = {
+  adminGetUser: vi.fn(),
+};
+mockCognito.adminGetUser.mockResolvedValue({});
+
 const prisma = new PrismaClient();
+
+const mockCognitoUserId = 'test-cognito-id';
+const mockUserData = {
+  name: 'Test User',
+  email: 'test@example.com',
+  phone: '1234567890',
+  address: '123 Test St',
+};
 
 beforeAll(async () => {
   // Connect to the test database
@@ -28,21 +45,16 @@ beforeEach(async () => {
 
 describe('User Service Integration Tests', () => {
   it('should create a new user', async () => {
-    const newUser: NewUser = {
-      name: 'John Doe',
-      email: 'john@example.com',
-      phone: '303-555-1212',
-      address: '11382 High St. Northglenn, CO 80233',
-      password: 'password123!',
-    };
+    const createdUser = await createUserService(
+      mockCognitoUserId,
+      mockUserData,
+    );
 
-    const createdUser = await createUserService(newUser);
-
-    expect(createdUser).toHaveProperty('id');
-    expect(createdUser.name).toBe(newUser.name);
-    expect(createdUser.email).toBe(newUser.email);
-    expect(createdUser.phone).toBe(newUser.phone);
-    expect(createdUser.address).toBe(newUser.address);
+    expect(createdUser.id).toEqual(mockCognitoUserId);
+    expect(createdUser.name).toBe(mockUserData.name);
+    expect(createdUser.email).toBe(mockUserData.email);
+    expect(createdUser.phone).toBe(mockUserData.phone);
+    expect(createdUser.address).toBe(mockUserData.address);
     expect(createdUser).toHaveProperty('createdAt');
     expect(createdUser).toHaveProperty('updatedAt');
 
@@ -61,11 +73,8 @@ describe('User Service Integration Tests', () => {
   it('should retrieve an existing user', async () => {
     const newUser = await prisma.user.create({
       data: {
-        name: 'John Doe',
-        email: 'john@example.com',
-        phone: '303-555-1212',
-        address: '11382 High St. Northglenn, CO 80233',
-        password: 'password123!',
+        id: mockCognitoUserId,
+        ...mockUserData,
       },
     });
 
@@ -86,11 +95,8 @@ describe('User Service Integration Tests', () => {
   it('should update an existing user', async () => {
     const newUser = await prisma.user.create({
       data: {
-        name: 'John Doe',
-        email: 'john@example.com',
-        phone: '303-555-1212',
-        address: '11382 High St. Northglenn, CO 80233',
-        password: 'password123!',
+        id: mockCognitoUserId,
+        ...mockUserData,
       },
     });
 
@@ -123,11 +129,8 @@ describe('User Service Integration Tests', () => {
   it('should delete an existing user', async () => {
     const newUser = await prisma.user.create({
       data: {
-        name: 'John Doe',
-        email: 'john@example.com',
-        phone: '303-555-1212',
-        address: '11382 High St. Northglenn, CO 80233',
-        password: 'password123!',
+        id: mockCognitoUserId,
+        ...mockUserData,
       },
     });
     const newUserWithISOStrings = {

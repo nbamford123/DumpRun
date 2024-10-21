@@ -7,10 +7,11 @@ RUN npm install -g tsx
 
 COPY package.json ./
 COPY pnpm-lock.yaml ./
+
+RUN pnpm i
+
 COPY tsconfig.json ./
 COPY .env.test ./
 COPY dynamodb ./dynamodb
-
-RUN pnpm i
 
 CMD ["tsx", "dynamodb/schema.ts"]

@@ -5,7 +5,6 @@ const NewUser = z
   .object({
     name: z.string().min(1).max(100),
     email: z.string().email(),
-    password: z.string().min(8),
     phone: z.string().regex(/^\+?[1-9]\d{1,14}$|^\d{3}-\d{3}-\d{4}$/),
     address: z.string(),
   })
@@ -32,7 +31,6 @@ const Error = z
 const UpdateUser = z
   .object({
     name: z.string().min(1).max(100),
-    password: z.string().min(8),
     phone: z.string().regex(/^\+?[1-9]\d{1,14}$|^\d{3}-\d{3}-\d{4}$/),
     address: z.string(),
   })
@@ -43,7 +41,6 @@ const NewDriver = z
   .object({
     name: z.string().min(1).max(100),
     email: z.string().email(),
-    password: z.string().min(8),
     phone: z.string().regex(/^\+?[1-9]\d{1,14}$|^\d{3}-\d{3}-\d{4}$/),
     address: z.string(),
     vehicleMake: z.string(),
@@ -71,7 +68,6 @@ const Driver = z
 const UpdateDriver = z
   .object({
     name: z.string().min(1).max(100),
-    password: z.string().min(8),
     phone: z.string().regex(/^\+?[1-9]\d{1,14}$|^\d{3}-\d{3}-\d{4}$/),
     address: z.string(),
     vehicleMake: z.string(),
@@ -382,18 +378,14 @@ const endpoints = makeApi([
       {
         name: "status",
         type: "Query",
-        schema: z
-          .array(
-            z.enum([
-              "pending",
-              "assigned",
-              "completed",
-              "in_progress",
-              "cancelled",
-              "deleted",
-            ])
-          )
-          .optional(),
+        schema: z.enum([
+          "pending",
+          "assigned",
+          "completed",
+          "in_progress",
+          "cancelled",
+          "deleted",
+        ]),
       },
       {
         name: "limit",
@@ -404,6 +396,16 @@ const endpoints = makeApi([
         name: "cursor",
         type: "Query",
         schema: z.string().optional(),
+      },
+      {
+        name: "startRequestedTime",
+        type: "Query",
+        schema: z.string().datetime({ offset: true }).optional(),
+      },
+      {
+        name: "endRequestedTime",
+        type: "Query",
+        schema: z.string().datetime({ offset: true }).optional(),
       },
     ],
     response: z

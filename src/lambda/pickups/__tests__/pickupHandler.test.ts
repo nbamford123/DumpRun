@@ -476,7 +476,7 @@ describe('pickup lambdas', () => {
       22,
       'abc123',
       undefined,
-      undefined
+      undefined,
     );
     expect(JSON.parse((result as APIGatewayProxyResult).body)).toEqual({
       pickups: mockPickups,

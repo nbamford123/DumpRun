@@ -1,9 +1,10 @@
 # Temporary ToDo File
 
+- next: lambda api execution permissions script/e2e tests, then update readmes-- backend complete!
+- are we sure we don't need cogntio auth for create drivers/users? Won't they exist in cognito before the dumprun records get created?
 - need to figure out a way to use the dynamodb schema in both test and prod, right now I'm swapping out the configs, that sux
 - dynamo table name needs to be defined somewhere rather than sprinkled everywhere throughout the code, probably ENV
 - is a 200 return from soft delete pickup correct?
-- acceptPickup returns 500 with not found message
 - VPC Configuration: If your DynamoDB is accessed via VPC endpoints, you'll need to configure VPC settings for your Lambda.
 - X-Ray Tracing: Consider adding X-Ray tracing for better insights into your Lambda and DynamoDB interactions.
 - should users and drivers be soft deleted like pickups?
@@ -31,21 +32,18 @@
 - Documentation will become an issue soon enough, too. Confluence?
 - For admin frontend, does Next make the most sense?
 
-1. API Gateway Integration:
-  Once your Lambda function are implemented and tested, set up the integration with API Gateway. This involves configuring the routes defined in your OpenAPI spec to trigger the appropriate Lambda functions.
-  You can do this manually in the console or use Infrastructure as Code (IaC) tools like AWS SAM, CloudFormation, or Terraform.
-2. Testing:
+1. Testing:
   Develop integration tests that cover the entire flow from API Gateway through your Lambda functions and to the database. This ensures that all components of your system work together as expected.
   Create API tests to verify end-to-end functionality.
   Conduct security testing, especially around your authentication setup.
-3. Set Up CI/CD Pipeline:
+2. Set Up CI/CD Pipeline:
   Create a CI/CD pipeline using a service like AWS CodePipeline or GitHub Actions. This should automate the process of testing, building, and deploying your application.
-4. Monitoring and Logging:
+3. Monitoring and Logging:
   Implement logging in your Lambda functions and set up monitoring using AWS CloudWatch. This will help you track the performance and behavior of your application in production.
-5. Optimize and scale:
+4. Optimize and scale:
   Based on your testing results, optimize your Lambda functions and database queries.
   Consider implementing caching if needed (e.g., API Gateway caching, DAX for DynamoDB).
-6. Documentation and monitoring:
+5. Documentation and monitoring:
   Update your API documentation.
   Set up CloudWatch alarms and logs for monitoring.
 
@@ -62,12 +60,6 @@ This Lambda function would receive the JWT, decode it, check the claims, and ret
 3. In Your Lambda Functions:
 The Lambda functions receive the decoded JWT claims in the event object.
 You can add logic in your Lambdas to check these claims and authorize actions accordingly.
-
-**Recommended Approach**:
-
-Use Cognito groups to categorize users and drivers.
-Set up API Gateway resource policies or a Lambda authorizer to enforce coarse-grained access control.
-Implement fine-grained access control in your Lambda functions by checking the Cognito groups or custom claims.
 
 ### Plan for Reviewing AWS Permissions
 
@@ -102,6 +94,34 @@ Regularly audit and update permissions as your application evolves.
 Use AWS IAM Access Analyzer to identify unused permissions and external access.
 Keep your team informed about the importance of AWS security best practices.
 
-
-
 TODO: Schedule permission review before moving to production. Target date: [Insert Date Here]
+
+1. Lambda Function Permissions:
+Each Lambda function needs permission to be invoked by API Gateway. You can add this permission using the AWS CLI or Lambda console. Here's an example CLI command:
+```bash
+aws lambda add-permission \
+  --function-name YourLambdaFunctionName \
+  --statement-id apigateway-permission \
+  --action lambda:InvokeFunction \
+  --principal apigateway.amazonaws.com \
+  --source-arn "arn:aws:execute-api:${REGION}:${ACCOUNT_ID}:${API_ID}/*/${HTTP_METHOD}${RESOURCE_PATH}"
+```
+Replace the placeholders with your actual values.
+
+2. CORS Configuration:
+If your API will be accessed from web browsers, you'll need to set up CORS (Cross-Origin Resource Sharing). This can be done in the API Gateway console or through your OpenAPI specification.
+
+3. API Key (optional):
+If you want to use API keys for certain endpoints, you'll need to create and configure these in API Gateway.
+
+4. Resource Policies:
+Consider setting up resource policies for your API to control who can invoke it at the API level.
+
+5. WAF (Web Application Firewall):
+For production APIs, consider setting up AWS WAF to protect against common web exploits.
+
+6. SSL/TLS:
+Ensure your API is only accessible via HTTPS. This is typically the default in API Gateway.
+
+7. Logging and Monitoring:
+Set up CloudWatch logs and metrics for your API to monitor usage and detect potential security issues.

@@ -16,6 +16,7 @@
         "summary": "Create a new user account",
         "operationId": "createUser",
         "tags": ["Users"],
+        "security": [],
         "requestBody": {
           "required": true,
           "content": {
@@ -267,6 +268,7 @@
         "summary": "Create a new driver account",
         "operationId": "createDriver",
         "tags": ["Drivers"],
+        "security": [],
         "requestBody": {
           "required": true,
           "content": {
@@ -525,15 +527,6 @@
             "CognitoAuth": ["user", "admin"]
           }
         ],
-        "x-amazon-apigateway-auth": {
-          "type": "cognito_user_pools"
-        },
-        "x-amazon-apigateway-integration": {
-          "type": "aws_proxy",
-          "uri": "arn:aws:apigateway:region:lambda:path/2015-03-31/functions/arn:aws:lambda:region:account-id:function:create-pickup/invocations",
-          "passthroughBehavior": "when_no_match",
-          "httpMethod": "POST"
-        },
         "requestBody": {
           "required": true,
           "content": {
@@ -672,7 +665,7 @@
         "tags": ["Pickups"],
         "security": [
           {
-            "CognitoAuth": []
+            "CognitoAuth": ["user", "driver", "admin"]
           }
         ],
         "parameters": [
@@ -866,7 +859,7 @@
         "tags": ["Pickups"],
         "security": [
           {
-            "CognitoAuth": ["driver"]
+            "CognitoAuth": ["driver", "admin"]
           }
         ],
         "parameters": [

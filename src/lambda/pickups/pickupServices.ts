@@ -7,6 +7,8 @@ import {
   DeleteCommand,
   GetCommand,
   PutCommand,
+  QueryCommand,
+  type QueryCommandInput,
   ScanCommand,
   UpdateCommand,
 } from '@aws-sdk/lib-dynamodb';
@@ -55,26 +57,44 @@ export class PickupService {
   };
 
   getPickups = async (
-    limit?: number,
-    startKey?: string,
-    status?: string[],
+    status: string,
+    limit = 20,
+    cursor?: string,
+    startRequestedTime?: string,
+    endRequestedTime?: string,
   ): Promise<{ pickups: Pickup[]; nextCursor: string | null }> => {
-    // which of these can be undefined to just return everything?
-    const params = {
-      TableName: this.tableName,
+    const defaultStartTime = '0000-01-01T00:00:00Z';
+    const defaultEndTime = '9999-12-31T23:59:59Z';
+
+    const params: QueryCommandInput = {
+      TableName: 'Pickups',
+      IndexName: 'StatusIndex',
+      KeyConditionExpression:
+        '#status = :status AND #requestedTime BETWEEN :start AND :end',
+      ExpressionAttributeNames: {
+        '#status': 'status',
+        '#requestedTime': 'requestedTime',
+      },
+      ExpressionAttributeValues: {
+        ':status': status,
+        ':start': startRequestedTime || defaultStartTime,
+        ':end': endRequestedTime || defaultEndTime,
+      },
       Limit: limit,
-      ExclusiveStartKey: startKey ? { id: startKey } : undefined,
-      FilterExpression:
-        status && status.length > 0 ? 'status IN (:status)' : undefined,
-      ExpressionAttributeValues:
-        status && status.length > 0 ? { ':status': status } : undefined,
+      ScanIndexForward: false, // This will return results in descending order of requestedTime
     };
 
-    const result = await this.dynamoDB.send(new ScanCommand(params));
+    if (cursor) {
+      params.ExclusiveStartKey = JSON.parse(cursor);
+    }
+    const command = new QueryCommand(params);
+    const result = await this.dynamoDB.send(command);
 
     return {
       pickups: result.Items || [],
-      nextCursor: result.LastEvaluatedKey ? result.LastEvaluatedKey.id : null,
+      nextCursor: result.LastEvaluatedKey
+        ? JSON.stringify(result.LastEvaluatedKey)
+        : null,
     };
   };
 

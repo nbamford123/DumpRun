@@ -457,7 +457,7 @@ describe('pickup lambdas', () => {
 
     const event: DeepPartial<APIGatewayProxyEvent> = {
       queryStringParameters: {
-        status: ['pending', 'assigned'],
+        status: 'pending',
         limit: 22,
         cursor: 'abc123',
       },
@@ -471,10 +471,13 @@ describe('pickup lambdas', () => {
     );
 
     expect(result?.statusCode).toBe(200);
-    expect(mockPickupService.getPickups).toHaveBeenCalledWith(22, 'abc123', [
+    expect(mockPickupService.getPickups).toHaveBeenCalledWith(
       'pending',
-      'assigned',
-    ]);
+      22,
+      'abc123',
+      undefined,
+      undefined
+    );
     expect(JSON.parse((result as APIGatewayProxyResult).body)).toEqual({
       pickups: mockPickups,
       nextCursor: 'def345',
@@ -956,6 +959,7 @@ it('should return 200 for a valid accept pickup', async () => {
   expect(JSON.parse((result as APIGatewayProxyResult).body)).toEqual(
     mockAcceptedPickup,
   );
+  expect(mockPickupService.acceptPickup).toHaveBeenCalledWith('123', DRIVER_ID);
 });
 
 it('should return 200 for admin accept pickup', async () => {

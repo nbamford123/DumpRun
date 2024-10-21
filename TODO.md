@@ -3,7 +3,6 @@
 - need to figure out a way to use the dynamodb schema in both test and prod, right now I'm swapping out the configs, that sux
 - dynamo table name needs to be defined somewhere rather than sprinkled everywhere throughout the code, probably ENV
 - is a 200 return from soft delete pickup correct?
-- getPickups returns 500 with zod error
 - acceptPickup returns 500 with not found message
 - VPC Configuration: If your DynamoDB is accessed via VPC endpoints, you'll need to configure VPC settings for your Lambda.
 - X-Ray Tracing: Consider adding X-Ray tracing for better insights into your Lambda and DynamoDB interactions.

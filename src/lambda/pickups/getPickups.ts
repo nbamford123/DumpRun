@@ -16,12 +16,17 @@ export const handler: APIGatewayProxyHandler = async (event) => {
       };
     }
     // Extract query parameters
-    const { status, limit, cursor } = listPickupsQuerySchema.parse(
-      event.queryStringParameters,
-    );
+    const { status, limit, cursor, startRequestedTime, endRequestedTime } =
+      listPickupsQuerySchema.parse(event.queryStringParameters);
 
     const pickupService = getPickupService();
-    const pickups = await pickupService.getPickups(limit, cursor, status);
+    const pickups = await pickupService.getPickups(
+      status,
+      limit,
+      cursor,
+      startRequestedTime,
+      endRequestedTime,
+    );
     return {
       statusCode: 200,
       body: JSON.stringify(pickups),

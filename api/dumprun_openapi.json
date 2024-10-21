@@ -579,22 +579,19 @@
           {
             "in": "query",
             "name": "status",
+            "required": true,
             "schema": {
-              "type": "array",
-              "items": {
-                "type": "string",
-                "enum": [
-                  "pending",
-                  "assigned",
-                  "completed",
-                  "in_progress",
-                  "cancelled",
-                  "deleted"
-                ]
-              }
+              "type": "string",
+              "enum": [
+                "pending",
+                "assigned",
+                "completed",
+                "in_progress",
+                "cancelled",
+                "deleted"
+              ]
             },
-            "style": "form",
-            "explode": false
+            "description": "The status of pickups to retrieve"
           },
           {
             "in": "query",
@@ -604,14 +601,34 @@
               "minimum": 1,
               "maximum": 100,
               "default": 20
-            }
+            },
+            "description": "The maximum number of pickups to return"
           },
           {
             "in": "query",
             "name": "cursor",
             "schema": {
               "type": "string"
-            }
+            },
+            "description": "Pagination cursor for fetching next set of results"
+          },
+          {
+            "in": "query",
+            "name": "startRequestedTime",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "description": "Start of the requested time range for filtering pickups (inclusive)"
+          },
+          {
+            "in": "query",
+            "name": "endRequestedTime",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "description": "End of the requested time range for filtering pickups (inclusive)"
           }
         ],
         "responses": {

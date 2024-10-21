@@ -2,7 +2,7 @@
 set -e
 
 # Configuration file
-CONFIG_FILE="lambda-config-pickups.json"
+CONFIG_FILE="lambda-config.json"
 
 # Function to read JSON config
 parse_json() {
@@ -75,7 +75,7 @@ deploy_lambda() {
     echo $role_arn
     
     # Create or update Lambda function
- # Prepare base parameters
+    # Prepare base parameters
     local parameters=(
         --function-name "$func_name"
         --handler "$handler"
@@ -106,8 +106,6 @@ deploy_lambda() {
         echo "No layer specified or layer is null. Skipping layer configuration."
     fi
 
-    echo "PARAMETERS: ${parameters[@]}"
-    
     if aws lambda get-function --function-name "$func_name" &>/dev/null; then
         echo "Updating existing Lambda function $func_name..."
         aws lambda update-function-configuration "${parameters[@]}"
@@ -138,9 +136,27 @@ deploy_lambda() {
     # fi
 }
 
-
 # Main execution
-lambda_functions=$(parse_json "keys[]" | tr ' ' '\n')
+
+# Check if a regex pattern was provided as an argument
+if [ $# -eq 1 ]; then
+    REGEX_PATTERN="$1"
+    echo "Filtering Lambda functions using pattern: $REGEX_PATTERN"
+else
+    REGEX_PATTERN=".*"  # Match all if no pattern provided
+    echo "No filter pattern provided. Processing all Lambda functions."
+fi
+
+lambda_functions=$(jq -r 'keys[]' "$CONFIG_FILE" | grep -E "$REGEX_PATTERN")
+
+if [ -z "$lambda_functions" ]; then
+    echo "No Lambda functions matched the provided pattern."
+    exit 0
+fi
+
+echo "Lambda functions to be processed:"
+echo "$lambda_functions"
+
 while IFS= read -r func; do
     handler=$(parse_json ".\"$func\".handler")
     role_name=$(parse_json ".\"$func\".role_name")

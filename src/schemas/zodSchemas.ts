@@ -378,18 +378,14 @@ const endpoints = makeApi([
       {
         name: "status",
         type: "Query",
-        schema: z
-          .array(
-            z.enum([
-              "pending",
-              "assigned",
-              "completed",
-              "in_progress",
-              "cancelled",
-              "deleted",
-            ])
-          )
-          .optional(),
+        schema: z.enum([
+          "pending",
+          "assigned",
+          "completed",
+          "in_progress",
+          "cancelled",
+          "deleted",
+        ]),
       },
       {
         name: "limit",
@@ -400,6 +396,16 @@ const endpoints = makeApi([
         name: "cursor",
         type: "Query",
         schema: z.string().optional(),
+      },
+      {
+        name: "startRequestedTime",
+        type: "Query",
+        schema: z.string().datetime({ offset: true }).optional(),
+      },
+      {
+        name: "endRequestedTime",
+        type: "Query",
+        schema: z.string().datetime({ offset: true }).optional(),
       },
     ],
     response: z

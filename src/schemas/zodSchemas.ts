@@ -1,6 +1,11 @@
 import { makeApi, Zodios, type ZodiosOptions } from "@zodios/core";
 import { z } from "zod";
 
+const Error = z
+  .object({ code: z.string(), message: z.string() })
+  .partial()
+  .strict()
+  .passthrough();
 const NewUser = z
   .object({
     name: z.string().min(1).max(100),
@@ -20,11 +25,6 @@ const User = z
     createdAt: z.string().datetime({ offset: true }),
     updatedAt: z.string().datetime({ offset: true }),
   })
-  .partial()
-  .strict()
-  .passthrough();
-const Error = z
-  .object({ code: z.string(), message: z.string() })
   .partial()
   .strict()
   .passthrough();
@@ -131,9 +131,9 @@ const UpdatePickup = z
   .strict();
 
 export const schemas = {
+  Error,
   NewUser,
   User,
-  Error,
   UpdateUser,
   NewDriver,
   Driver,
@@ -335,6 +335,87 @@ const endpoints = makeApi([
         status: 500,
         description: `Internal Server Error`,
         schema: Error,
+      },
+    ],
+  },
+  {
+    method: "get",
+    path: "/v1/health/dynamodb",
+    alias: "checkDynamoDBHealth",
+    requestFormat: "json",
+    response: z
+      .object({
+        status: z.literal("healthy"),
+        timestamp: z.string().datetime({ offset: true }),
+        table: z.string(),
+        latency: z.number(),
+      })
+      .partial()
+      .strict()
+      .passthrough(),
+    errors: [
+      {
+        status: 401,
+        description: `Unauthorized`,
+        schema: Error,
+      },
+      {
+        status: 403,
+        description: `Access forbidden`,
+        schema: Error,
+      },
+      {
+        status: 500,
+        description: `DynamoDB is unhealthy`,
+        schema: z
+          .object({
+            status: z.literal("unhealthy"),
+            timestamp: z.string().datetime({ offset: true }),
+            error: z.string(),
+          })
+          .partial()
+          .strict()
+          .passthrough(),
+      },
+    ],
+  },
+  {
+    method: "get",
+    path: "/v1/health/postgres",
+    alias: "checkPostgresHealth",
+    requestFormat: "json",
+    response: z
+      .object({
+        status: z.literal("healthy"),
+        timestamp: z.string().datetime({ offset: true }),
+        latency: z.number(),
+      })
+      .partial()
+      .strict()
+      .passthrough(),
+    errors: [
+      {
+        status: 401,
+        description: `Unauthorized`,
+        schema: Error,
+      },
+      {
+        status: 403,
+        description: `Access forbidden`,
+        schema: Error,
+      },
+      {
+        status: 500,
+        description: `PostgreSQL database is unhealthy`,
+        schema: z
+          .object({
+            status: z.literal("unhealthy"),
+            timestamp: z.string().datetime({ offset: true }),
+            error: z.string(),
+          })
+          .partial()
+          .strict()
+          .passthrough(),
       },
     ],
   },

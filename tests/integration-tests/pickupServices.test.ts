@@ -65,7 +65,7 @@ describe('Pickup Service Integration Tests', () => {
     dynamoDB.destroy();
   });
 
-  it('should create and get qa new pickup', async () => {
+  it('should create and get a new pickup', async () => {
     const userId = 'testUser123';
     const newPickup = {
       location: '123 Test St, Test City',

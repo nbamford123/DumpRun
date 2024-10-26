@@ -1,7 +1,14 @@
 # Temporary ToDo File
 
-- next: lambda api execution permissions script/e2e tests, then update readmes-- backend complete!
-- are we sure we don't need cogntio auth for create drivers/users? Won't they exist in cognito before the dumprun records get created?
+- what about keeping pickup history for both users and drivers? I guess as long as they're not deleted, but that means we should disable even the soft delete
+- note that pickups also need some kind of completed state, what determines that? As far as the user is concerned, once the shit is gone and they've paid, it's done.
+- when get pickup fails to find the pickup in the db, it throws and returns a 500, shouldn't that be a 404?
+- zod failure on getPickups because it's missing the required "status" param, but it's returning a 500. Fix!
+- need to revisit lambda logging-- too many 500s. Like a zod failure that then has to be looked up in cloudwatch
+- should I create and delete cognito users in the e2e tests?
+- should be using cognito groups instead of custom roles for admin,driver, user, then gateway authorizer could enforce that policy before the lambdas get called!
+- who marks a pickup as complete? Driver or User? Driver makes more sense, but the User will have to okay it before payment goes through, right?
+- turn off cloudwatch logs for gateway? What about lambdas? It costs $$$
 - need to figure out a way to use the dynamodb schema in both test and prod, right now I'm swapping out the configs, that sux
 - dynamo table name needs to be defined somewhere rather than sprinkled everywhere throughout the code, probably ENV
 - is a 200 return from soft delete pickup correct?
@@ -10,7 +17,7 @@
 - should users and drivers be soft deleted like pickups?
 - the build script is building the services too, how can we leave them out? Maybe an index file that contains the lambdas but not support files like services?
 - we have to have the email on the cognito user so they can interact with it, but what if someone wants to be a driver and a user? Different emails?
-- should probably take email out of postgres
+- should probably take email out of postgres? Or is it safer to have it duplicated from cognito?
 - try and figure out a way to not include the entire zod schemas bundle in every built file. Maybe some settings on the generator?
 - go through various documents in drive and extract important considerations-- there's a lot of good stuff there, but not worth killing momentum at this point.
 - when can you delete a pickup? Current statuses are: pending" | "available" | "accepted" | "in_progress" | "completed" | "cancelled" | "deleted. For now I'm saying it has to be pending, available or cancelled
@@ -33,8 +40,6 @@
 - For admin frontend, does Next make the most sense?
 
 1. Testing:
-  Develop integration tests that cover the entire flow from API Gateway through your Lambda functions and to the database. This ensures that all components of your system work together as expected.
-  Create API tests to verify end-to-end functionality.
   Conduct security testing, especially around your authentication setup.
 2. Set Up CI/CD Pipeline:
   Create a CI/CD pipeline using a service like AWS CodePipeline or GitHub Actions. This should automate the process of testing, building, and deploying your application.
@@ -47,20 +52,6 @@
   Update your API documentation.
   Set up CloudWatch alarms and logs for monitoring.
 
-
-### Implementing Authorization:
-You have a few options for implementing the driver/user role-based access:
-
-1. API Gateway Resource Policies:
-You can set up resource policies in API Gateway that check the claims in the JWT.
-For example, you could allow access to /v1/pickups/available only if the "user_type" claim is "driver".
-2. Lambda Authorizer:
-Instead of the built-in Cognito authorizer, you can use a custom Lambda authorizer.
-This Lambda function would receive the JWT, decode it, check the claims, and return an IAM policy dynamically.
-3. In Your Lambda Functions:
-The Lambda functions receive the decoded JWT claims in the event object.
-You can add logic in your Lambdas to check these claims and authorize actions accordingly.
-
 ### Plan for Reviewing AWS Permissions
 
 1. Current Stage (Development):
@@ -68,13 +59,11 @@ You can add logic in your Lambdas to check these claims and authorize actions ac
 Use the current permissive policy to set up and test your AWS resources.
 Document all AWS actions your application actually performs.
 
-
 2. Pre-Production Review:
 
 Review the documented AWS actions.
 Create a new, more restrictive policy based on these actual needs.
 Test the new policy thoroughly in a staging environment.
-
 
 3. Production Preparation:
 
@@ -83,10 +72,8 @@ Implement the principle of least privilege:
 Scope down Resource fields to specific ARNs where possible.
 Replace wildcard permissions with specific actions.
 
-
 Consider creating separate roles for different functions if they have distinct permission needs.
 Implement AWS Organizations and Service Control Policies if dealing with multiple accounts or teams.
-
 
 4. Ongoing Maintenance:
 
@@ -96,32 +83,168 @@ Keep your team informed about the importance of AWS security best practices.
 
 TODO: Schedule permission review before moving to production. Target date: [Insert Date Here]
 
-1. Lambda Function Permissions:
-Each Lambda function needs permission to be invoked by API Gateway. You can add this permission using the AWS CLI or Lambda console. Here's an example CLI command:
-```bash
-aws lambda add-permission \
-  --function-name YourLambdaFunctionName \
-  --statement-id apigateway-permission \
-  --action lambda:InvokeFunction \
-  --principal apigateway.amazonaws.com \
-  --source-arn "arn:aws:execute-api:${REGION}:${ACCOUNT_ID}:${API_ID}/*/${HTTP_METHOD}${RESOURCE_PATH}"
-```
-Replace the placeholders with your actual values.
-
-2. CORS Configuration:
+1. CORS Configuration:
 If your API will be accessed from web browsers, you'll need to set up CORS (Cross-Origin Resource Sharing). This can be done in the API Gateway console or through your OpenAPI specification.
 
-3. API Key (optional):
-If you want to use API keys for certain endpoints, you'll need to create and configure these in API Gateway.
-
-4. Resource Policies:
+2. Resource Policies:
 Consider setting up resource policies for your API to control who can invoke it at the API level.
 
-5. WAF (Web Application Firewall):
+3. WAF (Web Application Firewall):
 For production APIs, consider setting up AWS WAF to protect against common web exploits.
 
-6. SSL/TLS:
+4. SSL/TLS:
 Ensure your API is only accessible via HTTPS. This is typically the default in API Gateway.
 
-7. Logging and Monitoring:
+5. Logging and Monitoring:
 Set up CloudWatch logs and metrics for your API to monitor usage and detect potential security issues.
+
+## e2e test with production table
+
+```javascript
+// testSetup/dbUtils.ts
+const TEST_PREFIX = 'e2e_test_';  // Clear identifier for test data
+
+export function generateTestId() {
+  return `${TEST_PREFIX}${Date.now()}_${Math.random().toString(36).slice(2)}`;
+}
+
+export function isTestData(id: string) {
+  return id.startsWith(TEST_PREFIX);
+}
+
+export async function cleanupAllTestData() {
+  // Scan table for test prefixed items and delete
+  const testItems = await dynamoDB.scan({
+    TableName: 'YourTable',
+    FilterExpression: 'begins_with(id, :prefix)',
+    ExpressionAttributeValues: {
+      ':prefix': TEST_PREFIX
+    }
+  }).promise();
+  
+  // Delete in batches
+  // Important: Only delete items with test prefix
+  for (const item of testItems.Items) {
+    if (isTestData(item.id)) {
+      await dynamoDB.delete({
+        TableName: 'YourTable',
+        Key: { id: item.id }
+      }).promise();
+    }
+  }
+}
+```
+
+### Safety checks in tests
+
+```javascript
+export async function createTestItem(data: any) {
+  const testId = generateTestId();
+  const testItem = {
+    ...data,
+    id: testId
+  };
+  
+  // Double-check we're not accidentally using a non-test ID
+  if (!isTestData(testItem.id)) {
+    throw new Error('Attempting to create non-test data in tests');
+  }
+  
+  return await apiGatewayClient.post('/items', testItem);
+}
+
+export async function deleteTestItem(id: string) {
+  // Safety check before deletion
+  if (!isTestData(id)) {
+    throw new Error('Attempting to delete non-test data');
+  }
+  
+  return await apiGatewayClient.delete(`/items/${id}`);
+}
+```
+
+### Cleanup function before and after tests
+
+```javascript
+describe('API Gateway DB Integration Tests', () => {
+  beforeAll(async () => {
+    // Clean up any leftover test data from previous runs
+    await cleanupAllTestData();
+  });
+
+  afterAll(async () => {
+    // Clean up after tests
+    await cleanupAllTestData();
+  });
+
+  it('completes CRUD operations', async () => {
+    const testItem = {
+      name: 'test item',
+      attributes: {
+        // Test all schema fields you care about
+        stringField: 'test',
+        numberField: 123,
+        booleanField: true,
+        arrayField: ['test'],
+        objectField: { nested: 'value' }
+      }
+    };
+
+    const createResponse = await createTestItem(testItem);
+    expect(createResponse.statusCode).toBe(201);
+    
+    // Verify all fields were saved correctly
+    const readResponse = await apiGatewayClient.get(`/items/${createResponse.body.id}`);
+    expect(readResponse.body.attributes).toEqual(testItem.attributes);
+  });
+});
+```
+
+### Monitoring/Alerts for test data
+
+```javascript
+async function monitorTestData() {
+  const testItems = await dynamoDB.scan({
+    TableName: 'YourTable',
+    FilterExpression: 'begins_with(id, :prefix)',
+    ExpressionAttributeValues: {
+      ':prefix': TEST_PREFIX
+    },
+    Select: 'COUNT'
+  }).promise();
+
+  if (testItems.Count > 100) {  // Adjust threshold as needed
+    // Alert via CloudWatch/SNS
+    console.error(`High number of test items detected: ${testItems.Count}`);
+  }
+}
+```
+
+### Consider time based cleanup
+
+```javascript
+export function generateTestId() {
+  const timestamp = Date.now();
+  return `${TEST_PREFIX}${timestamp}_${Math.random().toString(36).slice(2)}`;
+}
+
+export async function cleanupOldTestData() {
+  const oneDayAgo = Date.now() - (24 * 60 * 60 * 1000);
+  
+  // Parse timestamp from ID and delete old items
+  const testItems = await dynamoDB.scan({
+    TableName: 'YourTable',
+    FilterExpression: 'begins_with(id, :prefix)',
+    ExpressionAttributeValues: {
+      ':prefix': TEST_PREFIX
+    }
+  }).promise();
+
+  for (const item of testItems.Items) {
+    const timestamp = parseInt(item.id.split('_')[1]);
+    if (timestamp < oneDayAgo) {
+      await deleteTestItem(item.id);
+    }
+  }
+}
+```

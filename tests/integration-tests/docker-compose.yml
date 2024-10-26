@@ -16,8 +16,8 @@ services:
       retries: 3 
   dynamodb-setup:
     build:
-      context: .
-      dockerfile: ./dynamodb/Dockerfile.dynamodb-local-setup
+      context: ../../
+      dockerfile: ./tests/integration-tests/Dockerfile.dynamodb-local-setup
     depends_on:
       dynamodb-local:
         condition: service_healthy
@@ -44,7 +44,7 @@ services:
     image: node:20-alpine
     working_dir: /app
     volumes:
-      - .:/app
+      - ../../:/app
     command: sh -c "npx prisma migrate deploy && npx prisma generate"
     depends_on:
       - postgres

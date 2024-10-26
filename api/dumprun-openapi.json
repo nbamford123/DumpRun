@@ -11,6 +11,144 @@
     }
   ],
   "paths": {
+    "/v1/health/postgres": {
+      "get": {
+        "summary": "Check PostgreSQL database health",
+        "operationId": "checkPostgresHealth",
+        "tags": ["Health"],
+        "security": [
+          {
+            "CognitoAuth": ["admin"]
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "PostgreSQL database is healthy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "enum": ["healthy"]
+                    },
+                    "timestamp": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "latency": {
+                      "type": "number",
+                      "description": "Query latency in milliseconds"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "PostgreSQL database is unhealthy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "enum": ["unhealthy"]
+                    },
+                    "timestamp": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        }
+      }
+    },
+    "/v1/health/dynamodb": {
+      "get": {
+        "summary": "Check DynamoDB health",
+        "operationId": "checkDynamoDBHealth",
+        "tags": ["Health"],
+        "security": [
+          {
+            "CognitoAuth": ["admin"]
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "DynamoDB is healthy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "enum": ["healthy"]
+                    },
+                    "timestamp": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "table": {
+                      "type": "string",
+                      "description": "Name of the DynamoDB table"
+                    },
+                    "latency": {
+                      "type": "number",
+                      "description": "Query latency in milliseconds"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "DynamoDB is unhealthy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "enum": ["unhealthy"]
+                    },
+                    "timestamp": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        }
+      }
+    },
     "/v1/users": {
       "post": {
         "summary": "Create a new user account",

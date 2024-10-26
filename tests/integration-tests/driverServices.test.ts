@@ -1,3 +1,4 @@
+import { config } from 'dotenv';
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 import { PrismaClient } from '@prisma/client';
 import {
@@ -8,6 +9,9 @@ import {
 } from '@/lambda/drivers/driverServices';
 
 import type { NewDriver, UpdateDriver } from '@/schemas/apiSchema.d.ts';
+
+// Load environment variables from .env.test
+config({ path: '.env.test' });
 
 vi.mock('@aws-sdk/client-cognito-identity-provider');
 

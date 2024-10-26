@@ -1,8 +1,21 @@
 {
   "name": "dumprun",
   "version": "0.0.1",
-  "description": "",
+  "description": "Backend service for the DumpRun platform - connecting waste removal drivers with customers needing debris removal",
   "type": "module",
+  "private": true,
+  "license": "UNLICENSED",
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com:TruckLink/DumpRun.git"
+  },
+  "author": "Nathan Bamford <nathan.bamford@gmail.com>",
+  "engines": {
+    "node": ">=20.18.0"
+  },
+  "lint-staged": {
+    "*.{js,ts,json}": "pnpm lint:fix && pnpm format"
+  },
   "scripts": {
     "build": "rimraf dist && npx prisma generate && tsup",
     "check-types": "tsc --noEmit",
@@ -14,42 +27,45 @@
     "prepare": "husky install",
     "pre-commit": "pnpm format && pnpm validate",
     "test": "vitest run src",
-    "test-integration": "docker-compose up -d --build && vitest run integration-tests; EXIT_CODE=$?; docker-compose down -v; exit $EXIT_CODE",
+    "test:integration": "docker-compose -f ./tests/integration-tests/docker-compose.yml up -d --build && vitest tests/integration-tests; EXIT_CODE=$?; docker-compose -f tests/integration-tests/docker-compose.yml down -v; exit $EXIT_CODE",
+    "test:e2e:tier1": "vitest tests/e2e-tests/e2e.tier1.test.ts",
+    "test:e2e:tier2": "vitest e2e-tests/e2e.tier2.test.ts",
+    "test:e2e:tier3": "vitest e2e-tests/e2e.tier3.test.ts",
     "validate": "pnpm lint && pnpm check-types && pnpm test",
     "validate-openapi": "pnpm swagger-cli validate api/dumprun-openapi.json",
-    "validate-and-generate": "pnpm validate-openapi && pnpm generate-types && pnpm generate-zod"
+    "sync-types": "pnpm validate-openapi && pnpm generate-types && pnpm generate-zod"
   },
-  "author": "Nathan Bamford",
-  "license": "ISC",
   "devDependencies": {
     "@apidevtools/swagger-cli": "^4.0.4",
-    "@biomejs/biome": "^1.9.2",
+    "@biomejs/biome": "^1.9.4",
     "@types/aws-lambda": "^8.10.145",
-    "@types/node": "^22.5.4",
+    "@types/node": "^22.7.7",
     "@types/uuid": "^10.0.0",
     "archiver": "^7.0.1",
+    "axios": "^1.7.7",
     "dotenv": "^16.4.5",
     "glob": "^11.0.0",
-    "globals": "^15.9.0",
-    "husky": "^8.0.0",
-    "openapi-typescript": "^7.4.0",
+    "globals": "^15.11.0",
+    "husky": "^8.0.3",
+    "lint-staged": "^15.2.10",
+    "openapi-typescript": "^7.4.1",
     "openapi-zod-client": "^1.18.2",
-    "prisma": "^5.19.1",
+    "prisma": "^5.21.1",
     "rimraf": "^6.0.1",
     "tsup": "^8.3.0",
-    "typescript": "^5.6.2",
+    "typescript": "^5.6.3",
     "vite": "^5.4.9",
-    "vitest": "^2.1.1",
+    "vitest": "^2.1.3",
     "zod": "^3.23.8"
   },
   "dependencies": {
-    "@aws-sdk/client-cognito-identity-provider": "^3.668.0",
-    "@aws-sdk/client-dynamodb": "^3.665.0",
-    "@aws-sdk/lib-dynamodb": "^3.665.0",
+    "@aws-sdk/client-cognito-identity-provider": "^3.675.0",
+    "@aws-sdk/client-dynamodb": "^3.675.0",
+    "@aws-sdk/lib-dynamodb": "^3.675.0",
     "@aws-sdk/middleware-host-header": "^3.664.0",
     "@aws-sdk/middleware-logger": "^3.664.0",
     "@aws-sdk/util-dynamodb": "^3.675.0",
-    "@prisma/client": "^5.19.1",
+    "@prisma/client": "^5.21.1",
     "@zodios/core": "^10.9.6",
     "uuid": "^10.0.0"
   }

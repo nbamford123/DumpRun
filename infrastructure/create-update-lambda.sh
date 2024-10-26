@@ -2,11 +2,38 @@
 set -e
 
 # Configuration file
-CONFIG_FILE="lambda-config.json"
+CONFIG_FILE="infrastructure/lambda-config.json"
+
+# Load environment variables
+if [ -f .env ]; then
+    export $(cat .env | grep -v '^#' | xargs)
+else
+    echo "WARNING: .env file not found"
+fi
+
+# Add environment variable validation
+required_vars=("AWS_REGION" "AWS_ACCOUNT_ID" "DATABASE_URL" "COGNITO_USER_POOL_ID" "LAMBDA_LAYER_ARN" "DYNAMO_TABLE_NAME" "GATEWAY_API_ID")
+for var in "${required_vars[@]}"; do
+    if [ -z "${!var}" ]; then
+        echo "Error: Required environment variable $var is not set"
+        exit 1
+    fi
+done
 
 # Function to read JSON config
 parse_json() {
-    echo $(jq -r "$1" $CONFIG_FILE)
+    local query="$1"
+    jq -r \
+        --arg AWS_REGION "$AWS_REGION" \
+        --arg AWS_ACCOUNT_ID "$AWS_ACCOUNT_ID" \
+        --arg DYNAMO_TABLE_NAME "$DYNAMO_TABLE_NAME" \
+        --arg LAMBDA_LAYER_ARN "$LAMBDA_LAYER_ARN" \
+        "$query | walk(if type == \"string\" then
+            gsub(\"\\\\$\\\\{AWS_REGION\\\\}\"; \$AWS_REGION) |
+            gsub(\"\\\\$\\\\{AWS_ACCOUNT_ID\\\\}\"; \$AWS_ACCOUNT_ID) |
+            gsub(\"\\\\$\\\\{DYNAMO_TABLE_NAME\\\\}\"; \$DYNAMO_TABLE_NAME) |
+            gsub(\"\\\\$\\\\{LAMBDA_LAYER_ARN\\\\}\"; \$LAMBDA_LAYER_ARN)
+          else . end)" "$CONFIG_FILE"
 }
 
 wait_for_function_update() {

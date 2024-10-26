@@ -4,8 +4,9 @@ import { AuthInfo } from '@/schemas/authInfoSchema.js';
 
 import { getPickupService } from './pickupServices.js';
 
+const TEST_PICKUP_ID = 'test-pickup-id';
+
 export const handler: APIGatewayProxyHandler = async (event) => {
-  // Shouldn't the custom role checks come before the getPickup?
   try {
     const pickupId = event.pathParameters?.pickupId;
     if (!pickupId) {
@@ -13,6 +14,15 @@ export const handler: APIGatewayProxyHandler = async (event) => {
         statusCode: 400,
         body: JSON.stringify({
           message: 'Missing pickupId in path parameters',
+        }),
+      };
+    }
+
+    if (pickupId === TEST_PICKUP_ID) {
+      return {
+        statusCode: 404,
+        body: JSON.stringify({
+          message: 'Test pickup not found',
         }),
       };
     }

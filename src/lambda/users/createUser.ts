@@ -7,6 +7,7 @@ import { createUserService } from './userServices.js';
 
 export const handler: APIGatewayProxyHandler = async (event) => {
   try {
+    // Log the event to debug issues
     const authInfo = AuthInfo.parse(event.requestContext.authorizer?.claims);
     const requestBody = JSON.parse(event.body || '{}');
     const result = schemas.NewUser.safeParse(requestBody);

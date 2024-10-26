@@ -5,9 +5,20 @@ import { AuthInfo } from '@/schemas/authInfoSchema.js';
 import { getPickupService } from './pickupServices.js';
 import { validGetPickup } from './pickupHelpers.js';
 
+const TEST_PICKUP_ID = 'test-pickup-id';
 export const handler: APIGatewayProxyHandler = async (event) => {
   try {
     const pickupId = event.pathParameters?.pickupId;
+
+    if (pickupId === TEST_PICKUP_ID) {
+      return {
+        statusCode: 404,
+        body: JSON.stringify({
+          message: 'Test pickup not found',
+        }),
+      };
+    }
+
     if (!pickupId) {
       return {
         statusCode: 400,

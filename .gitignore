@@ -4,4 +4,6 @@ node_modules
 dist
 dist-scripts
 .env
-.env.test
+.env.*
+!.env.test.sample
+!.env.sample

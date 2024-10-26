@@ -4,6 +4,40 @@
  */
 
 export interface paths {
+  '/v1/health/postgres': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Check PostgreSQL database health */
+    get: operations['checkPostgresHealth'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/health/dynamodb': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Check DynamoDB health */
+    get: operations['checkDynamoDBHealth'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/v1/users': {
     parameters: {
       query?: never;
@@ -346,6 +380,96 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+  checkPostgresHealth: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description PostgreSQL database is healthy */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            /** @enum {string} */
+            status?: 'healthy';
+            /** Format: date-time */
+            timestamp?: string;
+            /** @description Query latency in milliseconds */
+            latency?: number;
+          };
+        };
+      };
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      /** @description PostgreSQL database is unhealthy */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            /** @enum {string} */
+            status?: 'unhealthy';
+            /** Format: date-time */
+            timestamp?: string;
+            error?: string;
+          };
+        };
+      };
+    };
+  };
+  checkDynamoDBHealth: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description DynamoDB is healthy */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            /** @enum {string} */
+            status?: 'healthy';
+            /** Format: date-time */
+            timestamp?: string;
+            /** @description Name of the DynamoDB table */
+            table?: string;
+            /** @description Query latency in milliseconds */
+            latency?: number;
+          };
+        };
+      };
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      /** @description DynamoDB is unhealthy */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            /** @enum {string} */
+            status?: 'unhealthy';
+            /** Format: date-time */
+            timestamp?: string;
+            error?: string;
+          };
+        };
+      };
+    };
+  };
   listUsers: {
     parameters: {
       query?: {

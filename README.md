@@ -49,8 +49,9 @@ Backend service for the DumpRun platform - a service connecting waste removal dr
 ```
 ### Key Directories
 
-Each lambda domain folder contains its business logic and corresponding unit tests
-Unit tests are co-located with the code they test in __tests__ directories
+Each lambda domain folder contains its business logic and corresponding unit tests.
+
+Unit tests are co-located with the code they test in __tests__ directories.
 
 For detailed information about infrastructure setup and deployment, see infrastructure/README.md.
 

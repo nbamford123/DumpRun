@@ -1,17 +1,12 @@
-import { vi, describe, it, expect, beforeEach } from 'vitest';
-import type {
-  APIGatewayProxyEvent,
-  APIGatewayProxyResult,
-  Callback,
-  Context,
-} from 'aws-lambda';
+import { vi, describe, it, expect, afterEach } from 'vitest';
+import type { APIGatewayProxyEvent, Context } from 'aws-lambda';
 
+import { getCorsHeaders } from '@/utils/corsHeaders';
 import type { DeepPartial } from '@/utils/DeepPartial.js';
-import type { HealthCheck } from '../types.js';
 // Mock the entire userServices module
 vi.mock('../healthServices', () => ({
-  checkPostgresHealth: vi.fn(),
-  checkDynamoDBHealth: vi.fn(),
+	checkPostgresHealth: vi.fn(),
+	checkDynamoDBHealth: vi.fn(),
 }));
 
 // Import after mocking
@@ -19,172 +14,183 @@ import { handler as postgresHealth } from '../postgresHealth.js';
 import { handler as dynamoDBHealth } from '../dynamodbHealth.js';
 import { checkPostgresHealth, checkDynamoDBHealth } from '../healthServices.js';
 
-const mockHealthyStatus: HealthCheck = {
-  status: 'healthy',
-  timestamp: new Date().toISOString(),
+const mockHealthyStatus = {
+	status: 'healthy',
+	timestamp: new Date().toISOString(),
 };
-const mockUnhealthyStatus: HealthCheck = {
-  status: 'unhealthy',
-  timestamp: new Date().toISOString(),
+const mockUnhealthyStatus = {
+	status: 'unhealthy',
+	timestamp: new Date().toISOString(),
 };
 
 const requestContextNonAdmin = {
-  authorizer: {
-    claims: {
-      sub: 'driver_id',
-      'custom:role': 'driver',
-    },
-  },
+	requestContext: {
+		authorizer: {
+			claims: {
+				sub: 'driver_id',
+				'custom:role': 'driver',
+			},
+		},
+	},
 };
 const requestContextAdmin = {
-  authorizer: {
-    claims: {
-      sub: 'admin-id',
-      'custom:role': 'admin',
-    },
-  },
+	requestContext: {
+		authorizer: {
+			claims: {
+				sub: 'admin-id',
+				'custom:role': 'admin',
+			},
+		},
+	},
 };
 
+const getResult = (statusCode: number, body?: Record<string, unknown>) => ({
+	statusCode,
+	headers: getCorsHeaders(),
+	body: body ? JSON.stringify(body) : undefined,
+});
+
 describe('health check lambdas', () => {
-  beforeEach(() => {
-    vi.resetAllMocks();
-  });
+	afterEach(() => {
+		vi.restoreAllMocks();
+	});
 
-  it('should get a healthy postgres result successfully', async () => {
-    (
-      checkPostgresHealth as vi.MockedFunction<typeof checkPostgresHealth>
-    ).mockResolvedValue(mockHealthyStatus);
+	it('should get a healthy postgres result successfully', async () => {
+		(
+			checkPostgresHealth as vi.MockedFunction<typeof checkPostgresHealth>
+		).mockResolvedValue(mockHealthyStatus);
 
-    const event: DeepPartial<APIGatewayProxyEvent> = {
-      requestContext: requestContextAdmin,
-    };
+		const result = await postgresHealth(requestContextAdmin, {} as Context);
+		expect(result).toEqual(getResult(200, mockHealthyStatus));
+	});
 
-    const result = await postgresHealth(event, {} as Context, {} as Callback);
-    expect(result?.statusCode).toBe(200);
-    expect(JSON.parse((result as APIGatewayProxyResult).body)).toEqual(
-      mockHealthyStatus,
-    );
-  });
+	it('should get an unhealthy postgres result successfully', async () => {
+		(
+			checkPostgresHealth as vi.MockedFunction<typeof checkPostgresHealth>
+		).mockResolvedValue(mockUnhealthyStatus);
 
-  it('should get an unhealthy postgres result successfully', async () => {
-    (
-      checkPostgresHealth as vi.MockedFunction<typeof checkPostgresHealth>
-    ).mockResolvedValue(mockUnhealthyStatus);
+		const result = await postgresHealth(requestContextAdmin, {} as Context);
+		expect(result).toEqual(getResult(200, mockUnhealthyStatus));
+	});
 
-    const event: DeepPartial<APIGatewayProxyEvent> = {
-      requestContext: requestContextAdmin,
-    };
+	it('should get 403 health unauthorized when not admin', async () => {
+		const errors: unknown[] = [];
+		vi.spyOn(console, 'warn').mockImplementation((...args) => {
+			errors.push(args);
+		});
+		(
+			checkPostgresHealth as vi.MockedFunction<typeof checkPostgresHealth>
+		).mockResolvedValue(mockUnhealthyStatus);
 
-    const result = await postgresHealth(event, {} as Context, {} as Callback);
-    expect(result?.statusCode).toBe(500);
-    expect(JSON.parse((result as APIGatewayProxyResult).body)).toEqual(
-      mockUnhealthyStatus,
-    );
-  });
+		const result = await postgresHealth(requestContextNonAdmin, {
+			awsRequestId: 'request123',
+		} as Context);
+		expect(result).toEqual(
+			getResult(403, { code: 'Forbidden', message: 'User does not have required role' }),
+		);
+		expect(errors[0]).toEqual([
+			'Unauthorized access attempt',
+			{
+				requestId: 'request123',
+				role: 'driver',
+			},
+		]);
+	});
 
-  it('should return 403 for postgres health unauthorized', async () => {
-    const event: DeepPartial<APIGatewayProxyEvent> = {
-      requestContext: requestContextNonAdmin,
-    };
+	it('should get 500 for postgres health internal server error', async () => {
+		const errors: unknown[] = [];
+		vi.spyOn(console, 'error').mockImplementation((...args) => {
+			errors.push(args);
+		});
+		(
+			checkPostgresHealth as vi.MockedFunction<typeof checkPostgresHealth>
+		).mockRejectedValue(new Error('Database error'));
 
-    const result = await postgresHealth(event, {} as Context, {} as Callback);
+		const result = await postgresHealth(requestContextAdmin, {
+			awsRequestId: 'request123',
+		} as Context);
+		expect(result).toEqual(
+			getResult(500, {
+				code: 'InternalServerError',
+				message: 'An unexpected error occurred',
+			}),
+		);
+		expect(errors[0]).toEqual([
+			'Handler execution failed',
+			{
+				requestId: 'request123',
+				error: 'Database error',
+			},
+		]);
+	});
 
-    expect(result?.statusCode).toBe(403);
-    expect(JSON.parse((result as APIGatewayProxyResult).body)).toHaveProperty(
-      'message',
-      'Not authorized',
-    );
-  });
+	it('should get a healthy dynamodb result successfully', async () => {
+		(
+			checkDynamoDBHealth as vi.MockedFunction<typeof checkDynamoDBHealth>
+		).mockResolvedValue(mockHealthyStatus);
 
-  it('should return 500 for postgres health internal server error', async () => {
-    (
-      checkPostgresHealth as vi.MockedFunction<typeof checkPostgresHealth>
-    ).mockRejectedValue(new Error('Database error'));
+		const result = await dynamoDBHealth(requestContextAdmin, {} as Context);
+		expect(result).toEqual(getResult(200, mockHealthyStatus));
+	});
 
-    const event: DeepPartial<APIGatewayProxyEvent> = {
-      requestContext: requestContextAdmin,
-    };
+	it('should get an unhealthy dynamodb result successfully', async () => {
+		(
+			checkDynamoDBHealth as vi.MockedFunction<typeof checkDynamoDBHealth>
+		).mockResolvedValue(mockUnhealthyStatus);
 
-    const result = await postgresHealth(
-      event as APIGatewayProxyEvent,
-      {} as Context,
-      {} as Callback,
-    );
+		const result = await dynamoDBHealth(requestContextAdmin, {} as Context);
+		expect(result).toEqual(getResult(200, mockUnhealthyStatus));
+	});
 
-    expect(result?.statusCode).toBe(500);
-    expect(JSON.parse((result as APIGatewayProxyResult).body)).toEqual({
-      message: 'Database error',
-      status: 'unhealthy',
-      timestamp: expect.any(String),
-    });
-  });
+	it('should get 403 for dynamodb health unauthorized', async () => {
+		const errors: unknown[] = [];
+		vi.spyOn(console, 'warn').mockImplementation((...args) => {
+			errors.push(args);
+		});
+		const event: DeepPartial<APIGatewayProxyEvent> = {
+			requestContext: requestContextNonAdmin,
+		};
 
-  it('should get a healthy dynamodb result successfully', async () => {
-    (
-      checkDynamoDBHealth as vi.MockedFunction<typeof checkDynamoDBHealth>
-    ).mockResolvedValue(mockHealthyStatus);
+		const result = await dynamoDBHealth(requestContextNonAdmin, {
+			awsRequestId: 'request123',
+		} as Context);
+		expect(result).toEqual(
+			getResult(403, { code: 'Forbidden', message: 'User does not have required role' }),
+		);
+		expect(errors[0]).toEqual([
+			'Unauthorized access attempt',
+			{
+				requestId: 'request123',
+				role: 'driver',
+			},
+		]);
+	});
 
-    const event: DeepPartial<APIGatewayProxyEvent> = {
-      requestContext: requestContextAdmin,
-    };
+	it('should get 500 for dynamodb health internal server error', async () => {
+		const errors: unknown[] = [];
+		vi.spyOn(console, 'error').mockImplementation((...args) => {
+			errors.push(args);
+		});
+		(
+			checkDynamoDBHealth as vi.MockedFunction<typeof checkDynamoDBHealth>
+		).mockRejectedValue(new Error('Database error'));
 
-    const result = await dynamoDBHealth(event, {} as Context, {} as Callback);
-    expect(result?.statusCode).toBe(200);
-    expect(JSON.parse((result as APIGatewayProxyResult).body)).toEqual(
-      mockHealthyStatus,
-    );
-  });
-
-  it('should get an unhealthy postgres result successfully', async () => {
-    (
-      checkDynamoDBHealth as vi.MockedFunction<typeof checkDynamoDBHealth>
-    ).mockResolvedValue(mockUnhealthyStatus);
-
-    const event: DeepPartial<APIGatewayProxyEvent> = {
-      requestContext: requestContextAdmin,
-    };
-
-    const result = await dynamoDBHealth(event, {} as Context, {} as Callback);
-    expect(result?.statusCode).toBe(500);
-    expect(JSON.parse((result as APIGatewayProxyResult).body)).toEqual(
-      mockUnhealthyStatus,
-    );
-  });
-
-  it('should return 403 for postgres health unauthorized', async () => {
-    const event: DeepPartial<APIGatewayProxyEvent> = {
-      requestContext: requestContextNonAdmin,
-    };
-
-    const result = await dynamoDBHealth(event, {} as Context, {} as Callback);
-
-    expect(result?.statusCode).toBe(403);
-    expect(JSON.parse((result as APIGatewayProxyResult).body)).toHaveProperty(
-      'message',
-      'Not authorized',
-    );
-  });
-
-  it('should return 500 for postgres health internal server error', async () => {
-    (
-      checkDynamoDBHealth as vi.MockedFunction<typeof checkDynamoDBHealth>
-    ).mockRejectedValue(new Error('Database error'));
-
-    const event: DeepPartial<APIGatewayProxyEvent> = {
-      requestContext: requestContextAdmin,
-    };
-
-    const result = await dynamoDBHealth(
-      event as APIGatewayProxyEvent,
-      {} as Context,
-      {} as Callback,
-    );
-
-    expect(result?.statusCode).toBe(500);
-    expect(JSON.parse((result as APIGatewayProxyResult).body)).toEqual({
-      message: 'Database error',
-      status: 'unhealthy',
-      timestamp: expect.any(String),
-    });
-  });
+		const result = await dynamoDBHealth(requestContextAdmin, {
+			awsRequestId: 'request123',
+		} as Context);
+		
+		expect(result).toEqual(
+			getResult(500, {
+				code: 'InternalServerError',
+				message: 'An unexpected error occurred',
+			}),
+		);
+		expect(errors[0]).toEqual([
+			'Handler execution failed',
+			{
+				requestId: 'request123',
+				error: 'Database error',
+			},
+		]);
+	});
 });

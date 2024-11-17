@@ -1,5 +1,12 @@
 # Temporary ToDo File
-
+## Frontend
+- should I be pulling in linting rules for aws/lit/? How does biome support that?
+## Backend
+- ask claude about lambda/cloudwatch logging. Is what I have sufficient? Not being set up in terraform!
+- set up staging/prod stages in api gateway now? Later?
+- .the env example files are git ignored
+- typo in README
+- move testing stuff to a different markdown file? Minimize the readme in general. Maybe a different architecture doc too.
 - what about keeping pickup history for both users and drivers? I guess as long as they're not deleted, but that means we should disable even the soft delete
 - note that pickups also need some kind of completed state, what determines that? As far as the user is concerned, once the shit is gone and they've paid, it's done.
 - when get pickup fails to find the pickup in the db, it throws and returns a 500, shouldn't that be a 404?

@@ -1,16 +1,16 @@
 import { checkPostgresHealth } from './healthServices.js';
 import {
-	createHandler,
-	type OperationHandler,
-} from '../middleware/createHandler.js';
+	createPrismaHandler,
+	type PrismaOperationHandler,
+} from '../middleware/createHandlerPostgres.js';
 import { createSuccessResponse } from '../types/index.js';
 
-const healthCheckHandler: OperationHandler = async (context) => {
-	const dynamoDBHealth = await checkPostgresHealth();
-	return createSuccessResponse<'checkPostgresHealth'>(200, dynamoDBHealth);
+const healthCheckHandler: PrismaOperationHandler = async (context) => {
+	const postgresHealth = await checkPostgresHealth(context.client);
+	return createSuccessResponse<'checkPostgresHealth'>(200, postgresHealth);
 };
 
-export const handler = createHandler<'checkPostgresHealth'>(
+export const handler = createPrismaHandler<'checkPostgresHealth'>(
 	healthCheckHandler,
 	{ requiredRole: 'admin' },
 );

@@ -2,6 +2,7 @@
 ## Frontend
 - should I be pulling in linting rules for aws/lit/? How does biome support that?
 ## Backend
+- why are there two .env.local files? Do I need the one in integration tests?
 - ask claude about lambda/cloudwatch logging. Is what I have sufficient? Not being set up in terraform!
 - set up staging/prod stages in api gateway now? Later?
 - .the env example files are git ignored

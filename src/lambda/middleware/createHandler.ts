@@ -1,43 +1,33 @@
-// middleware/types.ts
-import { DynamoDB } from '@aws-sdk/client-dynamodb';
-
 import { AuthInfo } from '../types/authInfoSchema.js';
 import type { operations } from '@/schemas/apiSchema.ts';
 import {
 	type APILambda,
-  type APIResponse,
+	type APIResponse,
 	BadRequest,
-  Forbidden,
+	Forbidden,
 	Unauthorized,
 	InternalServerError,
 } from '../types/index.js';
 
 export type HandlerContext = {
-	client: DynamoDB;
 	requestId: string;
 	userId: string;
 	userRole: string;
 };
 
-// Shared DynamoDB client
-const dynamoDBClient = new DynamoDB({
-	maxAttempts: 3,
-	retryMode: 'standard',
-});
-
-type MiddlewareOptions = {
+export type MiddlewareOptions = {
 	requiredRole: string;
 	validateInput?: z.ZodSchema;
 };
 
 export type OperationHandler = (
-  context: HandlerContext
+	context: HandlerContext,
 ) => Promise<APIResponse>;
 
-export function createHandler<T extends keyof operations>(
+export const createHandler = <T extends keyof operations>(
 	handler: OperationHandler,
 	options: MiddlewareOptions,
-): APILambda<T> {
+): APILambda<T> => {
 	return async (event, context) => {
 		const { awsRequestId } = context;
 		const authResult = AuthInfo.safeParse(
@@ -51,16 +41,16 @@ export function createHandler<T extends keyof operations>(
 			return Unauthorized();
 		}
 
-    // Check role authorization
-    if (authResult.data['custom:role'] !== options.requiredRole) {
-      console.warn('Unauthorized access attempt', {
-        requestId: awsRequestId,
-        role: authResult.data['custom:role'],
-      });
-      return Forbidden();
-    }
-		
-    try {
+		// Check role authorization
+		if (authResult.data['custom:role'] !== options.requiredRole) {
+			console.warn('Unauthorized access attempt', {
+				requestId: awsRequestId,
+				role: authResult.data['custom:role'],
+			});
+			return Forbidden();
+		}
+
+		try {
 			// Input validation if schema provided
 			if (options.validateInput) {
 				const inputResult = options.validateInput.safeParse(event.body);
@@ -76,7 +66,6 @@ export function createHandler<T extends keyof operations>(
 
 			// Create handler context
 			const handlerContext: HandlerContext = {
-				client: dynamoDBClient,
 				requestId: awsRequestId,
 				userId: event.requestContext?.authorizer?.claims?.sub ?? '',
 				userRole:
@@ -93,7 +82,7 @@ export function createHandler<T extends keyof operations>(
 			return InternalServerError();
 		}
 	};
-}
+};
 
 // Example usage in a lambda file
 // healthcheck.ts

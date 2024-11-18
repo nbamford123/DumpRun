@@ -1,7 +1,7 @@
 import type { Context } from 'aws-lambda';
 
 import type { operations } from '@/schemas/apiSchema.ts';
-import { ErrorCodes, type APIError } from '@/schemas/errors.ts';
+import { ErrorCodes, type APIError } from '@/schemas/errors.js';
 
 import { getCorsHeaders } from '@/utils/corsHeaders.js';
 import type { APIGatewayTransformedEvent } from './gateway.js';

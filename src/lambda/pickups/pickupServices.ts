@@ -20,6 +20,7 @@ import type { components } from '@/schemas/apiSchema.d.ts';
 type Pickup = components['schemas']['Pickup'];
 type NewPickup = components['schemas']['NewPickup'];
 
+// Change this into functions that take the document client from the handler context
 // Simple factory method to create a production instance of the dynamodb service
 export const getPickupService = (
 	tableName: string = process.env.DYNAMO_TABLE_NAME || 'Pickups',

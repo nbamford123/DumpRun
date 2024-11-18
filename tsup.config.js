@@ -22,8 +22,8 @@ export default defineConfig({
 		// '@aws-sdk/client-cognito-identity-provider',
 		// '@aws-sdk/middleware-host-header',
 		// '@aws-sdk/middleware-logger'
-	], // Add any libraries you want to bundle here
-	minify: true, // Enable minification
+	],
+	minify: true,
 
 	// Prisma client requires special handling
 	esbuildOptions: (options) => {
@@ -44,12 +44,10 @@ export default defineConfig({
 	},
 	async onSuccess() {
 		// Zip each file in the dist directory
-
-		// Function to zip a file
 		async function zipFile(filePath, zipPath, newName) {
 			const output = createWriteStream(zipPath);
 			const archive = archiver('zip', {
-				zlib: { level: 9 }, // Sets the compression level.
+				zlib: { level: 9 }, 
 			});
 
 			output.on('close', () => {
@@ -65,7 +63,6 @@ export default defineConfig({
 			await archive.finalize();
 		}
 
-		// Recursive function to traverse directories and zip files
 		async function traverseAndZip(dir) {
 			const entries = await readdir(dir, { withFileTypes: true });
 

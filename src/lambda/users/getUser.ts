@@ -1,46 +1,26 @@
-import type { APIGatewayProxyHandler } from 'aws-lambda';
-
-import { AuthInfo } from 'lambda/types/authInfoSchema.js';
+import {
+	createPrismaHandler,
+	type PrismaOperationHandler,
+} from '../middleware/createHandlerPostgres.js';
+import { createSuccessResponse, NotFound, Forbidden } from '../types/index.js';
 
 import { getUserService } from './userServices.js';
 
-export const handler: APIGatewayProxyHandler = async (event) => {
-	try {
-		const authInfo = AuthInfo.parse(event.requestContext.authorizer?.claims);
-		const userId = event.pathParameters?.userId;
-		if (!userId) {
-			return {
-				statusCode: 400,
-				body: JSON.stringify({ message: 'Missing userId in path parameters' }),
-			};
-		}
-		if (
-			authInfo['custom:role'] === 'admin' ||
-			(authInfo['custom:role'] === 'user' && authInfo.sub === userId)
-		) {
-			const user = await getUserService(userId);
-			if (!user) {
-				return {
-					statusCode: 404,
-					body: JSON.stringify({ message: 'User not found' }),
-				};
-			}
-			return {
-				statusCode: 200,
-				body: JSON.stringify(user),
-			};
-		}
-		return {
-			statusCode: 403,
-			body: JSON.stringify({
-				message: 'Not authorized',
-			}),
-		};
-	} catch (error) {
-		console.error('Error in getUser:', error);
-		return {
-			statusCode: 500,
-			body: JSON.stringify({ message: 'Internal Server Error' }),
-		};
+const getUserHandler: PrismaOperationHandler<'getUser'> = async (context) => {
+	const user = await getUserService(context.client, context.userId);
+	if (user === null) return NotFound('User not found');
+	
+	// Only admin or this user can retrieve record
+	if (context.userRole !== 'admin' && context.userId !== user.id) {
+		console.warn('Unauthorized access attempt', {
+			requestId: context.requestId,
+		});
+		return Forbidden("User doesn't have permission");
 	}
+	return createSuccessResponse<'getUser'>(200, user);
 };
+
+export const handler = createPrismaHandler(getUserHandler, {
+	requiredRole: ['user', 'admin'],
+	operation: 'getUser'
+});

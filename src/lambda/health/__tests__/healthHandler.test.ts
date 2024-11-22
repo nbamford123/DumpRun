@@ -1,15 +1,23 @@
-import { vi, describe, it, expect, afterEach } from 'vitest';
+import {
+	vi,
+	describe,
+	it,
+	expect,
+	beforeEach,
+	afterEach,
+} from 'vitest';
 import type { APIGatewayProxyEvent, Context } from 'aws-lambda';
 
-import { getCorsHeaders } from '@/utils/corsHeaders';
 import {
 	requestContextAdmin,
 	requestContextDriver,
 	requestContextUser,
+	mockLambdaContext,
+	getResult
 } from '@/utils/testUtils.js';
 import type { DeepPartial } from '@/utils/DeepPartial.js';
 
-// Mock the entire userServices module
+// Mock the entire healthServices module
 vi.mock('../healthServices', () => ({
 	checkPostgresHealth: vi.fn(),
 	checkDynamoDBHealth: vi.fn(),
@@ -25,17 +33,11 @@ const mockHealthyStatus = {
 	timestamp: new Date().toISOString(),
 };
 
-const getResult = (statusCode: number, body?: Record<string, unknown>) => ({
-	statusCode,
-	headers: getCorsHeaders(),
-	body: body ? JSON.stringify(body) : undefined,
-});
-
-const mockLambdaContext = {
-	getRemainingTimeInMillis: () => 10000
-}
-
 describe('health check lambdas', () => {
+	// Swallow the console warnings so they don't pollute test output
+	beforeEach(() => {
+		vi.spyOn(console, 'warn').mockImplementation(() => {});
+	});
 	afterEach(() => {
 		vi.restoreAllMocks();
 	});

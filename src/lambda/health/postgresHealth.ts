@@ -5,12 +5,14 @@ import {
 } from '../middleware/createHandlerPostgres.js';
 import { createSuccessResponse } from '../types/index.js';
 
-const healthCheckHandler: PrismaOperationHandler = async (context) => {
+const healthCheckHandler: PrismaOperationHandler<
+	'checkPostgresHealth'
+> = async (context) => {
 	const postgresHealth = await checkPostgresHealth(context.client);
 	return createSuccessResponse<'checkPostgresHealth'>(200, postgresHealth);
 };
 
 export const handler = createPrismaHandler<'checkPostgresHealth'>(
 	healthCheckHandler,
-	{ requiredRole: 'admin' },
+	{ requiredRole: ['admin'] },
 );

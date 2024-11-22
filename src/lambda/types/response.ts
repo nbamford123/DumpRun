@@ -6,7 +6,7 @@ import { ErrorCodes, type APIError } from '@/schemas/errors.js';
 import { getCorsHeaders } from '@/utils/corsHeaders.js';
 import type { APIGatewayTransformedEvent } from './gateway.js';
 
-export type SuccessStatusCode = 200 | 201;
+export type SuccessStatusCode = 200 | 201 | 204;
 export type ErrorStatusCode = 400 | 401 | 403 | 404 | 500;
 
 export type SuccessResponse = {
@@ -72,5 +72,7 @@ export const Unauthorized = (message = 'Invalid authorization data') =>
 	createErrorResponse(401, { code: ErrorCodes.UNAUTHORIZED, message });
 export const Forbidden = (message = 'User does not have required role') =>
 	createErrorResponse(403, { code: ErrorCodes.FORBIDDEN, message });
+export const NotFound = (message = 'Not found') =>
+	createErrorResponse(404, { code: ErrorCodes.NOT_FOUND, message });
 export const InternalServerError = (message = 'An unexpected error occurred') =>
 	createErrorResponse(500, { code: ErrorCodes.INTERNAL_SERVER_ERROR, message });

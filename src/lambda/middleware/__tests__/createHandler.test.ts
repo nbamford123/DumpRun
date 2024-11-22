@@ -1,11 +1,15 @@
 import { vi, describe, it, expect } from 'vitest';
 import type { APIGatewayProxyEvent, Context } from 'aws-lambda';
+import { z } from 'zod';
 
 import { getCorsHeaders } from '@/utils/corsHeaders';
 import type { DeepPartial } from '@/utils/DeepPartial.js';
 
 import { createHandler } from '../createHandler.js';
-import { requestContextAdmin, requestContextDriver } from '@/utils/testUtils.js'
+import {
+	requestContextAdmin,
+	requestContextDriver,
+} from '@/utils/testUtils.js';
 
 const getResult = (statusCode: number, body?: Record<string, unknown>) => ({
 	statusCode,
@@ -17,7 +21,7 @@ const awsRequestId = 'request123';
 describe('createHandler', () => {
 	it('should return a successful handler result', async () => {
 		const mockHandler = vi.fn();
-		const handler = createHandler(mockHandler, { requiredRole: 'admin' });
+		const handler = createHandler(mockHandler, { requiredRole: ['admin'] });
 		const event: DeepPartial<APIGatewayProxyEvent> = {
 			requestContext: requestContextAdmin,
 		};
@@ -31,12 +35,96 @@ describe('createHandler', () => {
 		});
 	});
 
+	it('should return a 400 handler result for bad input', async () => {
+		const errors: unknown[] = [];
+		vi.spyOn(console, 'error').mockImplementation((...args) => {
+			errors.push(args);
+		});
+		const handler = createHandler<'getPostgresHealth'>(vi.fn(), {
+			requiredRole: ['admin'],
+			validateInput: z.object({
+				name: z.string().min(1, 'Name is required'),
+				email: z.string().email('Invalid email format'),
+			}),
+		});
+		const event: DeepPartial<APIGatewayProxyEvent> = {
+			requestContext: requestContextAdmin,
+			body: JSON.stringify({ name: 'Nate' }),
+		};
+		const result = await handler(event, {
+			awsRequestId,
+		} as Context);
+		expect(result).toEqual(
+			getResult(400, {
+				code: 'BadRequest',
+				message: 'Invalid input',
+			}),
+		);
+		expect(errors[0]).toEqual([
+			'Input validation failed',
+			{
+				requestId: 'request123',
+				errors: [
+					{
+						code: 'invalid_type',
+						expected: 'string',
+						message: 'Required',
+						path: ['email'],
+						received: 'undefined',
+					},
+				],
+			},
+		]);
+	});
+
+	// TODO: What really ought to be done here (and for path parameters, is mock the zod helpers)
+	it('should return a 400 handler result for invalid query parameters', async () => {
+		const errors: unknown[] = [];
+		vi.spyOn(console, 'error').mockImplementation((...args) => {
+			errors.push(args);
+		});
+		const handler = createHandler<'listUsers'>(vi.fn(), {
+			requiredRole: ['admin'],
+			operation: 'listUsers',
+		});
+		const event: DeepPartial<APIGatewayProxyEvent> = {
+			requestContext: requestContextAdmin,
+			queryStringParameters: {
+				limit: 'b',
+			},
+		};
+		const result = await handler(event, {
+			awsRequestId,
+		} as Context);
+		expect(result).toEqual(
+			getResult(400, {
+				code: 'BadRequest',
+				message: 'Invalid query parameters',
+			}),
+		);
+		expect(errors[0]).toEqual([
+			'Query parameter validation failed',
+			{
+				requestId: 'request123',
+				errors: [
+					{
+						code: 'invalid_type',
+						expected: 'number',
+						message: 'Expected number, received string',
+						path: ['limit'],
+						received: 'string',
+					},
+				],
+			},
+		]);
+	});
+
 	it('should return a 401 handler result for bad auth', async () => {
 		const errors: unknown[] = [];
 		vi.spyOn(console, 'error').mockImplementation((...args) => {
 			errors.push(args);
 		});
-		const handler = createHandler(vi.fn(), { requiredRole: 'admin' });
+		const handler = createHandler(vi.fn(), { requiredRole: ['admin'] });
 		const event: DeepPartial<APIGatewayProxyEvent> = {
 			requestContext: {},
 		};
@@ -63,7 +151,7 @@ describe('createHandler', () => {
 		vi.spyOn(console, 'warn').mockImplementation((...args) => {
 			errors.push(args);
 		});
-		const handler = createHandler(vi.fn(), { requiredRole: 'admin' });
+		const handler = createHandler(vi.fn(), { requiredRole: ['admin'] });
 		const event: DeepPartial<APIGatewayProxyEvent> = {
 			requestContext: requestContextDriver,
 		};
@@ -92,7 +180,7 @@ describe('createHandler', () => {
 		const mockHandler = vi.fn();
 		mockHandler.mockRejectedValue(new Error('Database error'));
 
-		const handler = createHandler(mockHandler, { requiredRole: 'admin' });
+		const handler = createHandler(mockHandler, { requiredRole: ['admin'] });
 		const event: DeepPartial<APIGatewayProxyEvent> = {
 			requestContext: requestContextAdmin,
 		};

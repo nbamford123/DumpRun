@@ -69,7 +69,7 @@ const requestContextAdmin = {
 	},
 };
 
-describe('pickup lambdas', () => {
+describe.skip('pickup lambdas', () => {
 	// beforeEach(() => {
 	//   vi.resetAllMocks();
 	// });

@@ -8,5 +8,6 @@ export {
 	BadRequest,
 	Forbidden,
 	InternalServerError,
+	NotFound,
 	Unauthorized
 } from './response.js';

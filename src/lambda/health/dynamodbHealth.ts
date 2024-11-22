@@ -5,12 +5,13 @@ import {
 } from '../middleware/createHandlerDynamo.js';
 import { createSuccessResponse } from '../types/index.js';
 
-const healthCheckHandler: DynamoOperationHandler = async (context) => {
+const healthCheckHandler: DynamoOperationHandler<
+	'checkDynamoDBHealth'
+> = async (context) => {
 	const dynamoDBHealth = await checkDynamoDBHealth(context.client);
 	return createSuccessResponse<'checkDynamoDBHealth'>(200, dynamoDBHealth);
 };
 
-export const handler = createDynamoHandler<'checkDynamoDBHealth'>(
-	healthCheckHandler,
-	{ requiredRole: 'admin' },
-);
+export const handler = createDynamoHandler(healthCheckHandler, {
+	requiredRole: ['admin'],
+});

@@ -1,64 +1,35 @@
-import type { APIGatewayProxyHandler } from 'aws-lambda';
-
 import { schemas } from '@/schemas/zodSchemas.js';
-import { AuthInfo } from 'lambda/types/authInfoSchema.js';
 
-import { updateDriverService } from './driverServices.js';
+import {
+	createPrismaHandler,
+	type PrismaOperationHandler,
+} from '../middleware/createHandlerPostgres.js';
+import { createSuccessResponse, NotFound, Forbidden } from '../types/index.js';
 
-export const handler: APIGatewayProxyHandler = async (event) => {
-	try {
-		const authInfo = AuthInfo.parse(event.requestContext.authorizer?.claims);
+import { getDriverService, updateDriverService } from './driverServices.js';
 
-		const driverId = event.pathParameters?.driverId;
-		if (!driverId) {
-			return {
-				statusCode: 400,
-				body: JSON.stringify({
-					message: 'Missing driverId in path parameters',
-				}),
-			};
-		}
-
-		if (
-			authInfo['custom:role'] === 'admin' ||
-			(authInfo['custom:role'] === 'driver' && authInfo.sub === driverId)
-		) {
-			const requestBody = JSON.parse(event.body || '{}');
-			const result = schemas.UpdateDriver.safeParse(requestBody);
-			if (!result.success) {
-				return {
-					statusCode: 400,
-					body: JSON.stringify({
-						message: 'Invalid input',
-						errors: result.error.issues,
-					}),
-				};
-			}
-
-			const updatedUDriver = await updateDriverService(driverId, result.data);
-			if (!updatedUDriver) {
-				return {
-					statusCode: 404,
-					body: JSON.stringify({ message: 'Driver not found' }),
-				};
-			}
-
-			return {
-				statusCode: 200,
-				body: JSON.stringify(updatedUDriver),
-			};
-		}
-		return {
-			statusCode: 403,
-			body: JSON.stringify({
-				message: 'Not authorized',
-			}),
-		};
-	} catch (error) {
-		console.error('Error in updateDriver:', error);
-		return {
-			statusCode: 500,
-			body: JSON.stringify({ message: 'Internal Server Error' }),
-		};
+const updateDriverHandler: PrismaOperationHandler<'updateDriver'> = async (
+	context,
+) => {
+	// Only admin or this user can update
+	const user = await getDriverService(context.client, context.userId);
+	if (user === null) return NotFound('Driver not found');
+	if (context.userRole !== 'admin' && context.userId !== user.id) {
+		console.warn('Unauthorized access attempt', {
+			requestId: context.requestId,
+		});
+		return Forbidden("Driver doesn't have permission");
 	}
+	const updateUser = await updateDriverService(
+		context.client,
+		context.userId,
+		context.body,
+	) as NonNullable<unknown>;
+	return createSuccessResponse<'updateDriver'>(200, updateUser);
 };
+
+export const handler = createPrismaHandler(updateDriverHandler, {
+	requiredRole: ['driver', 'admin'],
+	operation: 'updateDriver',
+	validateInput: schemas.UpdateDriver,
+});

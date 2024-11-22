@@ -1,5 +1,5 @@
 import { CognitoIdentityProvider } from '@aws-sdk/client-cognito-identity-provider';
-import { Prisma, PrismaClient } from '@prisma/client';
+import type { PrismaClient } from '@prisma/client';
 
 import type { components } from '@/schemas/apiSchema.d.ts';
 
@@ -7,16 +7,20 @@ type Driver = components['schemas']['Driver'];
 type NewDriver = components['schemas']['NewDriver'];
 type UpdateDriver = components['schemas']['UpdateDriver'];
 
-const cognito = new CognitoIdentityProvider();
-const prisma = new PrismaClient();
+let cognito: CognitoIdentityProvider | null = null;
+const getCognito = () => {
+	if (cognito === null) cognito = new CognitoIdentityProvider();
+	return cognito;
+};
 
 export const createDriverService = async (
+	prisma: PrismaClient,
 	cognitoUserId: string,
 	driver: NewDriver,
 ): Promise<Driver> => {
 	try {
 		// Verify Cognito user exists
-		await cognito.adminGetUser({
+		await getCognito().adminGetUser({
 			UserPoolId: process.env.COGNITO_USER_POOL_ID || '',
 			Username: cognitoUserId,
 		});
@@ -37,6 +41,7 @@ export const createDriverService = async (
 };
 
 export const getDriversService = async (
+	prisma: PrismaClient,
 	limit = 10,
 	offset = 0,
 ): Promise<Driver[]> => {
@@ -55,7 +60,10 @@ export const getDriversService = async (
 	}
 };
 
-export const getDriverService = async (id: string): Promise<Driver | null> => {
+export const getDriverService = async (
+	prisma: PrismaClient,
+	id: string,
+): Promise<Driver | null> => {
 	try {
 		const driver = await prisma.driver.findUnique({
 			where: { id: id },
@@ -73,6 +81,7 @@ export const getDriverService = async (id: string): Promise<Driver | null> => {
 };
 
 export const updateDriverService = async (
+	prisma: PrismaClient,
 	id: string,
 	driver: UpdateDriver,
 ): Promise<Driver | null> => {
@@ -103,6 +112,7 @@ export const updateDriverService = async (
 };
 
 export const deleteDriverService = async (
+	prisma: PrismaClient,
 	id: string,
 ): Promise<Driver | null> => {
 	try {

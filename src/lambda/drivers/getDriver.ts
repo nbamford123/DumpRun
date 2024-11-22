@@ -1,50 +1,26 @@
-import type { APIGatewayProxyHandler } from 'aws-lambda';
-
-import { AuthInfo } from 'lambda/types/authInfoSchema.js';
+import {
+	createPrismaHandler,
+	type PrismaOperationHandler,
+} from '../middleware/createHandlerPostgres.js';
+import { createSuccessResponse, NotFound, Forbidden } from '../types/index.js';
 
 import { getDriverService } from './driverServices.js';
 
-export const handler: APIGatewayProxyHandler = async (event) => {
-	try {
-		const authInfo = AuthInfo.parse(event.requestContext.authorizer?.claims);
-		const driverId = event.pathParameters?.driverId;
-		if (!driverId) {
-			return {
-				statusCode: 400,
-				body: JSON.stringify({
-					message: 'Missing driverId in path parameters',
-				}),
-			};
-		}
-
-		if (
-			authInfo['custom:role'] === 'admin' ||
-			(authInfo['custom:role'] === 'driver' && authInfo.sub === driverId)
-		) {
-			const driver = await getDriverService(driverId);
-			if (!driver) {
-				return {
-					statusCode: 404,
-					body: JSON.stringify({ message: 'Driver not found' }),
-				};
-			}
-
-			return {
-				statusCode: 200,
-				body: JSON.stringify(driver),
-			};
-		}
-		return {
-			statusCode: 403,
-			body: JSON.stringify({
-				message: 'Not authorized',
-			}),
-		};
-	} catch (error) {
-		console.error('Error in getDriver:', error);
-		return {
-			statusCode: 500,
-			body: JSON.stringify({ message: 'Internal Server Error' }),
-		};
+const getDriverHandler: PrismaOperationHandler<'getDriver'> = async (context) => {
+	const driver = await getDriverService(context.client, context.userId);
+	if (driver === null) return NotFound('Driver not found');
+	
+	// Only admin or this user can retrieve record
+	if (context.userRole !== 'admin' && context.userId !== driver.id) {
+		console.warn('Unauthorized access attempt', {
+			requestId: context.requestId,
+		});
+		return Forbidden("User doesn't have permission");
 	}
+	return createSuccessResponse<'getDriver'>(200, driver);
 };
+
+export const handler = createPrismaHandler(getDriverHandler, {
+	requiredRole: ['driver', 'admin'],
+	operation: 'getDriver'
+});

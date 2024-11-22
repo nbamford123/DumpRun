@@ -1,35 +1,34 @@
-import { AuthInfo } from '../types/authInfoSchema.js';
 import type { operations } from '@/schemas/apiSchema.ts';
 import {
+	getQuerySchema,
+	getPathSchema,
+	hasQueryParams,
+	hasPathParams,
+} from '@/schemas/zodSchemaHelpers.js';
+import { AuthInfo } from '../types/authInfoSchema.js';
+import {
 	type APILambda,
-	type APIResponse,
 	BadRequest,
 	Forbidden,
 	Unauthorized,
 	InternalServerError,
 } from '../types/index.js';
-
-export type HandlerContext = {
-	requestId: string;
-	userId: string;
-	userRole: string;
-};
-
-export type MiddlewareOptions = {
-	requiredRole: string;
-	validateInput?: z.ZodSchema;
-};
-
-export type OperationHandler = (
-	context: HandlerContext,
-) => Promise<APIResponse>;
+import type {
+	OperationHandler,
+	MiddlewareOptions,
+	HandlerContext,
+	QueryParams,
+	PathParams,
+} from './types.js';
 
 export const createHandler = <T extends keyof operations>(
-	handler: OperationHandler,
-	options: MiddlewareOptions,
+	handler: OperationHandler<T>,
+	options: MiddlewareOptions<T>,
 ): APILambda<T> => {
 	return async (event, context) => {
 		const { awsRequestId } = context;
+
+		// Check for valid authentication info
 		const authResult = AuthInfo.safeParse(
 			event.requestContext?.authorizer?.claims,
 		);
@@ -42,37 +41,92 @@ export const createHandler = <T extends keyof operations>(
 		}
 
 		// Check role authorization
-		if (authResult.data['custom:role'] !== options.requiredRole) {
+		const role = authResult.data['custom:role'];
+		if (!options.requiredRole.includes(role)) {
 			console.warn('Unauthorized access attempt', {
 				requestId: awsRequestId,
-				role: authResult.data['custom:role'],
+				role,
 			});
 			return Forbidden();
 		}
 
 		try {
-			// Input validation if schema provided
-			if (options.validateInput) {
-				const inputResult = options.validateInput.safeParse(event.body);
-				if (!inputResult.success) {
-					console.error('Input validation failed', {
-						requestId: awsRequestId,
-						errors: inputResult.error.issues,
-					});
-					return BadRequest('Invalid input');
-				}
-				event.body = inputResult.data;
-			}
-
-			// Create handler context
-			const handlerContext: HandlerContext = {
+			// Base context without parameters
+			let handlerContext = {
 				requestId: awsRequestId,
 				userId: event.requestContext?.authorizer?.claims?.sub ?? '',
-				userRole:
-					event.requestContext?.authorizer?.claims?.['custom:role'] ?? '',
-			};
+				userRole: role,
+				body: undefined,
+			} as HandlerContext<T>;
 
-			// Execute handler with validated context
+			if (event.body) {
+				try {
+					const requestBody = JSON.parse(event.body);
+					// TODO: if we're only going to return the body if validation exists, shouldn't we require it?
+					if (options.validateInput) {
+						const inputResult = options.validateInput.safeParse(requestBody);
+						if (!inputResult.success) {
+							console.error('Input validation failed', {
+								requestId: awsRequestId,
+								errors: inputResult.error.issues,
+							});
+							return BadRequest('Invalid input');
+						}
+						handlerContext = { ...handlerContext, body: inputResult.data };
+					}
+				} catch (error) {
+					console.error('Failed to parse request body', {
+						requestId: awsRequestId,
+						error,
+					});
+					return BadRequest('Invalid JSON in request body');
+				}
+			}
+
+			// Handle path parameters if operation requires them
+			if (options.operation && hasPathParams(options.operation)) {
+				const pathSchema = getPathSchema(options.operation);
+				const pathResult = pathSchema.safeParse(event.pathParameters || {});
+
+				if (!pathResult.success) {
+					// Extract the first error message
+					const issue = pathResult.error.issues[0];
+					const message = `Invalid path parameter: ${issue?.path.join('.')} - ${issue?.message}`;
+					//parameter: issue.path[0]
+					console.error('Path parameter validation failed', {
+						requestId: awsRequestId,
+						errors: message,
+					});
+					return BadRequest(message);
+				}
+
+				handlerContext = {
+					...handlerContext,
+					params: pathResult.data as PathParams<T>,
+				};
+			}
+
+			// Handle query parameters if operation requires them
+			if (options.operation && hasQueryParams(options.operation)) {
+				const querySchema = getQuerySchema(options.operation);
+				const queryResult = querySchema.safeParse(
+					event.queryStringParameters || {},
+				);
+
+				if (!queryResult.success) {
+					console.error('Query parameter validation failed', {
+						requestId: awsRequestId,
+						errors: queryResult.error.issues,
+					});
+					return BadRequest('Invalid query parameters');
+				}
+
+				handlerContext = {
+					...handlerContext,
+					query: queryResult.data as QueryParams<T>,
+				};
+			}
+			// Execute handler with context
 			return await handler(handlerContext);
 		} catch (error) {
 			console.error('Handler execution failed', {
@@ -83,38 +137,3 @@ export const createHandler = <T extends keyof operations>(
 		}
 	};
 };
-
-// Example usage in a lambda file
-// healthcheck.ts
-// import { createHandler } from '../middleware/createHandler';
-// import { z } from 'zod';
-
-// const healthCheckHandler: LambdaHandler = async (event, context) => {
-// 	const health = await checkDynamoDBHealth(context.client);
-// 	return createSuccessResponse(200, health);
-// };
-
-// export const handler = createHandler(healthCheckHandler, {
-// 	requireAuth: true,
-// 	requiredRole: 'admin',
-// });
-
-// // user-update.ts
-// const updateUserSchema = z.object({
-// 	name: z.string(),
-// 	email: z.string().email(),
-// });
-
-// const updateUserHandler: LambdaHandler<{
-// 	body: z.infer<typeof updateUserSchema>;
-// }> = async (event, context) => {
-// 	// Handler has access to validated body and typed context
-// 	const { name, email } = event.body;
-// 	// ... update user logic
-// 	return createSuccessResponse(200, { success: true });
-// };
-
-// export const handler = createHandler(updateUserHandler, {
-// 	requireAuth: true,
-// 	validateInput: updateUserSchema,
-// });

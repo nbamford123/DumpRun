@@ -1,11 +1,13 @@
 # Temporary ToDo File
-## Frontend
-- should I be pulling in linting rules for aws/lit/? How does biome support that?
+
 ## Backend
+- Does delete pickup return the pickup for the hard delete (should we even allow that?)? not in openapi spec
+- fix the console outputs for user tests
+- should I be formatting zod error returns for query parameters/body the way I do for path? They're pretty useless now, and the path outputs as [Array]
 - why are there two .env.local files? Do I need the one in integration tests?
 - ask claude about lambda/cloudwatch logging. Is what I have sufficient? Not being set up in terraform!
 - set up staging/prod stages in api gateway now? Later?
-- .the env example files are git ignored
+- the env example files are git ignored
 - typo in README
 - move testing stuff to a different markdown file? Minimize the readme in general. Maybe a different architecture doc too.
 - what about keeping pickup history for both users and drivers? I guess as long as they're not deleted, but that means we should disable even the soft delete
@@ -45,7 +47,6 @@
 - PII! If we store any of this kind of stuff, we have to be incredibly careful with how we deal with it.
 - Issue tracking software? Jira?
 - Documentation will become an issue soon enough, too. Confluence?
-- For admin frontend, does Next make the most sense?
 
 1. Testing:
   Conduct security testing, especially around your authentication setup.
@@ -91,19 +92,16 @@ Keep your team informed about the importance of AWS security best practices.
 
 TODO: Schedule permission review before moving to production. Target date: [Insert Date Here]
 
-1. CORS Configuration:
-If your API will be accessed from web browsers, you'll need to set up CORS (Cross-Origin Resource Sharing). This can be done in the API Gateway console or through your OpenAPI specification.
-
-2. Resource Policies:
+1. Resource Policies:
 Consider setting up resource policies for your API to control who can invoke it at the API level.
 
-3. WAF (Web Application Firewall):
+2. WAF (Web Application Firewall):
 For production APIs, consider setting up AWS WAF to protect against common web exploits.
 
-4. SSL/TLS:
+3. SSL/TLS:
 Ensure your API is only accessible via HTTPS. This is typically the default in API Gateway.
 
-5. Logging and Monitoring:
+4. Logging and Monitoring:
 Set up CloudWatch logs and metrics for your API to monitor usage and detect potential security issues.
 
 ## e2e test with production table

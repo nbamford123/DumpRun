@@ -1,3 +1,5 @@
+import { getCorsHeaders } from '@/utils/corsHeaders';
+
 export const requestContextDriver = {
 	authorizer: {
 		claims: {
@@ -22,3 +24,13 @@ export const requestContextUser = {
 		},
 	},
 };
+export const mockLambdaContext = {
+	awsRequestId: 'aws123',
+	getRemainingTimeInMillis: () => 10000,
+};
+
+export const getResult = (statusCode: number, body?: Record<string, unknown>) => ({
+	statusCode,
+	headers: getCorsHeaders(),
+	body: body ? JSON.stringify(body) : undefined,
+});

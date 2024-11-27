@@ -1,12 +1,12 @@
 import { config } from 'dotenv';
-import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
-import { PrismaClient } from '@prisma/client';
+import { describe, it, expect, beforeEach } from 'vitest';
 import {
 	createDriverService,
 	getDriverService,
 	updateDriverService,
 	deleteDriverService,
 } from '@/lambda/drivers/driverServices';
+import { getPrismaClient } from '@/lambda/middleware/createHandlerPostgres.js';
 
 import type { NewDriver, UpdateDriver } from '@/schemas/apiSchema.d.ts';
 
@@ -21,7 +21,7 @@ const mockCognito = {
 };
 mockCognito.adminGetUser.mockResolvedValue({});
 
-const prisma = new PrismaClient();
+const prisma = getPrismaClient();
 
 const mockCognitoUserId = 'test-cognito-id';
 const mockDriverData = {
@@ -33,16 +33,6 @@ const mockDriverData = {
 	vehicleModel: 'f150',
 	vehicleYear: 1998,
 };
-
-beforeAll(async () => {
-	// Connect to the test database
-	await prisma.$connect();
-});
-
-afterAll(async () => {
-	// Disconnect from the test database
-	await prisma.$disconnect();
-});
 
 beforeEach(async () => {
 	// Clean up the database before each test
@@ -56,6 +46,7 @@ describe('Driver Service Integration Tests', () => {
 		};
 
 		const createdDriver = await createDriverService(
+			prisma,
 			mockCognitoUserId,
 			newDriver,
 		);
@@ -91,7 +82,7 @@ describe('Driver Service Integration Tests', () => {
 			},
 		});
 
-		const retrievedDriver = await getDriverService(newDriver.id);
+		const retrievedDriver = await getDriverService(prisma, newDriver.id);
 		const newDriverWithISOStrings = {
 			...newDriver,
 			createdAt: newDriver?.createdAt.toISOString(),
@@ -102,7 +93,7 @@ describe('Driver Service Integration Tests', () => {
 	});
 
 	it('should return null for non-existent driver', async () => {
-		expect(await getDriverService('non-existent-id')).toBeNull();
+		expect(await getDriverService(prisma, 'non-existent-id')).toBeNull();
 	});
 
 	it('should update an existing driver', async () => {
@@ -115,7 +106,11 @@ describe('Driver Service Integration Tests', () => {
 		const updateData: UpdateDriver = {
 			name: 'Robert Smith',
 		};
-		const updatedDriver = await updateDriverService(newDriver.id, updateData);
+		const updatedDriver = await updateDriverService(
+			prisma,
+			newDriver.id,
+			updateData,
+		);
 
 		expect(updatedDriver.name).toBe(updateData.name);
 		expect(updatedDriver.email).toBe(newDriver.email);
@@ -136,7 +131,7 @@ describe('Driver Service Integration Tests', () => {
 	});
 
 	it('should return null for updating non-existent driver', async () => {
-		expect(await updateDriverService('non-existent-id', {})).toBeNull();
+		expect(await updateDriverService(prisma, 'non-existent-id', {})).toBeNull();
 	});
 
 	it('should delete an existing driver', async () => {
@@ -153,7 +148,7 @@ describe('Driver Service Integration Tests', () => {
 			updatedAt: newDriver?.updatedAt.toISOString(),
 		};
 
-		const deletedDriver = await deleteDriverService(newDriver.id);
+		const deletedDriver = await deleteDriverService(prisma, newDriver.id);
 
 		expect(deletedDriver).toEqual(newDriverWithISOStrings);
 
@@ -165,6 +160,6 @@ describe('Driver Service Integration Tests', () => {
 	});
 
 	it('delete should return null for non-existent driver', async () => {
-		expect(await deleteDriverService('non-existent-id')).toBeNull();
+		expect(await deleteDriverService(prisma, 'non-existent-id')).toBeNull();
 	});
 });

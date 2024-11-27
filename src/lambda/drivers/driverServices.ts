@@ -18,26 +18,22 @@ export const createDriverService = async (
 	cognitoUserId: string,
 	driver: NewDriver,
 ): Promise<Driver> => {
-	try {
-		// Verify Cognito user exists
-		await getCognito().adminGetUser({
-			UserPoolId: process.env.COGNITO_USER_POOL_ID || '',
-			Username: cognitoUserId,
-		});
-		const newDriver = await prisma.driver.create({
-			data: {
-				id: cognitoUserId,
-				...driver, // Prisma will automatically handle createdAt and updatedAt
-			},
-		});
-		return {
-			...newDriver,
-			createdAt: newDriver.createdAt.toISOString(),
-			updatedAt: newDriver.createdAt.toISOString(),
-		};
-	} finally {
-		await prisma.$disconnect();
-	}
+	// Verify Cognito user exists
+	await getCognito().adminGetUser({
+		UserPoolId: process.env.COGNITO_USER_POOL_ID || '',
+		Username: cognitoUserId,
+	});
+	const newDriver = await prisma.driver.create({
+		data: {
+			id: cognitoUserId,
+			...driver, // Prisma will automatically handle createdAt and updatedAt
+		},
+	});
+	return {
+		...newDriver,
+		createdAt: newDriver.createdAt.toISOString(),
+		updatedAt: newDriver.createdAt.toISOString(),
+	};
 };
 
 export const getDriversService = async (
@@ -45,39 +41,31 @@ export const getDriversService = async (
 	limit = 10,
 	offset = 0,
 ): Promise<Driver[]> => {
-	try {
-		const users = await prisma.driver.findMany({
-			take: limit,
-			skip: offset,
-		});
-		return users.map((driver) => ({
-			...driver,
-			createdAt: driver?.createdAt.toISOString(),
-			updatedAt: driver?.updatedAt.toISOString(),
-		}));
-	} finally {
-		await prisma.$disconnect();
-	}
+	const users = await prisma.driver.findMany({
+		take: limit,
+		skip: offset,
+	});
+	return users.map((driver) => ({
+		...driver,
+		createdAt: driver?.createdAt.toISOString(),
+		updatedAt: driver?.updatedAt.toISOString(),
+	}));
 };
 
 export const getDriverService = async (
 	prisma: PrismaClient,
 	id: string,
 ): Promise<Driver | null> => {
-	try {
-		const driver = await prisma.driver.findUnique({
-			where: { id: id },
-		});
-		return driver === null
-			? driver
-			: {
-					...driver,
-					createdAt: driver?.createdAt.toISOString(),
-					updatedAt: driver?.updatedAt.toISOString(),
-				};
-	} finally {
-		await prisma.$disconnect();
-	}
+	const driver = await prisma.driver.findUnique({
+		where: { id: id },
+	});
+	return driver === null
+		? driver
+		: {
+				...driver,
+				createdAt: driver?.createdAt.toISOString(),
+				updatedAt: driver?.updatedAt.toISOString(),
+			};
 };
 
 export const updateDriverService = async (
@@ -106,8 +94,6 @@ export const updateDriverService = async (
 			return null;
 		}
 		throw error; // Re-throw other errors
-	} finally {
-		await prisma.$disconnect();
 	}
 };
 
@@ -135,7 +121,5 @@ export const deleteDriverService = async (
 			return null;
 		}
 		throw error; // Re-throw other errors
-	} finally {
-		await prisma.$disconnect();
 	}
 };

@@ -1,13 +1,5 @@
 import { config } from 'dotenv';
-import {
-	describe,
-	it,
-	expect,
-	beforeAll,
-	afterAll,
-	afterEach,
-	vi,
-} from 'vitest';
+import { describe, it, expect, afterAll } from 'vitest';
 import { DynamoDB } from '@aws-sdk/client-dynamodb';
 
 import {

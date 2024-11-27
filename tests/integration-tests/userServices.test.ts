@@ -1,6 +1,5 @@
 import { config } from 'dotenv';
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
-import { PrismaClient } from '@prisma/client';
 
 import {
 	createUserService,
@@ -8,6 +7,7 @@ import {
 	updateUserService,
 	deleteUserService,
 } from '@/lambda/users/userServices';
+import { getPrismaClient } from '@/lambda/middleware/createHandlerPostgres';
 
 import type { NewUser, UpdateUser } from '@/schemas/apiSchema.d.ts';
 
@@ -22,7 +22,7 @@ const mockCognito = {
 };
 mockCognito.adminGetUser.mockResolvedValue({});
 
-const prisma = new PrismaClient();
+const prisma = getPrismaClient();
 
 const mockCognitoUserId = 'test-cognito-id';
 const mockUserData = {
@@ -50,6 +50,7 @@ beforeEach(async () => {
 describe('User Service Integration Tests', () => {
 	it('should create a new user', async () => {
 		const createdUser = await createUserService(
+			prisma,
 			mockCognitoUserId,
 			mockUserData,
 		);
@@ -82,7 +83,7 @@ describe('User Service Integration Tests', () => {
 			},
 		});
 
-		const retrievedUser = await getUserService(newUser.id);
+		const retrievedUser = await getUserService(prisma, newUser.id);
 		const newUserWithISOStrings = {
 			...newUser,
 			createdAt: newUser?.createdAt.toISOString(),
@@ -93,7 +94,7 @@ describe('User Service Integration Tests', () => {
 	});
 
 	it('should return null for non-existent user', async () => {
-		expect(await getUserService('non-existent-id')).toBeNull();
+		expect(await getUserService(prisma, 'non-existent-id')).toBeNull();
 	});
 
 	it('should update an existing user', async () => {
@@ -108,7 +109,7 @@ describe('User Service Integration Tests', () => {
 			name: 'Robert Smith',
 		};
 
-		const updatedUser = await updateUserService(newUser.id, updateData);
+		const updatedUser = await updateUserService(prisma, newUser.id, updateData);
 
 		expect(updatedUser.name).toBe(updateData.name);
 		expect(updatedUser.email).toBe(newUser.email);
@@ -127,7 +128,7 @@ describe('User Service Integration Tests', () => {
 	});
 
 	it('should return null for updating non-existent user', async () => {
-		expect(await updateUserService('non-existent-id', {})).toBeNull();
+		expect(await updateUserService(prisma, 'non-existent-id', {})).toBeNull();
 	});
 
 	it('should delete an existing user', async () => {
@@ -143,7 +144,7 @@ describe('User Service Integration Tests', () => {
 			updatedAt: newUser?.updatedAt.toISOString(),
 		};
 
-		const deletedUser = await deleteUserService(newUser.id);
+		const deletedUser = await deleteUserService(prisma, newUser.id);
 
 		expect(deletedUser).toEqual(newUserWithISOStrings);
 
@@ -153,6 +154,6 @@ describe('User Service Integration Tests', () => {
 	});
 
 	it('should return null for non-existent user', async () => {
-		expect(await deleteUserService('non-existent-id')).toBeNull();
+		expect(await deleteUserService(prisma, 'non-existent-id')).toBeNull();
 	});
 });

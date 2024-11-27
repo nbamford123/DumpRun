@@ -1,4 +1,4 @@
-import { getCorsHeaders } from '@/utils/corsHeaders';
+import { getCorsHeaders } from '@/utils/corsHeaders.js';
 
 export const requestContextDriver = {
 	authorizer: {

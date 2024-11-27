@@ -7,7 +7,7 @@ import { getCorsHeaders } from '@/utils/corsHeaders.js';
 import type { APIGatewayTransformedEvent } from './gateway.js';
 
 export type SuccessStatusCode = 200 | 201 | 204;
-export type ErrorStatusCode = 400 | 401 | 403 | 404 | 500;
+export type ErrorStatusCode = 400 | 401 | 403 | 404 | 409 | 500;
 
 export type SuccessResponse = {
 	statusCode: SuccessStatusCode;
@@ -36,7 +36,8 @@ type OperationResponse<
 
 export type OperationSuccessResponse<TOperation extends keyof operations> =
 	| OperationResponse<TOperation, 200>
-	| OperationResponse<TOperation, 201>;
+	| OperationResponse<TOperation, 201>
+	| OperationResponse<TOperation, 204>;
 
 export type APILambda<TOperation extends keyof operations> = (
 	event: APIGatewayTransformedEvent<TOperation>,
@@ -46,7 +47,7 @@ export type APILambda<TOperation extends keyof operations> = (
 // Helper function to maintain type safety during stringification
 export const createSuccessResponse = <TOperation extends keyof operations>(
 	statusCode: SuccessStatusCode,
-	body: OperationSuccessResponse<TOperation>,
+	body?: OperationSuccessResponse<TOperation>,
 ): SuccessResponse => {
 	return {
 		statusCode,
@@ -68,6 +69,8 @@ export function createErrorResponse(
 
 export const BadRequest = (message = 'Bad request') =>
 	createErrorResponse(400, { code: ErrorCodes.BAD_REQUEST, message });
+export const Conflict = (message = 'Conflict') =>
+	createErrorResponse(409, { code: ErrorCodes.CONFLICT, message });
 export const Unauthorized = (message = 'Invalid authorization data') =>
 	createErrorResponse(401, { code: ErrorCodes.UNAUTHORIZED, message });
 export const Forbidden = (message = 'User does not have required role') =>

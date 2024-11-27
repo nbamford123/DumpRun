@@ -1,5 +1,5 @@
 import { CognitoIdentityProvider } from '@aws-sdk/client-cognito-identity-provider';
-import type { PrismaClient } from '@prisma/client';
+import { Prisma, type PrismaClient } from '@prisma/client';
 
 import type { components } from '@/schemas/apiSchema.d.ts';
 

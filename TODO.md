@@ -1,7 +1,7 @@
 # Temporary ToDo File
 
 ## Backend
-- Does delete pickup return the pickup for the hard delete (should we even allow that?)? not in openapi spec
+- Does delete pickup return the pickup for the hard delete (should we even allow that?)? not in openapi spec. Do any of the deletes?
 - fix the console outputs for user tests
 - should I be formatting zod error returns for query parameters/body the way I do for path? They're pretty useless now, and the path outputs as [Array]
 - why are there two .env.local files? Do I need the one in integration tests?

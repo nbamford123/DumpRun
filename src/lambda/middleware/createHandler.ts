@@ -19,6 +19,7 @@ import type {
 	HandlerContext,
 	QueryParams,
 	PathParams,
+	ParsedBody
 } from './types.js';
 
 export const createHandler = <T extends keyof operations>(
@@ -61,7 +62,7 @@ export const createHandler = <T extends keyof operations>(
 
 			if (event.body) {
 				try {
-					const requestBody = JSON.parse(event.body);
+					const requestBody = JSON.parse(event.body) as ParsedBody<T>;
 					// TODO: if we're only going to return the body if validation exists, shouldn't we require it?
 					if (options.validateInput) {
 						const inputResult = options.validateInput.safeParse(requestBody);

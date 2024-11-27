@@ -9,23 +9,22 @@ import { getDriverService, deleteDriverService } from './driverServices.js';
 const deleteDriverHandler: PrismaOperationHandler<'deleteDriver'> = async (
 	context,
 ) => {
-	// Only admin or this user can delete
 	const driver = await getDriverService(context.client, context.userId);
 	if (driver === null) return NotFound('Driver not found');
 
-	if (context.userRole !== 'admin' && context.userId !== driver.id) {
-		console.warn('Unauthorized access attempt', {
-			requestId: context.requestId,
-		});
-		return Forbidden("User doesn't have permission");
+	// Only admin or *this* user can delete
+	if (context.userRole === 'admin' || context.userId === driver.id) {
+		const deletedDriver = (await deleteDriverService(
+			context.client,
+			context.userId,
+		)) as NonNullable<unknown>;
+
+		return createSuccessResponse<'deleteDriver'>(204, deletedDriver);
 	}
-
-	const deleteDriver = (await deleteDriverService(
-		context.client,
-		context.userId,
-	)) as NonNullable<unknown>;
-
-	return createSuccessResponse<'deleteDriver'>(204, deleteDriver);
+	console.warn('Unauthorized access attempt', {
+		requestId: context.requestId,
+	});
+	return Forbidden("User doesn't have permission");
 };
 
 export const handler = createPrismaHandler(deleteDriverHandler, {

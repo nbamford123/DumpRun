@@ -1,82 +1,42 @@
-import type { APIGatewayProxyHandler } from 'aws-lambda';
-
 import { schemas } from '@/schemas/zodSchemas.js';
-import { AuthInfo } from 'lambda/types/authInfoSchema.js';
 
-import { getPickupService } from './pickupServices.js';
+import {
+	createDynamoHandler,
+	type DynamoOperationHandler,
+} from '../middleware/createHandlerDynamo.js';
+import { createSuccessResponse, NotFound, Forbidden } from '../types/index.js';
 
-export const handler: APIGatewayProxyHandler = async (event) => {
-	try {
-		const pickupId = event.pathParameters?.pickupId;
-		if (!pickupId) {
-			return {
-				statusCode: 400,
-				body: JSON.stringify({
-					message: 'Missing pickupId in path parameters',
-				}),
-			};
+import { getPickupService, updatePickupService } from './pickupServices.js';
+
+const updatePickupHandler: DynamoOperationHandler<'updatePickup'> = async (
+	context,
+) => {
+	// Only admin or this user can update
+	const pickup = await getPickupService(
+		context.client,
+		context.params.pickupId,
+	);
+	if (pickup === null || pickup.status === 'deleted')
+		return NotFound('Pickup not found');
+	if (context.userRole === 'admin' || context.userId === pickup.userId) {
+		if (pickup.status === 'accepted' || pickup.status === 'completed') {
+			return Forbidden('Cannot modify an accepted or completed pickup');
 		}
-
-		const authInfo = AuthInfo.parse(event.requestContext.authorizer?.claims);
-		// Only users and admins can update pickups
-		if (!['admin', 'user'].includes(authInfo['custom:role'])) {
-			return {
-				statusCode: 403,
-				body: JSON.stringify({
-					message: 'Not authorized',
-				}),
-			};
-		}
-		const result = schemas.UpdatePickup.safeParse(
-			JSON.parse(event.body || '{}'),
-		);
-		if (!result.success) {
-			return {
-				statusCode: 400,
-				body: JSON.stringify({
-					message: 'Invalid input',
-					errors: result.error.issues,
-				}),
-			};
-		}
-		// Fetch the existing pickup
-		const pickupService = getPickupService();
-		const pickup = await pickupService.getPickup(pickupId);
-		// Can't update deleted pickup
-		if (!pickup || pickup.status === 'deleted') {
-			return {
-				statusCode: 404,
-				body: JSON.stringify({ message: 'Pickup not found' }),
-			};
-		}
-
-		if (authInfo['custom:role'] === 'user' && pickup.userId === authInfo.sub) {
-			if (pickup.status === 'accepted' || pickup.status === 'completed') {
-				return {
-					statusCode: 403,
-					body: JSON.stringify({
-						message: 'Cannot modify an accepted or completed pickup',
-					}),
-				};
-			}
-			// For pending pickups, users can update any field
-		}
-
-		// Update the pickup
-		const updatedPickup = await pickupService.updatePickup(
-			pickupId,
-			result.data,
-		);
-
-		return {
-			statusCode: 200,
-			body: JSON.stringify(updatedPickup),
-		};
-	} catch (error) {
-		console.error('Error updating pickup:', error);
-		return {
-			statusCode: 500,
-			body: JSON.stringify({ message: 'Internal server error' }),
-		};
+		const updatePickup = (await updatePickupService(
+			context.client,
+			context.params.pickupId,
+			context.body,
+		)) as NonNullable<unknown>;
+		return createSuccessResponse<'updatePickup'>(200, updatePickup);
 	}
+	console.warn('Unauthorized access attempt', {
+		requestId: context.requestId,
+	});
+	return Forbidden("User doesn't have permission");
 };
+
+export const handler = createDynamoHandler(updatePickupHandler, {
+	requiredRole: ['user', 'admin'],
+	operation: 'updatePickup',
+	validateInput: schemas.UpdatePickup,
+});

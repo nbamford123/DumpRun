@@ -452,7 +452,7 @@
 								"schema": {
 									"type": "object",
 									"properties": {
-										"users": {
+										"drivers": {
 											"type": "array",
 											"items": {
 												"$ref": "#/components/schemas/Driver"
@@ -1111,10 +1111,10 @@
 						"$ref": "#/components/responses/Unauthorized"
 					},
 					"403": {
-						"description": "Not authorized to cancel this acceptance"
+						"$ref": "#/components/responses/Forbidden"
 					},
 					"404": {
-						"description": "Pickup not found or not currently accepted"
+						"$ref": "#/components/responses/NotFound"
 					},
 					"409": {
 						"$ref": "#/components/responses/Conflict"

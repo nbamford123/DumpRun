@@ -587,7 +587,7 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        users?: components["schemas"]["Driver"][];
+                        drivers?: components["schemas"]["Driver"][];
                         total?: number;
                     };
                 };
@@ -938,20 +938,8 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
-            /** @description Not authorized to cancel this acceptance */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Pickup not found or not currently accepted */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
             500: components["responses"]["InternalServerError"];
         };

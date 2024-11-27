@@ -8,11 +8,11 @@ export const validGetPickup = (
 	pickup: Pickup,
 ): boolean => {
 	if (role === 'admin') return true;
-	if (pickup.status === 'deleted') return false;
+	// user can get their pickup
 	if (role === 'user' && pickup.userId === requesterId) return true;
+	// driver can get any available pickup, or any pickup they've accepted
 	if (role === 'driver') {
 		if (pickup.driverId === requesterId)
-			// Can return any status if its their pickup
 			return true;
 		if (pickup.status === 'available') return true;
 	}

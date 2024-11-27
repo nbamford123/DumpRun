@@ -198,7 +198,7 @@ const endpoints = makeApi([
       },
     ],
     response: z
-      .object({ users: z.array(Driver), total: z.number().int() })
+      .object({ drivers: z.array(Driver), total: z.number().int() })
       .partial()
       .strict()
       .passthrough(),
@@ -694,13 +694,13 @@ const endpoints = makeApi([
       },
       {
         status: 403,
-        description: `Not authorized to cancel this acceptance`,
-        schema: z.void(),
+        description: `Access forbidden`,
+        schema: Error,
       },
       {
         status: 404,
-        description: `Pickup not found or not currently accepted`,
-        schema: z.void(),
+        description: `Resource not found`,
+        schema: Error,
       },
       {
         status: 409,

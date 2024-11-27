@@ -8,109 +8,97 @@ export const AuthInfo = z.object({
 	'custom:role': z.enum(['user', 'driver', 'admin']),
 });
 
-const endpoints = api.api;
-
-export const getQuerySchema = <T extends keyof operations>(operation: T) => {
-	const schemaEndpoint = endpoints.find((e) => e.alias === operation);
-	return z.object(
-		schemaEndpoint?.parameters
-			.filter((p) => p.type === 'Query')
-			.reduce(
-				(
-					acc: { [key: string]: unknown },
-					param: { name: string; schema: string },
-				) => {
-					acc[param.name] = param?.schema;
-					return acc;
-				},
-				{},
-			) || {},
-	);
+// Define types for the endpoint structure we're working with
+type Parameter = {
+  name: string;
+  type: 'Query' | 'Path';
+  schema: ZodTypeAny;
 };
 
-// Type guard to check for query params
+type Endpoint = {
+  alias: keyof operations;
+  parameters: Parameter[];
+};
+
+const endpoints = api.api as Endpoint[];
+
+export const getQuerySchema = <T extends keyof operations>(operation: T) => {
+  const schemaEndpoint = endpoints.find((e) => e.alias === operation);
+  return z.object(
+    schemaEndpoint?.parameters
+      .filter((p: Parameter) => p.type === 'Query')
+      .reduce(
+        (acc: Record<string, ZodTypeAny>, param) => {
+          acc[param.name] = param.schema;
+          return acc;
+        },
+        {},
+      ) || {},
+  );
+};
+
 export const hasQueryParams = <T extends keyof operations>(
-	operation: T,
+  operation: T,
 ): operation is T &
-	keyof {
-		[K in keyof operations as operations[K] extends {
-			parameters: Array<{ type: 'Query' }>;
-		}
-			? K
-			: never]: true;
-	} => {
-	return Boolean(
-		endpoints
-			.find((e) => e.alias === operation)
-			?.parameters.some((p) => p.type === 'Query'),
-	);
+  keyof {
+    [K in keyof operations as operations[K] extends {
+      parameters: Array<{ type: 'Query' }>;
+    }
+      ? K
+      : never]: true;
+  } => {
+  return Boolean(
+    endpoints
+      .find((e) => e.alias === operation)
+      ?.parameters.some((p: Parameter) => p.type === 'Query'),
+  );
 };
 
 export const getPathSchema = <T extends keyof operations>(operation: T) => {
-	const schemaEndpoint = endpoints.find((e) => e.alias === operation);
-	return z.object(
-		schemaEndpoint?.parameters
-			.filter((p) => p.type === 'Path')
-			.reduce(
-				(
-					acc: { [key: string]: unknown },
-					param: { name: string; schema: string },
-				) => {
-					acc[param.name] = param?.schema;
-					return acc;
-				},
-				{},
-			) || {},
-	);
+  const schemaEndpoint = endpoints.find((e) => e.alias === operation);
+  return z.object(
+    schemaEndpoint?.parameters
+      .filter((p: Parameter) => p.type === 'Path')
+      .reduce(
+        (acc: Record<string, ZodTypeAny>, param) => {
+          acc[param.name] = param.schema;
+          return acc;
+        },
+        {},
+      ) || {},
+  );
 };
 
-// Type guard to check for query params
 export const hasPathParams = <T extends keyof operations>(
-	operation: T,
+  operation: T,
 ): operation is T &
-	keyof {
-		[K in keyof operations as operations[K] extends {
-			parameters: Array<{ type: 'Path' }>;
-		}
-			? K
-			: never]: true;
-	} => {
-	return Boolean(
-		endpoints
-			.find((e) => e.alias === operation)
-			?.parameters.some((p) => p.type === 'Path'),
-	);
+  keyof {
+    [K in keyof operations as operations[K] extends {
+      parameters: Array<{ type: 'Path' }>;
+    }
+      ? K
+      : never]: true;
+  } => {
+  return Boolean(
+    endpoints
+      .find((e) => e.alias === operation)
+      ?.parameters.some((p: Parameter) => p.type === 'Path'),
+  );
 };
 
-const listPickupsEndpoint = endpoints.find((e) => e.alias === 'listPickups');
+// Helper function to create schema from endpoint parameters
+const createSchemaFromEndpoint = (endpointName: keyof operations) => {
+  const endpoint = endpoints.find((e) => e.alias === endpointName);
+  return z.object(
+    endpoint?.parameters
+      .filter((p: Parameter) => p.type === 'Query')
+      .reduce((acc: Record<string, ZodTypeAny>, param) => {
+        acc[param.name] = param.schema;
+        return acc;
+      }, {}) || {},
+  );
+};
 
-export const listPickupsQuerySchema = z.object(
-	listPickupsEndpoint?.parameters
-		.filter((p) => p.type === 'Query')
-		.reduce((acc: { [key: string]: ZodTypeAny }, param) => {
-			acc[param.name] = param?.schema;
-			return acc;
-		}, {}) || {},
-);
-
-const listUsersEndpoint = endpoints.find((e) => e.alias === 'listUsers');
-
-export const listUsersQuerySchema = z.object(
-	listUsersEndpoint?.parameters
-		.filter((p) => p.type === 'Query')
-		.reduce((acc: { [key: string]: ZodTypeAny }, param) => {
-			acc[param.name] = param?.schema;
-			return acc;
-		}, {}) || {},
-);
-
-const listDriversEndpoint = endpoints.find((e) => e.alias === 'listDrivers');
-
-export const listDriversQuerySchema = z.object(
-	listDriversEndpoint?.parameters
-		.filter((p) => p.type === 'Query')
-		.reduce((acc: { [key: string]: ZodTypeAny }, param) => {
-			acc[param.name] = param?.schema;
-			return acc;
-		}, {}) || {},
-);
+export const listPickupsQuerySchema = createSchemaFromEndpoint('listPickups');
+export const listUsersQuerySchema = createSchemaFromEndpoint('listUsers');
+export const listDriversQuerySchema = createSchemaFromEndpoint('listDrivers');

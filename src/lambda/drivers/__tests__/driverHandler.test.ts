@@ -190,7 +190,6 @@ describe('driver lambdas', () => {
 		const event: DeepPartial<APIGatewayProxyEvent> = {
 			requestContext: requestContextDriver,
 		};
-
 		const result = await getDriver(event, mockLambdaContext);
 
 		expect(result).toEqual(
@@ -265,8 +264,8 @@ describe('driver lambdas', () => {
 			requestContext: requestContextAdmin,
 			body: JSON.stringify({ name: 'John Updated' }),
 		};
-
 		const result = await updateDriver(event, mockLambdaContext);
+
 		expect(result).toEqual(
 			getResult(404, { code: 'NotFound', message: 'Driver not found' }),
 		);

@@ -16,7 +16,10 @@ const getPickupHandler: DynamoOperationHandler<'getPickup'> = async (
 		context.client,
 		context.params.pickupId,
 	);
-	if (!pickup || (pickup.status === 'deleted' && context.userRole !== 'admin'))
+	if (
+		pickup == null ||
+		(pickup.status === 'deleted' && context.userRole !== 'admin')
+	)
 		return NotFound('Pickup not found');
 
 	if (validGetPickup(context.userRole, context.userId, pickup))

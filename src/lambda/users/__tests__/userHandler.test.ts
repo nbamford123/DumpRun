@@ -2,370 +2,391 @@ import { vi, describe, it, expect, beforeEach } from 'vitest';
 import type { APIGatewayProxyEvent } from 'aws-lambda';
 
 import {
-	requestContextAdmin,
-	requestContextDriver,
-	requestContextUser,
-	mockLambdaContext,
-	getResult,
+  requestContextAdmin,
+  requestContextDriver,
+  requestContextUser,
+  mockLambdaContext,
+  getResult,
 } from '@/utils/testUtils.js';
 import type { DeepPartial } from '@/utils/DeepPartial.js';
 
 // Mock the entire userServices module
 vi.mock('../userServices', () => ({
-	createUserService: vi.fn(),
-	getUserService: vi.fn(),
-	getUsersService: vi.fn(),
-	updateUserService: vi.fn(),
-	deleteUserService: vi.fn(),
+  createUserService: vi.fn(),
+  getUserService: vi.fn(),
+  getUsersService: vi.fn(),
+  updateUserService: vi.fn(),
+  deleteUserService: vi.fn(),
 }));
 
 // Import after mocking
+import { CognitoIdentityProvider } from '@aws-sdk/client-cognito-identity-provider';
+
 import { handler as createUser } from '../createUser.js';
 import { handler as getUser } from '../getUser.js';
 import { handler as getUsers } from '../getUsers.js';
 import { handler as updateUser } from '../updateUser.js';
 import { handler as deleteUser } from '../deleteUser.js';
 import {
-	createUserService,
-	getUserService,
-	getUsersService,
-	updateUserService,
-	deleteUserService,
+  createUserService,
+  getUserService,
+  getUsersService,
+  updateUserService,
+  deleteUserService,
 } from '../userServices.js';
 
 const mockUserId = requestContextUser.authorizer.claims.sub;
 const mockUser = {
-	id: mockUserId,
-	address: '11382 High St. Northglenn, CO 80233',
-	name: 'John Doe',
-	email: 'john@example.com',
-	phone: '303-451-5978',
-	createdAt: '2023-09-23T12:00:00Z',
-	updatedAt: '2023-09-23T12:00:00Z',
+  id: mockUserId,
+  firstName: 'John',
+  lastName: 'Doe',
+  email: 'john@example.com',
+  phoneNumber: '303-451-5978',
+  preferredContact: 'TEXT',
+  address: {
+    street: '11382 High St',
+    city: 'Northglenn',
+    state: 'CO',
+    zipCode: '80233',
+  },
+  createdAt: '2023-09-23T12:00:00Z',
+  updatedAt: '2023-09-23T12:00:00Z',
 };
 
 describe('user lambdas', () => {
-	beforeEach(() => {
-		vi.resetAllMocks();
-	});
 
-	it('should create a user successfully', async () => {
-		// Mock createUserService
-		(
-			createUserService as vi.MockedFunction<typeof createUserService>
-		).mockResolvedValue(mockUser);
+  beforeEach(() => {
+    vi.resetAllMocks();
+  });
 
-		const event: DeepPartial<APIGatewayProxyEvent> = {
-			requestContext: requestContextUser,
-			body: JSON.stringify(mockUser),
-		};
+  it('should create a user successfully', async () => {
+    // Mock createUserService
+    (
+      createUserService as vi.MockedFunction<typeof createUserService>
+    ).mockResolvedValue(mockUser);
 
-		const result = await createUser(event, mockLambdaContext);
-		expect(result).toEqual(getResult(201, mockUser));
-		expect(createUserService).toHaveBeenCalledWith(
-			expect.anything(),
-			mockUserId,
-			mockUser,
-		);
-	});
+    const event: DeepPartial<APIGatewayProxyEvent> = {
+      requestContext: requestContextAdmin,
+      body: JSON.stringify(mockUser),
+    };
 
-	it('should return 400 for invalid create user input', async () => {
-		const invalidUser = {
-			username: 'testuser',
-			// Missing required fields
-		};
+    const result = await createUser(event, mockLambdaContext);
+    expect(result).toEqual(getResult(201, mockUser));
+    // Verify Cognito calls
+    // expect(cognitoMock.adminCreateUser).toHaveBeenCalledWith({
+    //   UserPoolId: expect.any(String),
+    //   Username: mockUser.phoneNumber,
+    //   UserAttributes: expect.arrayContaining([
+    //     { Name: 'given_name', Value: mockUser.firstName },
+    //     { Name: 'family_name', Value: mockUser.lastName },
+    //     { Name: 'email', Value: mockUser.email },
+    //     { Name: 'phone_number', Value: mockUser.phoneNumber },
+    //     { Name: 'email_verified', Value: 'true' },
+    //     { Name: 'phone_number_verified', Value: 'true' },
+    //   ]),
+    //   MessageAction: 'SUPPRESS',
+    // });
 
-		const event: DeepPartial<APIGatewayProxyEvent> = {
-			requestContext: requestContextUser,
-			body: JSON.stringify(invalidUser),
-		};
+    expect(createUserService).toHaveBeenCalledWith(expect.anything(), mockUser);
+  });
 
-		const result = await createUser(event, mockLambdaContext);
+  it('should return 400 for invalid create user input', async () => {
+    const invalidUser = {
+      username: 'testuser',
+      // Missing required fields
+    };
 
-		expect(result?.statusCode).toBe(400);
-	});
+    const event: DeepPartial<APIGatewayProxyEvent> = {
+      requestContext: requestContextAdmin,
+      body: JSON.stringify(invalidUser),
+    };
 
-	it('admin should get users successfully', async () => {
-		const mockUsers = [
-			mockUser,
-			{
-				...mockUser,
-				id: 'anotherid',
-			},
-		];
-		(
-			getUsersService as vi.MockedFunction<typeof getUsersService>
-		).mockResolvedValue(mockUsers);
-		const event: DeepPartial<APIGatewayProxyEvent> = {
-			requestContext: requestContextAdmin,
-		};
-		const result = await getUsers(event, mockLambdaContext);
+    const result = await createUser(event, mockLambdaContext);
 
-		expect(result).toEqual(
-			getResult(200, { users: mockUsers, total: mockUsers.length }),
-		);
-	});
+    expect(result?.statusCode).toBe(400);
+  });
 
-	it('admin should get users successfully with query params', async () => {
-		const mockUsers = [
-			mockUser,
-			{
-				...mockUser,
-				id: 'anotherid',
-			},
-		];
-		(
-			getUsersService as vi.MockedFunction<typeof getUsersService>
-		).mockResolvedValue(mockUsers);
-		const event: DeepPartial<APIGatewayProxyEvent> = {
-			queryStringParameters: {
-				limit: 22,
-				offset: 13,
-			},
-			requestContext: requestContextAdmin,
-		};
-		const result = await getUsers(event, mockLambdaContext);
+  it('admin should get users successfully', async () => {
+    const mockUsers = [
+      mockUser,
+      {
+        ...mockUser,
+        id: 'anotherid',
+      },
+    ];
+    (
+      getUsersService as vi.MockedFunction<typeof getUsersService>
+    ).mockResolvedValue(mockUsers);
+    const event: DeepPartial<APIGatewayProxyEvent> = {
+      requestContext: requestContextAdmin,
+    };
+    const result = await getUsers(event, mockLambdaContext);
 
-		expect(result).toEqual(
-			getResult(200, { users: mockUsers, total: mockUsers.length }),
-		);
-		expect(getUsersService).toHaveBeenCalledWith(expect.anything(), 22, 13);
-	});
+    expect(result).toEqual(
+      getResult(200, { users: mockUsers, total: mockUsers.length })
+    );
+  });
 
-	it('should get a user successfully', async () => {
-		(
-			getUserService as vi.MockedFunction<typeof getUserService>
-		).mockResolvedValue(mockUser);
+  it('admin should get users successfully with query params', async () => {
+    const mockUsers = [
+      mockUser,
+      {
+        ...mockUser,
+        id: 'anotherid',
+      },
+    ];
+    (
+      getUsersService as vi.MockedFunction<typeof getUsersService>
+    ).mockResolvedValue(mockUsers);
+    const event: DeepPartial<APIGatewayProxyEvent> = {
+      queryStringParameters: {
+        limit: 22,
+        offset: 13,
+      },
+      requestContext: requestContextAdmin,
+    };
+    const result = await getUsers(event, mockLambdaContext);
 
-		const event: DeepPartial<APIGatewayProxyEvent> = {
-			pathParameters: { userId: mockUserId },
-			requestContext: requestContextUser,
-		};
+    expect(result).toEqual(
+      getResult(200, { users: mockUsers, total: mockUsers.length })
+    );
+    expect(getUsersService).toHaveBeenCalledWith(expect.anything(), 22, 13);
+  });
 
-		const result = await getUser(event, mockLambdaContext);
+  it('should get a user successfully', async () => {
+    (
+      getUserService as vi.MockedFunction<typeof getUserService>
+    ).mockResolvedValue(mockUser);
 
-		expect(result).toEqual(getResult(200, mockUser));
-		expect(getUserService).toHaveBeenCalledWith(expect.anything(), mockUserId);
-	});
+    const event: DeepPartial<APIGatewayProxyEvent> = {
+      pathParameters: { userId: mockUserId },
+      requestContext: requestContextUser,
+    };
 
-	it('should not get a user with wrong id', async () => {
-		(
-			getUserService as vi.MockedFunction<typeof getUserService>
-		).mockResolvedValue({ ...mockUser, id: 'abc123' });
+    const result = await getUser(event, mockLambdaContext);
 
-		const event: DeepPartial<APIGatewayProxyEvent> = {
-			pathParameters: { userId: mockUserId },
-			requestContext: requestContextUser,
-		};
+    expect(result).toEqual(getResult(200, mockUser));
+    expect(getUserService).toHaveBeenCalledWith(expect.anything(), mockUserId);
+  });
 
-		const result = await getUser(event, mockLambdaContext);
+  it('should not get a user with wrong id', async () => {
+    (
+      getUserService as vi.MockedFunction<typeof getUserService>
+    ).mockResolvedValue({ ...mockUser, id: 'abc123' });
 
-		expect(result).toEqual(
-			getResult(403, {
-				code: 'Forbidden',
-				message: "User doesn't have permission",
-			}),
-		);
-	});
+    const event: DeepPartial<APIGatewayProxyEvent> = {
+      pathParameters: { userId: mockUserId },
+      requestContext: requestContextUser,
+    };
 
-	it('should return 404 for get non-existent user', async () => {
-		(
-			getUserService as vi.MockedFunction<typeof getUserService>
-		).mockResolvedValue(null);
+    const result = await getUser(event, mockLambdaContext);
 
-		const event: DeepPartial<APIGatewayProxyEvent> = {
-			pathParameters: { userId: mockUserId },
-			requestContext: requestContextAdmin,
-		};
-		const result = await getUser(event, mockLambdaContext);
+    expect(result).toEqual(
+      getResult(403, {
+        code: 'Forbidden',
+        message: "User doesn't have permission",
+      })
+    );
+  });
 
-		expect(result).toEqual(
-			getResult(404, { code: 'NotFound', message: 'User not found' }),
-		);
-	});
+  it('should return 404 for get non-existent user', async () => {
+    (
+      getUserService as vi.MockedFunction<typeof getUserService>
+    ).mockResolvedValue(null);
 
-	it('should return 400 for get user missing userId', async () => {
-		const event: DeepPartial<APIGatewayProxyEvent> = {
-			requestContext: requestContextUser,
-		};
+    const event: DeepPartial<APIGatewayProxyEvent> = {
+      pathParameters: { userId: mockUserId },
+      requestContext: requestContextAdmin,
+    };
+    const result = await getUser(event, mockLambdaContext);
 
-		const result = await getUser(event, mockLambdaContext);
+    expect(result).toEqual(
+      getResult(404, { code: 'NotFound', message: 'User not found' })
+    );
+  });
 
-		expect(result).toEqual(
-			getResult(400, {
-				code: 'BadRequest',
-				message: 'Invalid path parameter: userId - Required',
-			}),
-		);
-	});
+  it('should return 400 for get user missing userId', async () => {
+    const event: DeepPartial<APIGatewayProxyEvent> = {
+      requestContext: requestContextUser,
+    };
 
-	it('should update a user successfully', async () => {
-		const mockUpdatedUser = {
-			...mockUser,
-			name: 'John Updated',
-			phone: '1234567890',
-		};
-		(
-			getUserService as vi.MockedFunction<typeof getUserService>
-		).mockResolvedValue(mockUser);
-		(
-			updateUserService as vi.MockedFunction<typeof updateUserService>
-		).mockResolvedValue(mockUpdatedUser);
-		const event: DeepPartial<APIGatewayProxyEvent> = {
-			pathParameters: { userId: mockUserId },
-			requestContext: requestContextUser,
-			body: JSON.stringify({ name: 'John Updated', phone: '1234567890' }),
-		};
-		const result = await updateUser(event, mockLambdaContext);
-		expect(result).toEqual(getResult(200, mockUpdatedUser));
-		expect(updateUserService).toHaveBeenCalledWith(
-			expect.anything(),
-			mockUserId,
-			{
-				name: 'John Updated',
-				phone: '1234567890',
-			},
-		);
-	});
+    const result = await getUser(event, mockLambdaContext);
 
-	it('should return 400 for missing user id in update user path', async () => {
-		const event: DeepPartial<APIGatewayProxyEvent> = {
-			requestContext: requestContextUser,
-		};
-		const result = await updateUser(event, mockLambdaContext);
+    expect(result).toEqual(
+      getResult(400, {
+        code: 'BadRequest',
+        message: 'Invalid path parameter: userId - Required',
+      })
+    );
+  });
 
-		expect(result).toEqual(
-			getResult(400, {
-				code: 'BadRequest',
-				message: 'Invalid path parameter: userId - Required',
-			}),
-		);
-	});
+  it('should update a user successfully', async () => {
+    const mockUpdatedUser = {
+      ...mockUser,
+      firstName: 'John Updated',
+      phone: '1234567890',
+    };
+    (
+      getUserService as vi.MockedFunction<typeof getUserService>
+    ).mockResolvedValue(mockUser);
+    (
+      updateUserService as vi.MockedFunction<typeof updateUserService>
+    ).mockResolvedValue(mockUpdatedUser);
+    const event: DeepPartial<APIGatewayProxyEvent> = {
+      pathParameters: { userId: mockUserId },
+      requestContext: requestContextUser,
+      body: JSON.stringify({ firstName: 'John Updated', phone: '1234567890' }),
+    };
+    const result = await updateUser(event, mockLambdaContext);
+    expect(result).toEqual(getResult(200, mockUpdatedUser));
+    expect(updateUserService).toHaveBeenCalledWith(
+      expect.anything(),
+      mockUserId,
+      {
+        firstName: 'John Updated',
+        phone: '1234567890',
+      }
+    );
+  });
 
-	it('should return 400 for invalid update user input', async () => {
-		const event: DeepPartial<APIGatewayProxyEvent> = {
-			pathParameters: { userId: mockUserId },
-			requestContext: requestContextUser,
-			body: JSON.stringify({ name: '' }), // Assuming empty name is invalid
-		};
+  it('should return 400 for missing user id in update user path', async () => {
+    const event: DeepPartial<APIGatewayProxyEvent> = {
+      requestContext: requestContextUser,
+    };
+    const result = await updateUser(event, mockLambdaContext);
 
-		const result = await updateUser(event, mockLambdaContext);
-		expect(result?.statusCode).toBe(400);
-	});
+    expect(result).toEqual(
+      getResult(400, {
+        code: 'BadRequest',
+        message: 'Invalid path parameter: userId - Required',
+      })
+    );
+  });
 
-	it('should return 404 for update user non-existent user', async () => {
-		(
-			getUserService as vi.MockedFunction<typeof getUserService>
-		).mockResolvedValue(null);
+  it('should return 400 for invalid update user input', async () => {
+    const event: DeepPartial<APIGatewayProxyEvent> = {
+      pathParameters: { userId: mockUserId },
+      requestContext: requestContextUser,
+      body: JSON.stringify({ firstName: '' }), // Assuming empty name is invalid
+    };
 
-		const event: DeepPartial<APIGatewayProxyEvent> = {
-			pathParameters: { userId: mockUserId },
-			requestContext: requestContextAdmin,
-			body: JSON.stringify({ name: 'John Updated' }),
-		};
-		const result = await updateUser(event, mockLambdaContext);
+    const result = await updateUser(event, mockLambdaContext);
+    expect(result?.statusCode).toBe(400);
+  });
 
-		expect(result).toEqual(
-			getResult(404, { code: 'NotFound', message: 'User not found' }),
-		);
-	});
+  it('should return 404 for update user non-existent user', async () => {
+    (
+      getUserService as vi.MockedFunction<typeof getUserService>
+    ).mockResolvedValue(null);
 
-	it('user should return 403 for update user not authorized', async () => {
-		(
-			getUserService as vi.MockedFunction<typeof getUserService>
-		).mockResolvedValue({ ...mockUser, id: 'abc123' });
-		const event: DeepPartial<APIGatewayProxyEvent> = {
-			pathParameters: { userId: mockUserId },
-			requestContext: requestContextDriver,
-			body: JSON.stringify({ name: 'John Updated' }),
-		};
-		const result = await updateUser(event, mockLambdaContext);
+    const event: DeepPartial<APIGatewayProxyEvent> = {
+      pathParameters: { userId: mockUserId },
+      requestContext: requestContextAdmin,
+      body: JSON.stringify({ name: 'John Updated' }),
+    };
+    const result = await updateUser(event, mockLambdaContext);
 
-		expect(result?.statusCode).toBe(403);
-	});
+    expect(result).toEqual(
+      getResult(404, { code: 'NotFound', message: 'User not found' })
+    );
+  });
 
-	it('should return 204 for delete user success', async () => {
-		(
-			getUserService as vi.MockedFunction<typeof getUserService>
-		).mockResolvedValue(mockUser);
-		(
-			deleteUserService as vi.MockedFunction<typeof deleteUserService>
-		).mockResolvedValue(mockUser);
+  it('user should return 403 for update user not authorized', async () => {
+    (
+      getUserService as vi.MockedFunction<typeof getUserService>
+    ).mockResolvedValue({ ...mockUser, id: 'abc123' });
+    const event: DeepPartial<APIGatewayProxyEvent> = {
+      pathParameters: { userId: mockUserId },
+      requestContext: requestContextDriver,
+      body: JSON.stringify({ name: 'John Updated' }),
+    };
+    const result = await updateUser(event, mockLambdaContext);
 
-		const event: DeepPartial<APIGatewayProxyEvent> = {
-			pathParameters: { userId: mockUserId },
-			requestContext: requestContextUser,
-		};
-		const result = await deleteUser(event, mockLambdaContext);
+    expect(result?.statusCode).toBe(403);
+  });
 
-		expect(result).toEqual(getResult(204, mockUser));
-	});
+  it('should return 204 for delete user success', async () => {
+    (
+      getUserService as vi.MockedFunction<typeof getUserService>
+    ).mockResolvedValue(mockUser);
+    (
+      deleteUserService as vi.MockedFunction<typeof deleteUserService>
+    ).mockResolvedValue(mockUser);
 
-	it('should return 204 for admin delete user success', async () => {
-		(
-			getUserService as vi.MockedFunction<typeof getUserService>
-		).mockResolvedValue(mockUser);
-		(
-			deleteUserService as vi.MockedFunction<typeof deleteUserService>
-		).mockResolvedValue(mockUser);
+    const event: DeepPartial<APIGatewayProxyEvent> = {
+      pathParameters: { userId: mockUserId },
+      requestContext: requestContextUser,
+    };
+    const result = await deleteUser(event, mockLambdaContext);
 
-		const event: DeepPartial<APIGatewayProxyEvent> = {
-			pathParameters: { userId: mockUserId },
-			requestContext: requestContextAdmin,
-		};
-		const result = await deleteUser(event, mockLambdaContext);
+    expect(result).toEqual(getResult(204, mockUser));
+  });
 
-		expect(result).toEqual(getResult(204, mockUser));
-	});
+  it('should return 204 for admin delete user success', async () => {
+    (
+      getUserService as vi.MockedFunction<typeof getUserService>
+    ).mockResolvedValue(mockUser);
+    (
+      deleteUserService as vi.MockedFunction<typeof deleteUserService>
+    ).mockResolvedValue(mockUser);
 
-	it('user should return 404 for delete user non-existent user', async () => {
-		(
-			getUserService as vi.MockedFunction<typeof getUserService>
-		).mockResolvedValue(null);
-		const event: DeepPartial<APIGatewayProxyEvent> = {
-			pathParameters: { userId: mockUserId },
-			requestContext: requestContextUser,
-		};
-		const result = await deleteUser(event, mockLambdaContext);
+    const event: DeepPartial<APIGatewayProxyEvent> = {
+      pathParameters: { userId: mockUserId },
+      requestContext: requestContextAdmin,
+    };
+    const result = await deleteUser(event, mockLambdaContext);
 
-		expect(result?.statusCode).toBe(404);
-	});
+    expect(result).toEqual(getResult(204, mockUser));
+  });
 
-	it('should return 400 for delete user missing userId parameter', async () => {
-		const event: DeepPartial<APIGatewayProxyEvent> = {
-			requestContext: requestContextUser,
-		};
-		const result = await deleteUser(event, mockLambdaContext);
+  it('user should return 404 for delete user non-existent user', async () => {
+    (
+      getUserService as vi.MockedFunction<typeof getUserService>
+    ).mockResolvedValue(null);
+    const event: DeepPartial<APIGatewayProxyEvent> = {
+      pathParameters: { userId: mockUserId },
+      requestContext: requestContextUser,
+    };
+    const result = await deleteUser(event, mockLambdaContext);
 
-		expect(result).toEqual(
-			getResult(400, {
-				code: 'BadRequest',
-				message: 'Invalid path parameter: userId - Required',
-			}),
-		);
-	});
+    expect(result?.statusCode).toBe(404);
+  });
 
-	it('should return 403 for delete user not authorized', async () => {
-		(
-			getUserService as vi.MockedFunction<typeof getUserService>
-		).mockResolvedValue({ ...mockUser, id: 'abc123' });
-		const event: DeepPartial<APIGatewayProxyEvent> = {
-			pathParameters: { userId: mockUserId },
-			requestContext: requestContextUser,
-		};
+  it('should return 400 for delete user missing userId parameter', async () => {
+    const event: DeepPartial<APIGatewayProxyEvent> = {
+      requestContext: requestContextUser,
+    };
+    const result = await deleteUser(event, mockLambdaContext);
 
-		const result = await deleteUser(event, mockLambdaContext);
+    expect(result).toEqual(
+      getResult(400, {
+        code: 'BadRequest',
+        message: 'Invalid path parameter: userId - Required',
+      })
+    );
+  });
 
-		expect(result?.statusCode).toBe(403);
-	});
+  it('should return 403 for delete user not authorized', async () => {
+    (
+      getUserService as vi.MockedFunction<typeof getUserService>
+    ).mockResolvedValue({ ...mockUser, id: 'abc123' });
+    const event: DeepPartial<APIGatewayProxyEvent> = {
+      pathParameters: { userId: mockUserId },
+      requestContext: requestContextUser,
+    };
 
-	it('should return 403 for delete user wrong role', async () => {
-		const event: DeepPartial<APIGatewayProxyEvent> = {
-			pathParameters: { userId: mockUserId },
-			requestContext: requestContextDriver,
-		};
-		const result = await deleteUser(event, mockLambdaContext);
+    const result = await deleteUser(event, mockLambdaContext);
 
-		expect(result?.statusCode).toBe(403);
-	});
+    expect(result?.statusCode).toBe(403);
+  });
+
+  it('should return 403 for delete user wrong role', async () => {
+    const event: DeepPartial<APIGatewayProxyEvent> = {
+      pathParameters: { userId: mockUserId },
+      requestContext: requestContextDriver,
+    };
+    const result = await deleteUser(event, mockLambdaContext);
+
+    expect(result?.statusCode).toBe(403);
+  });
 });

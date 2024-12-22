@@ -1,24 +1,27 @@
 # Temporary ToDo File
 
 ## Backend
-- Does delete pickup return the pickup for the hard delete (should we even allow that?)? not in openapi spec. Do any of the deletes?
-- fix the console outputs for user tests
-- should I be formatting zod error returns for query parameters/body the way I do for path? They're pretty useless now, and the path outputs as [Array]
+1. e2e tests
+2. readmes
+3. redploy
+4. push changes
+- open api spec doesn't have deleted or deletedat! Only prisma schema
+- update delete user and driver service to only mark deleted and the get, etc. calls to check the for the flag.
+- add a "verified" flag to user and driver schemas
+- when we move to production, we will have to implement an open api endpoint and no authentication for create user/driver
+- put the test id back in get pickup and ensure all e2e tests are running
+- move testing stuff to a different markdown file? Minimize the readme in general. Maybe a different architecture doc too.
+- absorb/check the console outputs for unit tests
+- should be formatting zod error returns for query parameters the way I do for path and body. They're pretty useless now, and the path outputs as [Array]
 - why are there two .env.local files? Do I need the one in integration tests?
-- ask claude about lambda/cloudwatch logging. Is what I have sufficient? Not being set up in terraform!
-- set up staging/prod stages in api gateway now? Later?
 - the env example files are git ignored
 - typo in README
-- move testing stuff to a different markdown file? Minimize the readme in general. Maybe a different architecture doc too.
 - what about keeping pickup history for both users and drivers? I guess as long as they're not deleted, but that means we should disable even the soft delete
 - note that pickups also need some kind of completed state, what determines that? As far as the user is concerned, once the shit is gone and they've paid, it's done.
-- when get pickup fails to find the pickup in the db, it throws and returns a 500, shouldn't that be a 404?
-- zod failure on getPickups because it's missing the required "status" param, but it's returning a 500. Fix!
-- need to revisit lambda logging-- too many 500s. Like a zod failure that then has to be looked up in cloudwatch
 - should I create and delete cognito users in the e2e tests?
 - should be using cognito groups instead of custom roles for admin,driver, user, then gateway authorizer could enforce that policy before the lambdas get called!
 - who marks a pickup as complete? Driver or User? Driver makes more sense, but the User will have to okay it before payment goes through, right?
-- turn off cloudwatch logs for gateway? What about lambdas? It costs $$$
+- doublecheck cloudwatch log handling-- definitely should have them set to INFO for production, right? But ERROR/INFO is okay for staging?
 - need to figure out a way to use the dynamodb schema in both test and prod, right now I'm swapping out the configs, that sux
 - dynamo table name needs to be defined somewhere rather than sprinkled everywhere throughout the code, probably ENV
 - is a 200 return from soft delete pickup correct?
@@ -52,12 +55,10 @@
   Conduct security testing, especially around your authentication setup.
 2. Set Up CI/CD Pipeline:
   Create a CI/CD pipeline using a service like AWS CodePipeline or GitHub Actions. This should automate the process of testing, building, and deploying your application.
-3. Monitoring and Logging:
-  Implement logging in your Lambda functions and set up monitoring using AWS CloudWatch. This will help you track the performance and behavior of your application in production.
-4. Optimize and scale:
+3. Optimize and scale:
   Based on your testing results, optimize your Lambda functions and database queries.
   Consider implementing caching if needed (e.g., API Gateway caching, DAX for DynamoDB).
-5. Documentation and monitoring:
+4. Documentation and monitoring:
   Update your API documentation.
   Set up CloudWatch alarms and logs for monitoring.
 

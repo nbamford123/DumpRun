@@ -12,7 +12,7 @@ const deletePickupHandler: DynamoOperationHandler<'deletePickup'> = async (
 ) => {
 	const pickup = await getPickupService(context.client, context.params.pickupId);
 
-	if (pickup === null || pickup.status === 'deleted')
+	if (pickup == null || pickup.status === 'deleted')
 		return NotFound('Pickup not found');
 	// Only admin or user who created pickup can delete
 	if (context.userId === pickup.userId || context.userRole === 'admin') {

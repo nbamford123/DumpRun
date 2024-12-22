@@ -16,7 +16,7 @@ const updatePickupHandler: DynamoOperationHandler<'updatePickup'> = async (
 		context.client,
 		context.params.pickupId,
 	);
-	if (pickup === null || pickup.status === 'deleted')
+	if (pickup == null || pickup.status === 'deleted')
 		return NotFound('Pickup not found');
 	if (context.userRole === 'admin' || context.userId === pickup.userId) {
 		if (pickup.status === 'accepted' || pickup.status === 'completed') {

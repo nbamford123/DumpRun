@@ -17,24 +17,49 @@ datasource db {
 // Are any of these fields optional in Driver or User?
 
 model User {
-  id        String   @id
-  name      String   
-  email     String   @unique
-  phone     String
-  address   String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id            String   @id  // Cognito ID
+  firstName     String
+  lastName      String
+  email         String   @unique
+  phoneNumber   String   @unique
+  street        String
+  city          String
+  state         String
+  zipCode       String
+  // Optional fields
+  pickupNotes   String?
+  preferredContact String @default("TEXT")
+
+  // Soft delete support ?? Currently not in api spec or implemented
+  isDeleted     Boolean  @default(false)
+  deletedAt     DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([phoneNumber])
+  @@index([email])
+  // @@index([isDeleted])
 }
 
 model Driver {
-  id        String   @id
-  name      String   
-  email     String   @unique
-  phone     String
-  address   String
+  id            String   @id // Cognito ID
+  firstName     String   
+  lastName      String   
+  email         String   @unique
+  phoneNumber   String   @unique
+  street        String
+  city          String
+  state         String
+  zipCode       String
   vehicleMake String
   vehicleModel String
   vehicleYear  Int
+  // Optional fields
+  preferredContact String @default("TEXT")
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([phoneNumber])
+  @@index([email])
 }

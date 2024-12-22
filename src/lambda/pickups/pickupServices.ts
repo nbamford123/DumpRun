@@ -99,7 +99,7 @@ export const getPickupService = async (
 	const result = await dynamoDB.send(new GetCommand(getParams));
 
 	if (!result.Item) {
-		throw new Error('Failed to retrieve pickup');
+		return null;
 	}
 
 	return result.Item as Pickup;

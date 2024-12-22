@@ -12,13 +12,12 @@ const createUserHandler: PrismaOperationHandler<'createUser'> = async (
 ) => {
 	const newUser = await createUserService(
 		context.client,
-		context.userId,
 		context.body,
 	);
 	return createSuccessResponse<'createUser'>(201, newUser);
 };
 
 export const handler = createPrismaHandler<'createUser'>(createUserHandler, {
-	requiredRole: ['user', 'admin'],
+	requiredRole: ['admin'],
 	validateInput: schemas.NewUser,
 });

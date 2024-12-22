@@ -12,7 +12,6 @@ const createDriverHandler: PrismaOperationHandler<'createDriver'> = async (
 ) => {
 	const newDriver = await createDriverService(
 		context.client,
-		context.userId,
 		context.body,
 	);
 	return createSuccessResponse<'createDriver'>(201, newDriver);

@@ -17,41 +17,88 @@ const Error = z
   .passthrough();
 const NewUser = z
   .object({
-    name: z.string().min(1).max(100),
+    firstName: z.string().min(1).max(100),
+    lastName: z.string().min(1).max(100),
     email: z.string().email(),
-    phone: z.string().regex(/^\+?[1-9]\d{1,14}$|^\d{3}-\d{3}-\d{4}$/),
-    address: z.string(),
+    phoneNumber: z
+      .string()
+      .regex(
+        /^(\+1|1)?[-. ]?\(?([0-9]{3})\)?[-. ]?([0-9]{3})[-. ]?([0-9]{4})$/
+      ),
+    address: z
+      .object({
+        street: z.string().min(1).max(100),
+        city: z.string().min(1).max(100),
+        state: z.string().regex(/^[A-Z]{2}$/),
+        zipCode: z.string().regex(/^\d{5}(-\d{4})?$/),
+      })
+      .strict()
+      .passthrough(),
+    preferredContact: z.enum(["CALL", "TEXT"]).optional().default("TEXT"),
   })
   .strict()
   .passthrough();
 const User = z
   .object({
     id: z.string(),
-    name: z.string(),
-    email: z.string(),
-    phone: z.string(),
-    address: z.string(),
+    firstName: z.string(),
+    lastName: z.string(),
+    email: z.string().email(),
+    phoneNumber: z.string(),
+    address: z
+      .object({
+        street: z.string(),
+        city: z.string(),
+        state: z.string().regex(/^[A-Z]{2}$/),
+        zipCode: z.string().regex(/^\d{5}(-\d{4})?$/),
+      })
+      .strict()
+      .passthrough(),
+    preferredContact: z.enum(["CALL", "TEXT"]).optional(),
     createdAt: z.string().datetime({ offset: true }),
     updatedAt: z.string().datetime({ offset: true }),
   })
-  .partial()
   .strict()
   .passthrough();
 const UpdateUser = z
   .object({
-    name: z.string().min(1).max(100),
-    phone: z.string().regex(/^\+?[1-9]\d{1,14}$|^\d{3}-\d{3}-\d{4}$/),
-    address: z.string(),
+    firstName: z.string().min(1).max(100),
+    lastName: z.string().min(1).max(100),
+    email: z.string().email(),
+    address: z
+      .object({
+        street: z.string().min(1).max(100),
+        city: z.string().min(1).max(100),
+        state: z.string().regex(/^[A-Z]{2}$/),
+        zipCode: z.string().regex(/^\d{5}(-\d{4})?$/),
+      })
+      .strict()
+      .passthrough(),
+    preferredContact: z.enum(["CALL", "TEXT"]),
   })
   .partial()
   .strict()
   .passthrough();
 const NewDriver = z
   .object({
-    name: z.string().min(1).max(100),
+    firstName: z.string().min(1).max(100),
+    lastName: z.string().min(1).max(100),
     email: z.string().email(),
-    phone: z.string().regex(/^\+?[1-9]\d{1,14}$|^\d{3}-\d{3}-\d{4}$/),
-    address: z.string(),
+    phoneNumber: z
+      .string()
+      .regex(
+        /^(\+1|1)?[-. ]?\(?([0-9]{3})\)?[-. ]?([0-9]{3})[-. ]?([0-9]{4})$/
+      ),
+    address: z
+      .object({
+        street: z.string().min(1).max(100),
+        city: z.string().min(1).max(100),
+        state: z.string().regex(/^[A-Z]{2}$/),
+        zipCode: z.string().regex(/^\d{5}(-\d{4})?$/),
+      })
+      .strict()
+      .passthrough(),
+    preferredContact: z.enum(["CALL", "TEXT"]).optional().default("TEXT"),
     vehicleMake: z.string(),
     vehicleModel: z.string(),
     vehicleYear: z.number(),
@@ -61,24 +108,43 @@ const NewDriver = z
 const Driver = z
   .object({
     id: z.string(),
-    name: z.string(),
-    email: z.string(),
-    phone: z.string(),
-    address: z.string(),
-    vehicleMake: z.string(),
-    vehicleModel: z.string(),
-    vehicleYear: z.number(),
+    firstName: z.string(),
+    lastName: z.string(),
+    email: z.string().email(),
+    phoneNumber: z.string(),
+    address: z
+      .object({
+        street: z.string(),
+        city: z.string(),
+        state: z.string().regex(/^[A-Z]{2}$/),
+        zipCode: z.string().regex(/^\d{5}(-\d{4})?$/),
+      })
+      .strict()
+      .passthrough(),
+    preferredContact: z.enum(["CALL", "TEXT"]).optional(),
+    vehicleMake: z.string().optional(),
+    vehicleModel: z.string().optional(),
+    vehicleYear: z.number().optional(),
     createdAt: z.string().datetime({ offset: true }),
     updatedAt: z.string().datetime({ offset: true }),
   })
-  .partial()
   .strict()
   .passthrough();
 const UpdateDriver = z
   .object({
-    name: z.string().min(1).max(100),
-    phone: z.string().regex(/^\+?[1-9]\d{1,14}$|^\d{3}-\d{3}-\d{4}$/),
-    address: z.string(),
+    firstName: z.string().min(1).max(100),
+    lastName: z.string().min(1).max(100),
+    email: z.string().email(),
+    address: z
+      .object({
+        street: z.string().min(1).max(100),
+        city: z.string().min(1).max(100),
+        state: z.string().regex(/^[A-Z]{2}$/),
+        zipCode: z.string().regex(/^\d{5}(-\d{4})?$/),
+      })
+      .strict()
+      .passthrough(),
+    preferredContact: z.enum(["CALL", "TEXT"]),
     vehicleMake: z.string(),
     vehicleModel: z.string(),
     vehicleYear: z.number(),

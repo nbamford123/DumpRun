@@ -221,59 +221,257 @@ export interface components {
             error?: string;
         };
         NewUser: {
-            name: string;
-            /** Format: email */
+            /** @description User's first name */
+            firstName: string;
+            /** @description User's last name */
+            lastName: string;
+            /**
+             * Format: email
+             * @description User's email address
+             */
             email: string;
-            phone: string;
-            address: string;
+            /**
+             * @description US phone number (accepts formats: (123) 456-7890, 123-456-7890, 123.456.7890, or just 1234567890)
+             * @example 123-456-7890
+             */
+            phoneNumber: string;
+            address: {
+                /**
+                 * @description Street address
+                 * @example 123 Main St
+                 */
+                street: string;
+                /**
+                 * @description City name
+                 * @example Denver
+                 */
+                city: string;
+                /**
+                 * @description Two-letter state code
+                 * @example CO
+                 */
+                state: string;
+                /**
+                 * @description 5-digit ZIP code or ZIP+4
+                 * @example 80203
+                 */
+                zipCode: string;
+            };
+            /**
+             * @description Preferred method of contact
+             * @default TEXT
+             * @enum {string}
+             */
+            preferredContact: "CALL" | "TEXT";
         };
         UpdateUser: {
-            name?: string;
-            phone?: string;
-            address?: string;
+            /** @description User's first name */
+            firstName?: string;
+            /** @description User's last name */
+            lastName?: string;
+            /**
+             * Format: email
+             * @description User's email address
+             */
+            email?: string;
+            address?: {
+                /**
+                 * @description Street address
+                 * @example 123 Main St
+                 */
+                street: string;
+                /**
+                 * @description City name
+                 * @example San Francisco
+                 */
+                city: string;
+                /**
+                 * @description Two-letter state code
+                 * @example CA
+                 */
+                state: string;
+                /**
+                 * @description 5-digit ZIP code or ZIP+4
+                 * @example 94105
+                 */
+                zipCode: string;
+            };
+            /**
+             * @description Preferred method of contact
+             * @enum {string}
+             */
+            preferredContact?: "CALL" | "TEXT";
         };
         User: {
-            id?: string;
-            name?: string;
-            email?: string;
-            phone?: string;
-            address?: string;
-            /** Format: date-time */
-            createdAt?: string;
-            /** Format: date-time */
-            updatedAt?: string;
+            /** @description User's unique identifier (same as Cognito ID) */
+            id: string;
+            /** @description User's first name */
+            firstName: string;
+            /** @description User's last name */
+            lastName: string;
+            /**
+             * Format: email
+             * @description User's email address
+             */
+            email: string;
+            /**
+             * @description User's phone number (used as primary identifier)
+             * @example 123-456-7890
+             */
+            phoneNumber: string;
+            address: {
+                /** @description Street address */
+                street: string;
+                /** @description City name */
+                city: string;
+                /** @description Two-letter state code */
+                state: string;
+                /** @description ZIP code */
+                zipCode: string;
+            };
+            /**
+             * @description Preferred method of contact
+             * @enum {string}
+             */
+            preferredContact?: "CALL" | "TEXT";
+            /**
+             * Format: date-time
+             * @description Timestamp of user creation
+             */
+            createdAt: string;
+            /**
+             * Format: date-time
+             * @description Timestamp of last update
+             */
+            updatedAt: string;
         };
         NewDriver: {
-            name: string;
-            /** Format: email */
+            /** @description User's first name */
+            firstName: string;
+            /** @description User's last name */
+            lastName: string;
+            /**
+             * Format: email
+             * @description User's email address
+             */
             email: string;
-            phone: string;
-            address: string;
+            /**
+             * @description US phone number (accepts formats: (123) 456-7890, 123-456-7890, 123.456.7890, or just 1234567890)
+             * @example 123-456-7890
+             */
+            phoneNumber: string;
+            address: {
+                /**
+                 * @description Street address
+                 * @example 123 Main St
+                 */
+                street: string;
+                /**
+                 * @description City name
+                 * @example Denver
+                 */
+                city: string;
+                /**
+                 * @description Two-letter state code
+                 * @example CO
+                 */
+                state: string;
+                /**
+                 * @description 5-digit ZIP code or ZIP+4
+                 * @example 80203
+                 */
+                zipCode: string;
+            };
+            /**
+             * @description Preferred method of contact
+             * @default TEXT
+             * @enum {string}
+             */
+            preferredContact: "CALL" | "TEXT";
             vehicleMake: string;
             vehicleModel: string;
             vehicleYear: number;
         };
         UpdateDriver: {
-            name?: string;
-            phone?: string;
-            address?: string;
+            /** @description User's first name */
+            firstName?: string;
+            /** @description User's last name */
+            lastName?: string;
+            /**
+             * Format: email
+             * @description User's email address
+             */
+            email?: string;
+            address?: {
+                /**
+                 * @description Street address
+                 * @example 123 Main St
+                 */
+                street: string;
+                /**
+                 * @description City name
+                 * @example San Francisco
+                 */
+                city: string;
+                /**
+                 * @description Two-letter state code
+                 * @example CA
+                 */
+                state: string;
+                /**
+                 * @description 5-digit ZIP code or ZIP+4
+                 * @example 94105
+                 */
+                zipCode: string;
+            };
+            /**
+             * @description Preferred method of contact
+             * @enum {string}
+             */
+            preferredContact?: "CALL" | "TEXT";
             vehicleMake?: string;
             vehicleModel?: string;
             vehicleYear?: number;
         };
         Driver: {
-            id?: string;
-            name?: string;
-            email?: string;
-            phone?: string;
-            address?: string;
+            /** @description User's unique identifier (same as Cognito ID) */
+            id: string;
+            /** @description User's first name */
+            firstName: string;
+            /** @description User's last name */
+            lastName: string;
+            /**
+             * Format: email
+             * @description User's email address
+             */
+            email: string;
+            /**
+             * @description User's phone number (used as primary identifier)
+             * @example 123-456-7890
+             */
+            phoneNumber: string;
+            address: {
+                /** @description Street address */
+                street: string;
+                /** @description City name */
+                city: string;
+                /** @description Two-letter state code */
+                state: string;
+                /** @description ZIP code */
+                zipCode: string;
+            };
+            /**
+             * @description Preferred method of contact
+             * @enum {string}
+             */
+            preferredContact?: "CALL" | "TEXT";
             vehicleMake?: string;
             vehicleModel?: string;
             vehicleYear?: number;
             /** Format: date-time */
-            createdAt?: string;
+            createdAt: string;
             /** Format: date-time */
-            updatedAt?: string;
+            updatedAt: string;
         };
         NewPickup: {
             location: string;

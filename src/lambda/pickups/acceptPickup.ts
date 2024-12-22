@@ -19,7 +19,7 @@ const acceptPickupHandler: DynamoOperationHandler<'acceptPickup'> = async (
 		context.client,
 		context.params.pickupId,
 	);
-	if (pickup === null || pickup.status === 'deleted')
+	if (pickup == null || pickup.status === 'deleted')
 		return NotFound('Pickup not found');
 	if (pickup.status !== 'available') return Conflict('Pickup not available');
 

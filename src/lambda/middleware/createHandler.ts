@@ -66,10 +66,12 @@ export const createHandler = <T extends keyof operations>(
 					// TODO: if we're only going to return the body if validation exists, shouldn't we require it?
 					if (options.validateInput) {
 						const inputResult = options.validateInput.safeParse(requestBody);
+						const issue = inputResult.error?.issues[0];
+						const message = `Invalid input: ${issue?.path.join('.')} - ${issue?.message}`;
 						if (!inputResult.success) {
 							console.error('Input validation failed', {
 								requestId: awsRequestId,
-								errors: inputResult.error.issues,
+								errors: message,
 							});
 							return BadRequest('Invalid input');
 						}

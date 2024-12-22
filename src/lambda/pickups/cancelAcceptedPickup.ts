@@ -19,7 +19,7 @@ const cancelAcceptedPickupHandler: DynamoOperationHandler<
 		context.client,
 		context.params.pickupId,
 	);
-	if (pickup === null || pickup.status === 'deleted')
+	if (pickup == null || pickup.status === 'deleted')
 		return NotFound('Pickup not found');
 
 	// If you're the user or driver, you can cancel (or admin)

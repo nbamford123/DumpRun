@@ -1,5 +1,13 @@
 import { config } from 'dotenv';
-import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
+import {
+  describe,
+  it,
+  expect,
+  beforeAll,
+  afterAll,
+  beforeEach,
+  vi,
+} from 'vitest';
 
 import { getPrismaClient } from '@/lambda/middleware/createHandlerPostgres';
 import {
@@ -21,12 +29,14 @@ vi.mock('@aws-sdk/client-cognito-identity-provider', () => {
   const adminCreateUser = vi
     .fn()
     .mockImplementation(() => ({ User: { Username: mockCognitoUserId } }));
+  const adminDeleteUser = vi.fn();
   const adminSetUserPassword = vi.fn();
   const adminUpdateUserAttributes = vi.fn();
 
   return {
     CognitoIdentityProvider: vi.fn().mockImplementation(() => ({
       adminCreateUser,
+      adminDeleteUser,
       adminSetUserPassword,
       adminUpdateUserAttributes,
     })),
@@ -66,8 +76,8 @@ beforeEach(async () => {
 
 describe('User Service Integration Tests', () => {
   it('should create a new user', async () => {
-    const createdUser = await createUserService(prisma, mockUserData);
-    expect(createdUser).toEqual({
+    const result = await createUserService(prisma, mockUserData);
+    expect(result.user).toEqual({
       ...mockUserData,
       id: mockCognitoUserId,
       createdAt: expect.any(String),
@@ -79,7 +89,7 @@ describe('User Service Integration Tests', () => {
 
     // Verify the user was actually created in the database
     const dbUser = await prisma.user.findUnique({
-      where: { id: createdUser.id },
+      where: { id: result.user.id },
     });
     expect(dbUser).toEqual(expect.any(Object));
   });

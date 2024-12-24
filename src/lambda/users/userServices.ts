@@ -4,11 +4,13 @@ import { Prisma, type PrismaClient, type User as DBUser } from '@prisma/client';
 import { formatPhoneForCognito } from '@/utils/formatPhoneForCognito.js';
 import { generateSecurePassword } from '@/utils/generateSecurePassword.js';
 
-import type {
-  User,
-  NewUser,
-  UpdateUser,
-  PrismaError,
+import {
+  type User,
+  type NewUser,
+  type UpdateUser,
+  type CreateUserResult,
+  isCognitoError,
+  isValidPreferredContact,
 } from '../types/schemaTypes.js';
 
 const cognitoClient = (() => {
@@ -35,9 +37,6 @@ const cognitoClient = (() => {
     },
   };
 })();
-
-const isValidPreferredContact = (val: unknown): val is 'CALL' | 'TEXT' =>
-  val === 'CALL' || val === 'TEXT';
 
 const dbToUser = (dbUser: DBUser): User => {
   const {
@@ -78,7 +77,7 @@ const userToDB = (user: NewUser): Partial<DBUser> => {
 export const createUserService = async (
   prisma: PrismaClient,
   userData: NewUser
-): Promise<User> => {
+): Promise<CreateUserResult<User>> => {
   const cognito = cognitoClient.getInstance();
   const userPoolId = process.env.COGNITO_USER_POOL_ID;
   try {
@@ -149,19 +148,37 @@ export const createUserService = async (
         isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
       }
     );
-    return dbToUser(myUser);
+    return { type: 'success', user: dbToUser(myUser) };
   } catch (error) {
-    // What about exisiting cognito user error?
-    // What about existing email error? It's unique in prisma db
-    // Handle specific error cases that will be important in production
-    if ((error as PrismaError).name === 'UsernameExistsException') {
-      throw new Error('A user with this phone number already exists');
+    // Handle Cognito-specific errors
+    if (isCognitoError(error)) {
+      switch (error.name) {
+        case 'UsernameExistsException':
+          return { type: 'phone_exists', phoneNumber: userData.phoneNumber };
+        // Assuming Zod would catch invalid input, but leaving them here just in case
+        // case 'InvalidParameterException':
+        //   if (error.message.includes('email')) {
+        //     // Cognito might also reject invalid emails
+        //     throw new Error(`Invalid email format: ${userData.email}`);
+        //   }
+        //   if (error.message.includes('phone')) {
+        //     throw new Error(`Invalid phone format: ${userData.phoneNumber}`);
+        //   }
+        //   throw error;
+        // case 'TooManyRequestsException':
+        //   throw new Error('Rate limit exceeded. Please try again later');
+        default:
+          throw error;
+      }
     }
     if (
       error instanceof Prisma.PrismaClientKnownRequestError &&
       error.code === 'P2002'
     ) {
-      throw new Error('A user with this email already exists');
+      const target = error.meta?.target as string[] | undefined;
+      if (target?.includes('email')) {
+        return { type: 'email_exists', email: userData.email };
+      }
     }
     throw error;
   }
@@ -218,19 +235,64 @@ export const deleteUserService = async (
   prisma: PrismaClient,
   id: string
 ): Promise<User | null> => {
+  const cognito = cognitoClient.getInstance();
+  const userPoolId = process.env.COGNITO_USER_POOL_ID;
+
+  if (!userPoolId) {
+    throw new Error('COGNITO_USER_POOL_ID environment variable is not set');
+  }
+
   try {
-    const user = await prisma.user.delete({
-      where: {
-        id: id,
+    const deletedUser = await prisma.$transaction(
+      async (tx) => {
+        const user = await tx.user.findUnique({
+          where: { id },
+        });
+        if (!user) {
+          return null;
+        }
+
+        // Delete from Cognito first
+        try {
+          await cognito.adminDeleteUser({
+            UserPoolId: userPoolId,
+            Username: id,
+          });
+        } catch (error) {
+          if (
+            !isCognitoError(error) ||
+            error.name !== 'UserNotFoundException'
+          ) {
+            throw error;
+          }
+          // If user not found in Cognito, continue with DB deletion
+          console.warn(`Cognito user ${id} not found during deletion`);
+        }
+        await tx.user.delete({
+          where: { id },
+        });
+
+        return user;
       },
-    });
-    return dbToUser(user);
+      {
+        maxWait: 5000,
+        timeout: 10000,
+        isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+      }
+    );
+    return deletedUser ? dbToUser(deletedUser) : null;
   } catch (error) {
     if (
       error instanceof Prisma.PrismaClientKnownRequestError &&
       error.code === 'P2025'
     ) {
       // Record to delete does not exist
+      return null;
+    }
+    if (isCognitoError(error) && error.name === 'UserNotFoundException') {
+      console.error(
+        `Inconsistency detected: User ${id} exists in DB but not in Cognito`
+      );
       return null;
     }
     throw error; // Re-throw other errors

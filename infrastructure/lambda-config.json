@@ -1,405 +1,435 @@
 {
-	"get-postgres-health": {
-		"handler": "index.handler",
-		"role_name": "lambda-basic-role",
-		"zip_file": "dist/health/postgresHealth.zip",
-		"environment": "DATABASE_URL=${DATABASE_URL},NODE_PATH=/opt/nodejs/node_modules,PRISMA_QUERY_ENGINE_LIBRARY=/opt/nodejs/node_modules/.prisma/client/libquery_engine-rhel-openssl-3.0.x.so.node,ALLOWED_ORIGINS=${ALLOWED_ORIGINS}",
-		"layer": "${LAMBDA_LAYER_ARN}",
-		"managed_policies": [
-			"arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
-		]
-	},
-	"get-dynamodb-health": {
-		"handler": "index.handler",
-		"role_name": "lambda-dynamodb-health-role",
-		"zip_file": "dist/health/dynamodbHealth.zip",
-		"environment": "TABLE_NAME=${DYNAMO_TABLE_NAME},NODE_PATH=/opt/nodejs/node_modules,ALLOWED_ORIGINS=${ALLOWED_ORIGINS}",
-		"managed_policies": [
-			"arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
-		],
-		"inline_policies": {
-			"DynamoDBAccess": {
-				"Version": "2012-10-17",
-				"Statement": [
-					{
-						"Effect": "Allow",
-						"Action": ["dynamodb:DescribeTable"],
-						"Resource": "arn:aws:dynamodb:${AWS_REGION}:${AWS_ACCOUNT_ID}:table/${DYNAMO_TABLE_NAME}"
-					}
-				]
-			}
-		}
-	},
-	"create-user": {
-		"handler": "index.handler",
-		"role_name": "lambda-cognito-role",
-		"zip_file": "dist/users/createUser.zip",
-		"environment": "DATABASE_URL=${DATABASE_URL},NODE_PATH=/opt/nodejs/node_modules,PRISMA_QUERY_ENGINE_LIBRARY=/opt/nodejs/node_modules/.prisma/client/libquery_engine-rhel-openssl-3.0.x.so.node,COGNITO_USER_POOL_ID=${COGNITO_USER_POOL_ID},ALLOWED_ORIGINS=${ALLOWED_ORIGINS}",
-		"layer": "${LAMBDA_LAYER_ARN}",
-		"managed_policies": [
-			"arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
-		],
-		"inline_policies": {
-			"CognitoUserPoolAccess": {
-				"Version": "2012-10-17",
-				"Statement": [
-					{
-						"Effect": "Allow",
-						"Action": ["cognito-idp:AdminGetUser"],
-						"Resource": "arn:aws:cognito-idp:${AWS_REGION}:${AWS_ACCOUNT_ID}:userpool/*"
-					}
-				]
-			}
-		}
-	},
-	"get-users": {
-		"handler": "index.handler",
-		"role_name": "lambda-basic-role",
-		"zip_file": "dist/users/getUsers.zip",
-		"environment": "DATABASE_URL=${DATABASE_URL},NODE_PATH=/opt/nodejs/node_modules,PRISMA_QUERY_ENGINE_LIBRARY=/opt/nodejs/node_modules/.prisma/client/libquery_engine-rhel-openssl-3.0.x.so.node,ALLOWED_ORIGINS=${ALLOWED_ORIGINS}",
-		"layer": "${LAMBDA_LAYER_ARN}",
-		"managed_policies": [
-			"arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
-		]
-	},
-	"get-user": {
-		"handler": "index.handler",
-		"role_name": "lambda-basic-role",
-		"zip_file": "dist/users/getUser.zip",
-		"environment": "DATABASE_URL=${DATABASE_URL},NODE_PATH=/opt/nodejs/node_modules,PRISMA_QUERY_ENGINE_LIBRARY=/opt/nodejs/node_modules/.prisma/client/libquery_engine-rhel-openssl-3.0.x.so.node,ALLOWED_ORIGINS=${ALLOWED_ORIGINS}",
-		"layer": "${LAMBDA_LAYER_ARN}",
-		"managed_policies": [
-			"arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
-		]
-	},
-	"update-user": {
-		"handler": "index.handler",
-		"role_name": "lambda-basic-role",
-		"zip_file": "dist/users/updateUser.zip",
-		"environment": "DATABASE_URL=${DATABASE_URL},NODE_PATH=/opt/nodejs/node_modules,PRISMA_QUERY_ENGINE_LIBRARY=/opt/nodejs/node_modules/.prisma/client/libquery_engine-rhel-openssl-3.0.x.so.node,ALLOWED_ORIGINS=${ALLOWED_ORIGINS}",
-		"layer": "${LAMBDA_LAYER_ARN}",
-		"managed_policies": [
-			"arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
-		]
-	},
-	"delete-user": {
-		"handler": "index.handler",
-		"role_name": "lambda-basic-role",
-		"zip_file": "dist/users/deleteUser.zip",
-		"environment": "DATABASE_URL=${DATABASE_URL},NODE_PATH=/opt/nodejs/node_modules,PRISMA_QUERY_ENGINE_LIBRARY=/opt/nodejs/node_modules/.prisma/client/libquery_engine-rhel-openssl-3.0.x.so.node,ALLOWED_ORIGINS=${ALLOWED_ORIGINS}",
-		"layer": "${LAMBDA_LAYER_ARN}",
-		"managed_policies": [
-			"arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
-		]
-	},
-	"create-driver": {
-		"handler": "index.handler",
-		"role_name": "lambda-cognito-role",
-		"zip_file": "dist/drivers/createDriver.zip",
-		"environment": "DATABASE_URL=${DATABASE_URL},NODE_PATH=/opt/nodejs/node_modules,PRISMA_QUERY_ENGINE_LIBRARY=/opt/nodejs/node_modules/.prisma/client/libquery_engine-rhel-openssl-3.0.x.so.node,COGNITO_USER_POOL_ID=${COGNITO_USER_POOL_ID},ALLOWED_ORIGINS=${ALLOWED_ORIGINS}",
-		"layer": "${LAMBDA_LAYER_ARN}",
-		"managed_policies": [
-			"arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
-		],
-		"inline_policies": {
-			"CognitoUserPoolAccess": {
-				"Version": "2012-10-17",
-				"Statement": [
-					{
-						"Effect": "Allow",
-						"Action": ["cognito-idp:AdminGetUser"],
-						"Resource": "arn:aws:cognito-idp:${AWS_REGION}:${AWS_ACCOUNT_ID}:userpool/*"
-					}
-				]
-			}
-		}
-	},
-	"get-drivers": {
-		"handler": "index.handler",
-		"role_name": "lambda-basic-role",
-		"zip_file": "dist/drivers/getDrivers.zip",
-		"environment": "DATABASE_URL=${DATABASE_URL},NODE_PATH=/opt/nodejs/node_modules,PRISMA_QUERY_ENGINE_LIBRARY=/opt/nodejs/node_modules/.prisma/client/libquery_engine-rhel-openssl-3.0.x.so.node,ALLOWED_ORIGINS=${ALLOWED_ORIGINS}",
-		"layer": "${LAMBDA_LAYER_ARN}",
-		"managed_policies": [
-			"arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
-		]
-	},
-	"get-driver": {
-		"handler": "index.handler",
-		"role_name": "lambda-basic-role",
-		"zip_file": "dist/drivers/getDriver.zip",
-		"environment": "DATABASE_URL=${DATABASE_URL},NODE_PATH=/opt/nodejs/node_modules,PRISMA_QUERY_ENGINE_LIBRARY=/opt/nodejs/node_modules/.prisma/client/libquery_engine-rhel-openssl-3.0.x.so.node,ALLOWED_ORIGINS=${ALLOWED_ORIGINS}",
-		"layer": "${LAMBDA_LAYER_ARN}",
-		"managed_policies": [
-			"arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
-		]
-	},
-	"update-driver": {
-		"handler": "index.handler",
-		"role_name": "lambda-basic-role",
-		"zip_file": "dist/drivers/updateDriver.zip",
-		"environment": "DATABASE_URL=${DATABASE_URL},NODE_PATH=/opt/nodejs/node_modules,PRISMA_QUERY_ENGINE_LIBRARY=/opt/nodejs/node_modules/.prisma/client/libquery_engine-rhel-openssl-3.0.x.so.node,ALLOWED_ORIGINS=${ALLOWED_ORIGINS}",
-		"layer": "${LAMBDA_LAYER_ARN}",
-		"managed_policies": [
-			"arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
-		]
-	},
-	"delete-driver": {
-		"handler": "index.handler",
-		"role_name": "lambda-basic-role",
-		"zip_file": "dist/drivers/deleteDriver.zip",
-		"environment": "DATABASE_URL=${DATABASE_URL},NODE_PATH=/opt/nodejs/node_modules,PRISMA_QUERY_ENGINE_LIBRARY=/opt/nodejs/node_modules/.prisma/client/libquery_engine-rhel-openssl-3.0.x.so.node,ALLOWED_ORIGINS=${ALLOWED_ORIGINS}",
-		"layer": "${LAMBDA_LAYER_ARN}",
-		"managed_policies": [
-			"arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
-		]
-	},
-	"create-pickup": {
-		"handler": "index.handler",
-		"role_name": "lambda-dynamodb-role",
-		"zip_file": "dist/pickups/createPickup.zip",
-		"environment": "TABLE_NAME=${DYNAMO_TABLE_NAME},NODE_PATH=/opt/nodejs/node_modules,ALLOWED_ORIGINS=${ALLOWED_ORIGINS}",
-		"managed_policies": [
-			"arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
-		],
-		"inline_policies": {
-			"DynamoDBAccess": {
-				"Version": "2012-10-17",
-				"Statement": [
-					{
-						"Effect": "Allow",
-						"Action": [
-							"dynamodb:GetItem",
-							"dynamodb:PutItem",
-							"dynamodb:UpdateItem",
-							"dynamodb:DeleteItem",
-							"dynamodb:Query",
-							"dynamodb:Scan"
-						],
-						"Resource": [
-							"arn:aws:dynamodb:${AWS_REGION}:${AWS_ACCOUNT_ID}:table/${DYNAMO_TABLE_NAME}",
-							"arn:aws:dynamodb:${AWS_REGION}:${AWS_ACCOUNT_ID}:table/${DYNAMO_TABLE_NAME}/index/*"
-						]
-					}
-				]
-			}
-		}
-	},
-	"get-pickups": {
-		"handler": "index.handler",
-		"role_name": "lambda-dynamodb-role",
-		"zip_file": "dist/pickups/getPickups.zip",
-		"environment": "TABLE_NAME=${DYNAMO_TABLE_NAME},NODE_PATH=/opt/nodejs/node_modules,ALLOWED_ORIGINS=${ALLOWED_ORIGINS}",
-		"managed_policies": [
-			"arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
-		],
-		"inline_policies": {
-			"DynamoDBAccess": {
-				"Version": "2012-10-17",
-				"Statement": [
-					{
-						"Effect": "Allow",
-						"Action": [
-							"dynamodb:GetItem",
-							"dynamodb:PutItem",
-							"dynamodb:UpdateItem",
-							"dynamodb:DeleteItem",
-							"dynamodb:Query",
-							"dynamodb:Scan"
-						],
-						"Resource": [
-							"arn:aws:dynamodb:${AWS_REGION}:${AWS_ACCOUNT_ID}:table/${DYNAMO_TABLE_NAME}",
-							"arn:aws:dynamodb:${AWS_REGION}:${AWS_ACCOUNT_ID}:table/${DYNAMO_TABLE_NAME}/index/*"
-						]
-					}
-				]
-			}
-		}
-	},
-	"get-pickup": {
-		"handler": "index.handler",
-		"role_name": "lambda-dynamodb-role",
-		"zip_file": "dist/pickups/getPickup.zip",
-		"environment": "TABLE_NAME=${DYNAMO_TABLE_NAME},NODE_PATH=/opt/nodejs/node_modules,ALLOWED_ORIGINS=${ALLOWED_ORIGINS}",
-		"managed_policies": [
-			"arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
-		],
-		"inline_policies": {
-			"DynamoDBAccess": {
-				"Version": "2012-10-17",
-				"Statement": [
-					{
-						"Effect": "Allow",
-						"Action": [
-							"dynamodb:GetItem",
-							"dynamodb:PutItem",
-							"dynamodb:UpdateItem",
-							"dynamodb:DeleteItem",
-							"dynamodb:Query",
-							"dynamodb:Scan"
-						],
-						"Resource": [
-							"arn:aws:dynamodb:${AWS_REGION}:${AWS_ACCOUNT_ID}:table/${DYNAMO_TABLE_NAME}",
-							"arn:aws:dynamodb:${AWS_REGION}:${AWS_ACCOUNT_ID}:table/${DYNAMO_TABLE_NAME}/index/*"
-						]
-					}
-				]
-			}
-		}
-	},
-	"update-pickup": {
-		"handler": "index.handler",
-		"role_name": "lambda-dynamodb-role",
-		"zip_file": "dist/pickups/updatePickup.zip",
-		"environment": "TABLE_NAME=${DYNAMO_TABLE_NAME},NODE_PATH=/opt/nodejs/node_modules,ALLOWED_ORIGINS=${ALLOWED_ORIGINS}",
-		"managed_policies": [
-			"arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
-		],
-		"inline_policies": {
-			"DynamoDBAccess": {
-				"Version": "2012-10-17",
-				"Statement": [
-					{
-						"Effect": "Allow",
-						"Action": [
-							"dynamodb:GetItem",
-							"dynamodb:PutItem",
-							"dynamodb:UpdateItem",
-							"dynamodb:DeleteItem",
-							"dynamodb:Query",
-							"dynamodb:Scan"
-						],
-						"Resource": [
-							"arn:aws:dynamodb:${AWS_REGION}:${AWS_ACCOUNT_ID}:table/${DYNAMO_TABLE_NAME}",
-							"arn:aws:dynamodb:${AWS_REGION}:${AWS_ACCOUNT_ID}:table/${DYNAMO_TABLE_NAME}/index/*"
-						]
-					}
-				]
-			}
-		}
-	},
-	"delete-pickup": {
-		"handler": "index.handler",
-		"role_name": "lambda-dynamodb-role",
-		"zip_file": "dist/pickups/deletePickup.zip",
-		"environment": "TABLE_NAME=${DYNAMO_TABLE_NAME},NODE_PATH=/opt/nodejs/node_modules,ALLOWED_ORIGINS=${ALLOWED_ORIGINS}",
-		"managed_policies": [
-			"arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
-		],
-		"inline_policies": {
-			"DynamoDBAccess": {
-				"Version": "2012-10-17",
-				"Statement": [
-					{
-						"Effect": "Allow",
-						"Action": [
-							"dynamodb:GetItem",
-							"dynamodb:PutItem",
-							"dynamodb:UpdateItem",
-							"dynamodb:DeleteItem",
-							"dynamodb:Query",
-							"dynamodb:Scan"
-						],
-						"Resource": [
-							"arn:aws:dynamodb:${AWS_REGION}:${AWS_ACCOUNT_ID}:table/${DYNAMO_TABLE_NAME}",
-							"arn:aws:dynamodb:${AWS_REGION}:${AWS_ACCOUNT_ID}:table/${DYNAMO_TABLE_NAME}/index/*"
-						]
-					}
-				]
-			}
-		}
-	},
-	"available-pickups": {
-		"handler": "index.handler",
-		"role_name": "lambda-dynamodb-role",
-		"zip_file": "dist/pickups/availablePickups.zip",
-		"environment": "TABLE_NAME=${DYNAMO_TABLE_NAME},NODE_PATH=/opt/nodejs/node_modules,ALLOWED_ORIGINS=${ALLOWED_ORIGINS}",
-		"managed_policies": [
-			"arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
-		],
-		"inline_policies": {
-			"DynamoDBAccess": {
-				"Version": "2012-10-17",
-				"Statement": [
-					{
-						"Effect": "Allow",
-						"Action": [
-							"dynamodb:GetItem",
-							"dynamodb:PutItem",
-							"dynamodb:UpdateItem",
-							"dynamodb:DeleteItem",
-							"dynamodb:Query",
-							"dynamodb:Scan"
-						],
-						"Resource": [
-							"arn:aws:dynamodb:${AWS_REGION}:${AWS_ACCOUNT_ID}:table/${DYNAMO_TABLE_NAME}",
-							"arn:aws:dynamodb:${AWS_REGION}:${AWS_ACCOUNT_ID}:table/${DYNAMO_TABLE_NAME}/index/*"
-						]
-					}
-				]
-			}
-		}
-	},
-	"accept-pickup": {
-		"handler": "index.handler",
-		"role_name": "lambda-dynamodb-role",
-		"zip_file": "dist/pickups/acceptPickup.zip",
-		"environment": "TABLE_NAME=${DYNAMO_TABLE_NAME},NODE_PATH=/opt/nodejs/node_modules,ALLOWED_ORIGINS=${ALLOWED_ORIGINS}",
-		"managed_policies": [
-			"arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
-		],
-		"inline_policies": {
-			"DynamoDBAccess": {
-				"Version": "2012-10-17",
-				"Statement": [
-					{
-						"Effect": "Allow",
-						"Action": [
-							"dynamodb:GetItem",
-							"dynamodb:PutItem",
-							"dynamodb:UpdateItem",
-							"dynamodb:DeleteItem",
-							"dynamodb:Query",
-							"dynamodb:Scan"
-						],
-						"Resource": [
-							"arn:aws:dynamodb:${AWS_REGION}:${AWS_ACCOUNT_ID}:table/${DYNAMO_TABLE_NAME}",
-							"arn:aws:dynamodb:${AWS_REGION}:${AWS_ACCOUNT_ID}:table/${DYNAMO_TABLE_NAME}/index/*"
-						]
-					}
-				]
-			}
-		}
-	},
-	"cancel-accepted-pickup": {
-		"handler": "index.handler",
-		"role_name": "lambda-dynamodb-role",
-		"zip_file": "dist/pickups/cancelAcceptedPickup.zip",
-		"environment": "TABLE_NAME=${DYNAMO_TABLE_NAME},NODE_PATH=/opt/nodejs/node_modules,ALLOWED_ORIGINS=${ALLOWED_ORIGINS}",
-		"managed_policies": [
-			"arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
-		],
-		"inline_policies": {
-			"DynamoDBAccess": {
-				"Version": "2012-10-17",
-				"Statement": [
-					{
-						"Effect": "Allow",
-						"Action": [
-							"dynamodb:GetItem",
-							"dynamodb:PutItem",
-							"dynamodb:UpdateItem",
-							"dynamodb:DeleteItem",
-							"dynamodb:Query",
-							"dynamodb:Scan"
-						],
-						"Resource": [
-							"arn:aws:dynamodb:${AWS_REGION}:${AWS_ACCOUNT_ID}:table/${DYNAMO_TABLE_NAME}",
-							"arn:aws:dynamodb:${AWS_REGION}:${AWS_ACCOUNT_ID}:table/${DYNAMO_TABLE_NAME}/index/*"
-						]
-					}
-				]
-			}
-		}
-	}
+  "get-postgres-health": {
+    "handler": "index.handler",
+    "role_name": "lambda-basic-role",
+    "zip_file": "dist/health/postgresHealth.zip",
+    "environment": "DATABASE_URL=${DATABASE_URL},NODE_PATH=/opt/nodejs/node_modules,PRISMA_QUERY_ENGINE_LIBRARY=/opt/nodejs/node_modules/.prisma/client/libquery_engine-rhel-openssl-3.0.x.so.node,ALLOWED_ORIGINS=${ALLOWED_ORIGINS}",
+    "layer": "${LAMBDA_LAYER_ARN}",
+    "managed_policies": [
+      "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+    ]
+  },
+  "get-dynamodb-health": {
+    "handler": "index.handler",
+    "role_name": "lambda-dynamodb-health-role",
+    "zip_file": "dist/health/dynamodbHealth.zip",
+    "environment": "TABLE_NAME=${DYNAMO_TABLE_NAME},NODE_PATH=/opt/nodejs/node_modules,ALLOWED_ORIGINS=${ALLOWED_ORIGINS}",
+    "managed_policies": [
+      "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+    ],
+    "inline_policies": {
+      "DynamoDBAccess": {
+        "Version": "2012-10-17",
+        "Statement": [
+          {
+            "Effect": "Allow",
+            "Action": ["dynamodb:DescribeTable"],
+            "Resource": "arn:aws:dynamodb:${AWS_REGION}:${AWS_ACCOUNT_ID}:table/${DYNAMO_TABLE_NAME}"
+          }
+        ]
+      }
+    }
+  },
+  "create-user": {
+    "handler": "index.handler",
+    "role_name": "lambda-cognito-role",
+    "zip_file": "dist/users/createUser.zip",
+    "environment": "DATABASE_URL=${DATABASE_URL},NODE_PATH=/opt/nodejs/node_modules,PRISMA_QUERY_ENGINE_LIBRARY=/opt/nodejs/node_modules/.prisma/client/libquery_engine-rhel-openssl-3.0.x.so.node,COGNITO_USER_POOL_ID=${COGNITO_USER_POOL_ID},ALLOWED_ORIGINS=${ALLOWED_ORIGINS}",
+    "layer": "${LAMBDA_LAYER_ARN}",
+    "managed_policies": [
+      "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+    ],
+    "inline_policies": {
+      "CognitoUserPoolAccess": {
+        "Version": "2012-10-17",
+        "Statement": [
+          {
+            "Effect": "Allow",
+            "Action": [
+              "cognito-idp:AdminCreateUser",
+              "cognito-idp:AdminSetUserPassword"
+            ],
+            "Resource": "arn:aws:cognito-idp:${AWS_REGION}:${AWS_ACCOUNT_ID}:userpool/*"
+          }
+        ]
+      }
+    }
+  },
+  "get-users": {
+    "handler": "index.handler",
+    "role_name": "lambda-basic-role",
+    "zip_file": "dist/users/getUsers.zip",
+    "environment": "DATABASE_URL=${DATABASE_URL},NODE_PATH=/opt/nodejs/node_modules,PRISMA_QUERY_ENGINE_LIBRARY=/opt/nodejs/node_modules/.prisma/client/libquery_engine-rhel-openssl-3.0.x.so.node,ALLOWED_ORIGINS=${ALLOWED_ORIGINS}",
+    "layer": "${LAMBDA_LAYER_ARN}",
+    "managed_policies": [
+      "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+    ]
+  },
+  "get-user": {
+    "handler": "index.handler",
+    "role_name": "lambda-basic-role",
+    "zip_file": "dist/users/getUser.zip",
+    "environment": "DATABASE_URL=${DATABASE_URL},NODE_PATH=/opt/nodejs/node_modules,PRISMA_QUERY_ENGINE_LIBRARY=/opt/nodejs/node_modules/.prisma/client/libquery_engine-rhel-openssl-3.0.x.so.node,ALLOWED_ORIGINS=${ALLOWED_ORIGINS}",
+    "layer": "${LAMBDA_LAYER_ARN}",
+    "managed_policies": [
+      "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+    ]
+  },
+  "update-user": {
+    "handler": "index.handler",
+    "role_name": "lambda-basic-role",
+    "zip_file": "dist/users/updateUser.zip",
+    "environment": "DATABASE_URL=${DATABASE_URL},NODE_PATH=/opt/nodejs/node_modules,PRISMA_QUERY_ENGINE_LIBRARY=/opt/nodejs/node_modules/.prisma/client/libquery_engine-rhel-openssl-3.0.x.so.node,ALLOWED_ORIGINS=${ALLOWED_ORIGINS}",
+    "layer": "${LAMBDA_LAYER_ARN}",
+    "managed_policies": [
+      "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+    ]
+  },
+  "delete-user": {
+    "handler": "index.handler",
+    "role_name": "lambda-basic-role",
+    "zip_file": "dist/users/deleteUser.zip",
+    "environment": "DATABASE_URL=${DATABASE_URL},NODE_PATH=/opt/nodejs/node_modules,PRISMA_QUERY_ENGINE_LIBRARY=/opt/nodejs/node_modules/.prisma/client/libquery_engine-rhel-openssl-3.0.x.so.node,ALLOWED_ORIGINS=${ALLOWED_ORIGINS}",
+    "layer": "${LAMBDA_LAYER_ARN}",
+    "managed_policies": [
+      "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+    ],
+    "inline_policies": {
+      "CognitoUserPoolAccess": {
+        "Version": "2012-10-17",
+        "Statement": [
+          {
+            "Effect": "Allow",
+            "Action": ["cognito-idp:AdminDeleteUser"],
+            "Resource": "arn:aws:cognito-idp:${AWS_REGION}:${AWS_ACCOUNT_ID}:userpool/*"
+          }
+        ]
+      }
+    }
+  },
+  "create-driver": {
+    "handler": "index.handler",
+    "role_name": "lambda-cognito-role",
+    "zip_file": "dist/drivers/createDriver.zip",
+    "environment": "DATABASE_URL=${DATABASE_URL},NODE_PATH=/opt/nodejs/node_modules,PRISMA_QUERY_ENGINE_LIBRARY=/opt/nodejs/node_modules/.prisma/client/libquery_engine-rhel-openssl-3.0.x.so.node,COGNITO_USER_POOL_ID=${COGNITO_USER_POOL_ID},ALLOWED_ORIGINS=${ALLOWED_ORIGINS}",
+    "layer": "${LAMBDA_LAYER_ARN}",
+    "managed_policies": [
+      "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+    ],
+    "inline_policies": {
+      "CognitoUserPoolAccess": {
+        "Version": "2012-10-17",
+        "Statement": [
+          {
+            "Effect": "Allow",
+            "Action": [
+              "cognito-idp:AdminCreateUser",
+              "cognito-idp:AdminSetUserPassword"
+            ],
+            "Resource": "arn:aws:cognito-idp:${AWS_REGION}:${AWS_ACCOUNT_ID}:userpool/*"
+          }
+        ]
+      }
+    }
+  },
+  "get-drivers": {
+    "handler": "index.handler",
+    "role_name": "lambda-basic-role",
+    "zip_file": "dist/drivers/getDrivers.zip",
+    "environment": "DATABASE_URL=${DATABASE_URL},NODE_PATH=/opt/nodejs/node_modules,PRISMA_QUERY_ENGINE_LIBRARY=/opt/nodejs/node_modules/.prisma/client/libquery_engine-rhel-openssl-3.0.x.so.node,ALLOWED_ORIGINS=${ALLOWED_ORIGINS}",
+    "layer": "${LAMBDA_LAYER_ARN}",
+    "managed_policies": [
+      "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+    ]
+  },
+  "get-driver": {
+    "handler": "index.handler",
+    "role_name": "lambda-basic-role",
+    "zip_file": "dist/drivers/getDriver.zip",
+    "environment": "DATABASE_URL=${DATABASE_URL},NODE_PATH=/opt/nodejs/node_modules,PRISMA_QUERY_ENGINE_LIBRARY=/opt/nodejs/node_modules/.prisma/client/libquery_engine-rhel-openssl-3.0.x.so.node,ALLOWED_ORIGINS=${ALLOWED_ORIGINS}",
+    "layer": "${LAMBDA_LAYER_ARN}",
+    "managed_policies": [
+      "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+    ]
+  },
+  "update-driver": {
+    "handler": "index.handler",
+    "role_name": "lambda-basic-role",
+    "zip_file": "dist/drivers/updateDriver.zip",
+    "environment": "DATABASE_URL=${DATABASE_URL},NODE_PATH=/opt/nodejs/node_modules,PRISMA_QUERY_ENGINE_LIBRARY=/opt/nodejs/node_modules/.prisma/client/libquery_engine-rhel-openssl-3.0.x.so.node,ALLOWED_ORIGINS=${ALLOWED_ORIGINS}",
+    "layer": "${LAMBDA_LAYER_ARN}",
+    "managed_policies": [
+      "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+    ]
+  },
+  "delete-driver": {
+    "handler": "index.handler",
+    "role_name": "lambda-basic-role",
+    "zip_file": "dist/drivers/deleteDriver.zip",
+    "environment": "DATABASE_URL=${DATABASE_URL},NODE_PATH=/opt/nodejs/node_modules,PRISMA_QUERY_ENGINE_LIBRARY=/opt/nodejs/node_modules/.prisma/client/libquery_engine-rhel-openssl-3.0.x.so.node,ALLOWED_ORIGINS=${ALLOWED_ORIGINS}",
+    "layer": "${LAMBDA_LAYER_ARN}",
+    "managed_policies": [
+      "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+    ],
+    "inline_policies": {
+      "CognitoUserPoolAccess": {
+        "Version": "2012-10-17",
+        "Statement": [
+          {
+            "Effect": "Allow",
+            "Action": ["cognito-idp:AdminDeleteUser"],
+            "Resource": "arn:aws:cognito-idp:${AWS_REGION}:${AWS_ACCOUNT_ID}:userpool/*"
+          }
+        ]
+      }
+    }
+  },
+  "create-pickup": {
+    "handler": "index.handler",
+    "role_name": "lambda-dynamodb-role",
+    "zip_file": "dist/pickups/createPickup.zip",
+    "environment": "TABLE_NAME=${DYNAMO_TABLE_NAME},NODE_PATH=/opt/nodejs/node_modules,ALLOWED_ORIGINS=${ALLOWED_ORIGINS}",
+    "managed_policies": [
+      "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+    ],
+    "inline_policies": {
+      "DynamoDBAccess": {
+        "Version": "2012-10-17",
+        "Statement": [
+          {
+            "Effect": "Allow",
+            "Action": [
+              "dynamodb:GetItem",
+              "dynamodb:PutItem",
+              "dynamodb:UpdateItem",
+              "dynamodb:DeleteItem",
+              "dynamodb:Query",
+              "dynamodb:Scan"
+            ],
+            "Resource": [
+              "arn:aws:dynamodb:${AWS_REGION}:${AWS_ACCOUNT_ID}:table/${DYNAMO_TABLE_NAME}",
+              "arn:aws:dynamodb:${AWS_REGION}:${AWS_ACCOUNT_ID}:table/${DYNAMO_TABLE_NAME}/index/*"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "get-pickups": {
+    "handler": "index.handler",
+    "role_name": "lambda-dynamodb-role",
+    "zip_file": "dist/pickups/getPickups.zip",
+    "environment": "TABLE_NAME=${DYNAMO_TABLE_NAME},NODE_PATH=/opt/nodejs/node_modules,ALLOWED_ORIGINS=${ALLOWED_ORIGINS}",
+    "managed_policies": [
+      "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+    ],
+    "inline_policies": {
+      "DynamoDBAccess": {
+        "Version": "2012-10-17",
+        "Statement": [
+          {
+            "Effect": "Allow",
+            "Action": [
+              "dynamodb:GetItem",
+              "dynamodb:PutItem",
+              "dynamodb:UpdateItem",
+              "dynamodb:DeleteItem",
+              "dynamodb:Query",
+              "dynamodb:Scan"
+            ],
+            "Resource": [
+              "arn:aws:dynamodb:${AWS_REGION}:${AWS_ACCOUNT_ID}:table/${DYNAMO_TABLE_NAME}",
+              "arn:aws:dynamodb:${AWS_REGION}:${AWS_ACCOUNT_ID}:table/${DYNAMO_TABLE_NAME}/index/*"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "get-pickup": {
+    "handler": "index.handler",
+    "role_name": "lambda-dynamodb-role",
+    "zip_file": "dist/pickups/getPickup.zip",
+    "environment": "TABLE_NAME=${DYNAMO_TABLE_NAME},NODE_PATH=/opt/nodejs/node_modules,ALLOWED_ORIGINS=${ALLOWED_ORIGINS}",
+    "managed_policies": [
+      "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+    ],
+    "inline_policies": {
+      "DynamoDBAccess": {
+        "Version": "2012-10-17",
+        "Statement": [
+          {
+            "Effect": "Allow",
+            "Action": [
+              "dynamodb:GetItem",
+              "dynamodb:PutItem",
+              "dynamodb:UpdateItem",
+              "dynamodb:DeleteItem",
+              "dynamodb:Query",
+              "dynamodb:Scan"
+            ],
+            "Resource": [
+              "arn:aws:dynamodb:${AWS_REGION}:${AWS_ACCOUNT_ID}:table/${DYNAMO_TABLE_NAME}",
+              "arn:aws:dynamodb:${AWS_REGION}:${AWS_ACCOUNT_ID}:table/${DYNAMO_TABLE_NAME}/index/*"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "update-pickup": {
+    "handler": "index.handler",
+    "role_name": "lambda-dynamodb-role",
+    "zip_file": "dist/pickups/updatePickup.zip",
+    "environment": "TABLE_NAME=${DYNAMO_TABLE_NAME},NODE_PATH=/opt/nodejs/node_modules,ALLOWED_ORIGINS=${ALLOWED_ORIGINS}",
+    "managed_policies": [
+      "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+    ],
+    "inline_policies": {
+      "DynamoDBAccess": {
+        "Version": "2012-10-17",
+        "Statement": [
+          {
+            "Effect": "Allow",
+            "Action": [
+              "dynamodb:GetItem",
+              "dynamodb:PutItem",
+              "dynamodb:UpdateItem",
+              "dynamodb:DeleteItem",
+              "dynamodb:Query",
+              "dynamodb:Scan"
+            ],
+            "Resource": [
+              "arn:aws:dynamodb:${AWS_REGION}:${AWS_ACCOUNT_ID}:table/${DYNAMO_TABLE_NAME}",
+              "arn:aws:dynamodb:${AWS_REGION}:${AWS_ACCOUNT_ID}:table/${DYNAMO_TABLE_NAME}/index/*"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "delete-pickup": {
+    "handler": "index.handler",
+    "role_name": "lambda-dynamodb-role",
+    "zip_file": "dist/pickups/deletePickup.zip",
+    "environment": "TABLE_NAME=${DYNAMO_TABLE_NAME},NODE_PATH=/opt/nodejs/node_modules,ALLOWED_ORIGINS=${ALLOWED_ORIGINS}",
+    "managed_policies": [
+      "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+    ],
+    "inline_policies": {
+      "DynamoDBAccess": {
+        "Version": "2012-10-17",
+        "Statement": [
+          {
+            "Effect": "Allow",
+            "Action": [
+              "dynamodb:GetItem",
+              "dynamodb:PutItem",
+              "dynamodb:UpdateItem",
+              "dynamodb:DeleteItem",
+              "dynamodb:Query",
+              "dynamodb:Scan"
+            ],
+            "Resource": [
+              "arn:aws:dynamodb:${AWS_REGION}:${AWS_ACCOUNT_ID}:table/${DYNAMO_TABLE_NAME}",
+              "arn:aws:dynamodb:${AWS_REGION}:${AWS_ACCOUNT_ID}:table/${DYNAMO_TABLE_NAME}/index/*"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "available-pickups": {
+    "handler": "index.handler",
+    "role_name": "lambda-dynamodb-role",
+    "zip_file": "dist/pickups/availablePickups.zip",
+    "environment": "TABLE_NAME=${DYNAMO_TABLE_NAME},NODE_PATH=/opt/nodejs/node_modules,ALLOWED_ORIGINS=${ALLOWED_ORIGINS}",
+    "managed_policies": [
+      "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+    ],
+    "inline_policies": {
+      "DynamoDBAccess": {
+        "Version": "2012-10-17",
+        "Statement": [
+          {
+            "Effect": "Allow",
+            "Action": [
+              "dynamodb:GetItem",
+              "dynamodb:PutItem",
+              "dynamodb:UpdateItem",
+              "dynamodb:DeleteItem",
+              "dynamodb:Query",
+              "dynamodb:Scan"
+            ],
+            "Resource": [
+              "arn:aws:dynamodb:${AWS_REGION}:${AWS_ACCOUNT_ID}:table/${DYNAMO_TABLE_NAME}",
+              "arn:aws:dynamodb:${AWS_REGION}:${AWS_ACCOUNT_ID}:table/${DYNAMO_TABLE_NAME}/index/*"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "accept-pickup": {
+    "handler": "index.handler",
+    "role_name": "lambda-dynamodb-role",
+    "zip_file": "dist/pickups/acceptPickup.zip",
+    "environment": "TABLE_NAME=${DYNAMO_TABLE_NAME},NODE_PATH=/opt/nodejs/node_modules,ALLOWED_ORIGINS=${ALLOWED_ORIGINS}",
+    "managed_policies": [
+      "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+    ],
+    "inline_policies": {
+      "DynamoDBAccess": {
+        "Version": "2012-10-17",
+        "Statement": [
+          {
+            "Effect": "Allow",
+            "Action": [
+              "dynamodb:GetItem",
+              "dynamodb:PutItem",
+              "dynamodb:UpdateItem",
+              "dynamodb:DeleteItem",
+              "dynamodb:Query",
+              "dynamodb:Scan"
+            ],
+            "Resource": [
+              "arn:aws:dynamodb:${AWS_REGION}:${AWS_ACCOUNT_ID}:table/${DYNAMO_TABLE_NAME}",
+              "arn:aws:dynamodb:${AWS_REGION}:${AWS_ACCOUNT_ID}:table/${DYNAMO_TABLE_NAME}/index/*"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "cancel-accepted-pickup": {
+    "handler": "index.handler",
+    "role_name": "lambda-dynamodb-role",
+    "zip_file": "dist/pickups/cancelAcceptedPickup.zip",
+    "environment": "TABLE_NAME=${DYNAMO_TABLE_NAME},NODE_PATH=/opt/nodejs/node_modules,ALLOWED_ORIGINS=${ALLOWED_ORIGINS}",
+    "managed_policies": [
+      "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+    ],
+    "inline_policies": {
+      "DynamoDBAccess": {
+        "Version": "2012-10-17",
+        "Statement": [
+          {
+            "Effect": "Allow",
+            "Action": [
+              "dynamodb:GetItem",
+              "dynamodb:PutItem",
+              "dynamodb:UpdateItem",
+              "dynamodb:DeleteItem",
+              "dynamodb:Query",
+              "dynamodb:Scan"
+            ],
+            "Resource": [
+              "arn:aws:dynamodb:${AWS_REGION}:${AWS_ACCOUNT_ID}:table/${DYNAMO_TABLE_NAME}",
+              "arn:aws:dynamodb:${AWS_REGION}:${AWS_ACCOUNT_ID}:table/${DYNAMO_TABLE_NAME}/index/*"
+            ]
+          }
+        ]
+      }
+    }
+  }
 }

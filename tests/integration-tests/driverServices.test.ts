@@ -20,12 +20,14 @@ vi.mock('@aws-sdk/client-cognito-identity-provider', () => {
   const adminCreateUser = vi
     .fn()
     .mockImplementation(() => ({ User: { Username: mockCognitoUserId } }));
+  const adminDeleteUser = vi.fn();
   const adminSetUserPassword = vi.fn();
   const adminUpdateUserAttributes = vi.fn();
 
   return {
     CognitoIdentityProvider: vi.fn().mockImplementation(() => ({
       adminCreateUser,
+      adminDeleteUser,
       adminSetUserPassword,
       adminUpdateUserAttributes,
     })),
@@ -68,8 +70,8 @@ beforeEach(async () => {
 
 describe('Driver Service Integration Tests', () => {
   it('should create a new driver', async () => {
-    const createdDriver = await createDriverService(prisma, mockDriverData);
-    expect(createdDriver).toEqual({
+    const result = await createDriverService(prisma, mockDriverData);
+    expect(result.user).toEqual({
       ...mockDriverData,
       id: mockCognitoUserId,
       createdAt: expect.any(String),
@@ -77,7 +79,7 @@ describe('Driver Service Integration Tests', () => {
     });
     // Verify the user was actually created in the database
     const dbDriver = await prisma.driver.findUnique({
-      where: { id: createdDriver.id },
+      where: { id: result.user.id },
     });
     expect(dbDriver).not.toBeNull();
   });

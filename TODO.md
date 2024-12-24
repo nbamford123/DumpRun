@@ -1,24 +1,19 @@
 # Temporary ToDo File
 
 ## Backend
-1. e2e tests
-2. readmes
-3. redploy
-4. push changes
-- open api spec doesn't have deleted or deletedat! Only prisma schema
+1. e2e tests 
+  - put the test id back in get pickup
+2. redploy
+- pretty  much everything in user and driver service is repeated, should be abstracted out to shared code
+- open api spec doesn't have deleted or deletedat for user. Only prisma schema
 - update delete user and driver service to only mark deleted and the get, etc. calls to check the for the flag.
 - add a "verified" flag to user and driver schemas
-- when we move to production, we will have to implement an open api endpoint and no authentication for create user/driver
-- put the test id back in get pickup and ensure all e2e tests are running
-- move testing stuff to a different markdown file? Minimize the readme in general. Maybe a different architecture doc too.
+- when we move to production, we will have to implement an open api endpoint and no authentication for create user/driver-- rate limit!
 - absorb/check the console outputs for unit tests
 - should be formatting zod error returns for query parameters the way I do for path and body. They're pretty useless now, and the path outputs as [Array]
-- why are there two .env.local files? Do I need the one in integration tests?
-- the env example files are git ignored
 - typo in README
 - what about keeping pickup history for both users and drivers? I guess as long as they're not deleted, but that means we should disable even the soft delete
 - note that pickups also need some kind of completed state, what determines that? As far as the user is concerned, once the shit is gone and they've paid, it's done.
-- should I create and delete cognito users in the e2e tests?
 - should be using cognito groups instead of custom roles for admin,driver, user, then gateway authorizer could enforce that policy before the lambdas get called!
 - who marks a pickup as complete? Driver or User? Driver makes more sense, but the User will have to okay it before payment goes through, right?
 - doublecheck cloudwatch log handling-- definitely should have them set to INFO for production, right? But ERROR/INFO is okay for staging?
@@ -27,10 +22,8 @@
 - is a 200 return from soft delete pickup correct?
 - VPC Configuration: If your DynamoDB is accessed via VPC endpoints, you'll need to configure VPC settings for your Lambda.
 - X-Ray Tracing: Consider adding X-Ray tracing for better insights into your Lambda and DynamoDB interactions.
-- should users and drivers be soft deleted like pickups?
 - the build script is building the services too, how can we leave them out? Maybe an index file that contains the lambdas but not support files like services?
 - we have to have the email on the cognito user so they can interact with it, but what if someone wants to be a driver and a user? Different emails?
-- should probably take email out of postgres? Or is it safer to have it duplicated from cognito?
 - try and figure out a way to not include the entire zod schemas bundle in every built file. Maybe some settings on the generator?
 - go through various documents in drive and extract important considerations-- there's a lot of good stuff there, but not worth killing momentum at this point.
 - when can you delete a pickup? Current statuses are: pending" | "available" | "accepted" | "in_progress" | "completed" | "cancelled" | "deleted. For now I'm saying it has to be pending, available or cancelled
@@ -39,12 +32,9 @@
 - should pickups have an accepted timestamp? Probably.
 - Drivers or admin can get the list of available pickups (constrained by geographic location?   We might want this to be constrained by truck size vs. load size too).
 - should a user be able to have more than one pickup scheduled? If so "list pickups" ought to differentiate between admin and user (only list pickups for that user id)
-- put prisma/docker setup tasks in readme-- when to run integration tests? How can they be run on github? Probably they can't
 - logging for the lambda functions? https://docs.aws.amazon.com/lambda/latest/dg/typescript-logging.html
 - Make sure the update AWS github action validates the openapi spec
 - set up github actions to automatically redploy aws gateway when openapi spec changes
-- is driver really just a special user? Like the driver table would only contain extra info and a userid back to the user table?
-- can user/driver change email/phone #? Makes sense in a way, but how to prevent account hijacking?
 - Will we need to store the driver's dl #? What about insurance? Going to punt on that for now.
 - Does the driver have to put in the vehicle info, etc. to create the account, or can that be done later? Obviously they can't pick up a job without it.
 - PII! If we store any of this kind of stuff, we have to be incredibly careful with how we deal with it.

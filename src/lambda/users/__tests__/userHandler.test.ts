@@ -19,9 +19,6 @@ vi.mock('../userServices', () => ({
   deleteUserService: vi.fn(),
 }));
 
-// Import after mocking
-import { CognitoIdentityProvider } from '@aws-sdk/client-cognito-identity-provider';
-
 import { handler as createUser } from '../createUser.js';
 import { handler as getUser } from '../getUser.js';
 import { handler as getUsers } from '../getUsers.js';
@@ -54,7 +51,6 @@ const mockUser = {
 };
 
 describe('user lambdas', () => {
-
   beforeEach(() => {
     vi.resetAllMocks();
   });
@@ -63,8 +59,7 @@ describe('user lambdas', () => {
     // Mock createUserService
     (
       createUserService as vi.MockedFunction<typeof createUserService>
-    ).mockResolvedValue(mockUser);
-
+    ).mockResolvedValue({ type: 'success', user: mockUser });
     const event: DeepPartial<APIGatewayProxyEvent> = {
       requestContext: requestContextAdmin,
       body: JSON.stringify(mockUser),
@@ -72,21 +67,6 @@ describe('user lambdas', () => {
 
     const result = await createUser(event, mockLambdaContext);
     expect(result).toEqual(getResult(201, mockUser));
-    // Verify Cognito calls
-    // expect(cognitoMock.adminCreateUser).toHaveBeenCalledWith({
-    //   UserPoolId: expect.any(String),
-    //   Username: mockUser.phoneNumber,
-    //   UserAttributes: expect.arrayContaining([
-    //     { Name: 'given_name', Value: mockUser.firstName },
-    //     { Name: 'family_name', Value: mockUser.lastName },
-    //     { Name: 'email', Value: mockUser.email },
-    //     { Name: 'phone_number', Value: mockUser.phoneNumber },
-    //     { Name: 'email_verified', Value: 'true' },
-    //     { Name: 'phone_number_verified', Value: 'true' },
-    //   ]),
-    //   MessageAction: 'SUPPRESS',
-    // });
-
     expect(createUserService).toHaveBeenCalledWith(expect.anything(), mockUser);
   });
 
@@ -104,6 +84,46 @@ describe('user lambdas', () => {
     const result = await createUser(event, mockLambdaContext);
 
     expect(result?.statusCode).toBe(400);
+  });
+
+  it('should return 409 for create user phone number exists', async () => {
+    // Mock createUserService
+    (
+      createUserService as vi.MockedFunction<typeof createUserService>
+    ).mockResolvedValue({
+      type: 'phone_exists',
+      phoneNumber: mockUser.phoneNumber,
+    });
+    const event: DeepPartial<APIGatewayProxyEvent> = {
+      requestContext: requestContextAdmin,
+      body: JSON.stringify(mockUser),
+    };
+
+    const result = await createUser(event, mockLambdaContext);
+    expect(result.statusCode).toEqual(409);
+    expect(JSON.parse(result.body).message).toEqual(
+      `A user with phone number ${mockUser.phoneNumber} already exists`
+    );
+  });
+
+  it('should return 409 for create user email exists', async () => {
+    // Mock createUserService
+    (
+      createUserService as vi.MockedFunction<typeof createUserService>
+    ).mockResolvedValue({
+      type: 'email_exists',
+      email: mockUser.email,
+    });
+    const event: DeepPartial<APIGatewayProxyEvent> = {
+      requestContext: requestContextAdmin,
+      body: JSON.stringify(mockUser),
+    };
+
+    const result = await createUser(event, mockLambdaContext);
+    expect(result.statusCode).toEqual(409);
+    expect(JSON.parse(result.body).message).toEqual(
+      `A user with email ${mockUser.email} already exists`
+    );
   });
 
   it('admin should get users successfully', async () => {

@@ -7,11 +7,14 @@ import {
 
 import { formatPhoneForCognito } from '@/utils/formatPhoneForCognito.js';
 import { generateSecurePassword } from '@/utils/generateSecurePassword.js';
-import type {
-  Driver,
-  NewDriver,
-  UpdateDriver,
-  PrismaError,
+import {
+  type Driver,
+  type NewDriver,
+  type UpdateDriver,
+  type PrismaError,
+  type CreateUserResult,
+  isCognitoError,
+  isValidPreferredContact,
 } from '../types/schemaTypes.js';
 
 const cognitoClient = (() => {
@@ -38,9 +41,6 @@ const cognitoClient = (() => {
     },
   };
 })();
-
-const isValidPreferredContact = (val: unknown): val is 'CALL' | 'TEXT' =>
-  val === 'CALL' || val === 'TEXT';
 
 const dbToDriver = (dbDriver: DBDriver): Driver => {
   const {
@@ -81,7 +81,7 @@ const driverToDB = (driver: NewDriver): Partial<DBDriver> => {
 export const createDriverService = async (
   prisma: PrismaClient,
   driverData: NewDriver
-): Promise<Driver> => {
+): Promise<CreateUserResult<Driver>> => {
   const cognito = cognitoClient.getInstance();
   const userPoolId = process.env.COGNITO_USER_POOL_ID;
   try {
@@ -152,17 +152,37 @@ export const createDriverService = async (
         isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
       }
     );
-    return dbToDriver(myDriver);
+    return { type: 'success', user: dbToDriver(myDriver) };
   } catch (error) {
-    // Handle specific error cases that will be important in production
-    if ((error as PrismaError).name === 'UsernameExistsException') {
-      throw new Error('A user with this phone number already exists');
+    // Handle Cognito-specific errors
+    if (isCognitoError(error)) {
+      switch (error.name) {
+        case 'UsernameExistsException':
+          return { type: 'phone_exists', phoneNumber: driverData.phoneNumber };
+        // Assuming Zod would catch invalid input, but leaving them here just in case
+        // case 'InvalidParameterException':
+        //   if (error.message.includes('email')) {
+        //     // Cognito might also reject invalid emails
+        //     throw new Error(`Invalid email format: ${userData.email}`);
+        //   }
+        //   if (error.message.includes('phone')) {
+        //     throw new Error(`Invalid phone format: ${userData.phoneNumber}`);
+        //   }
+        //   throw error;
+        // case 'TooManyRequestsException':
+        //   throw new Error('Rate limit exceeded. Please try again later');
+        default:
+          throw error;
+      }
     }
     if (
       error instanceof Prisma.PrismaClientKnownRequestError &&
       error.code === 'P2002'
     ) {
-      throw new Error('A driver with this phone number already exists');
+      const target = error.meta?.target as string[] | undefined;
+      if (target?.includes('email')) {
+        return { type: 'email_exists', email: driverData.email };
+      }
     }
     throw error;
   }

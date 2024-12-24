@@ -1,23 +1,31 @@
 import { schemas } from '@/schemas/zodSchemas.js';
 
 import {
-	createPrismaHandler,
-	type PrismaOperationHandler,
+  createPrismaHandler,
+  type PrismaOperationHandler,
 } from '../middleware/createHandlerPostgres.js';
-import { createSuccessResponse } from '../types/index.js';
+import { Conflict, createSuccessResponse } from '../types/index.js';
 import { createDriverService } from './driverServices.js';
 
 const createDriverHandler: PrismaOperationHandler<'createDriver'> = async (
-	context,
+  context
 ) => {
-	const newDriver = await createDriverService(
-		context.client,
-		context.body,
-	);
-	return createSuccessResponse<'createDriver'>(201, newDriver);
+  const response = await createDriverService(context.client, context.body);
+  if (response.type === 'success')
+    return createSuccessResponse<'createDriver'>(201, response.user);
+  return Conflict(
+    `${
+      response.type === 'email_exists'
+        ? `A user with email ${response.email} already exists`
+        : `A user with phone number ${response.phoneNumber} already exists`
+    }`
+  );
 };
 
-export const handler = createPrismaHandler<'createDriver'>(createDriverHandler, {
-	requiredRole: ['driver', 'admin'],
-	validateInput: schemas.NewDriver,
-});
+export const handler = createPrismaHandler<'createDriver'>(
+  createDriverHandler,
+  {
+    requiredRole: ['driver', 'admin'],
+    validateInput: schemas.NewDriver,
+  }
+);

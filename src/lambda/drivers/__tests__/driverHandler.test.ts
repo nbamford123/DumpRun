@@ -47,7 +47,7 @@ const mockDriver = {
     state: 'CO',
     zipCode: '80233',
   },
-	preferredContact: 'TEXT',
+  preferredContact: 'TEXT',
   vehicleMake: 'Ford',
   vehicleModel: 'F150',
   vehicleYear: 1998,
@@ -64,7 +64,7 @@ describe('driver lambdas', () => {
     // Mock createDriverService
     (
       createDriverService as vi.MockedFunction<typeof createDriverService>
-    ).mockResolvedValue(mockDriver);
+    ).mockResolvedValue({ type: 'success', user: mockDriver });
 
     const event: DeepPartial<APIGatewayProxyEvent> = {
       requestContext: requestContextDriver,
@@ -91,6 +91,45 @@ describe('driver lambdas', () => {
     const result = await createDriver(event, mockLambdaContext);
 
     expect(result?.statusCode).toBe(400);
+  });
+
+  it('should return 409 for create driver phone number exists', async () => {
+    // Mock createDriverService
+    (
+      createDriverService as vi.MockedFunction<typeof createDriverService>
+    ).mockResolvedValue({
+      type: 'phone_exists',
+      phoneNumber: mockDriver.phoneNumber,
+    });
+
+    const event: DeepPartial<APIGatewayProxyEvent> = {
+      requestContext: requestContextDriver,
+      body: JSON.stringify(mockDriver),
+    };
+
+    const result = await createDriver(event, mockLambdaContext);
+    expect(result.statusCode).toEqual(409);
+    expect(JSON.parse(result.body).message).toEqual(
+      `A user with phone number ${mockDriver.phoneNumber} already exists`
+    );
+  });
+
+  it('should return 409 for create user email exists', async () => {
+    // Mock createDriverService
+    (
+      createDriverService as vi.MockedFunction<typeof createDriverService>
+    ).mockResolvedValue({ type: 'email_exists', email: mockDriver.email });
+
+    const event: DeepPartial<APIGatewayProxyEvent> = {
+      requestContext: requestContextDriver,
+      body: JSON.stringify(mockDriver),
+    };
+
+    const result = await createDriver(event, mockLambdaContext);
+    expect(result.statusCode).toEqual(409);
+    expect(JSON.parse(result.body).message).toEqual(
+      `A user with email ${mockDriver.email} already exists`
+    );
   });
 
   it('admin should get drivers successfully', async () => {

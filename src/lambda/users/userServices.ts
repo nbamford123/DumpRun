@@ -81,6 +81,17 @@ export const createUserService = async (
   const cognito = cognitoClient.getInstance();
   const userPoolId = process.env.COGNITO_USER_POOL_ID;
 
+  // Check for existing email first
+  const existingUser = await prisma.user.findUnique({
+    where: { email: userData.email },
+    select: { email: true },
+  });
+
+  if (existingUser) {
+    return { type: 'email_exists', email: userData.email };
+  }
+  let cognitoUserId: string | undefined;
+
   try {
     const formattedPhone = formatPhoneForCognito(userData.phoneNumber);
     // Create Cognito user with phone number as username (like we would in production), and test password for now
@@ -121,89 +132,52 @@ export const createUserService = async (
       MessageAction: 'SUPPRESS', // We'll handle our own communication
     });
 
-    const cognitoUserId = cognitoResponse.User?.Username;
+    cognitoUserId = cognitoResponse.User?.Username;
     if (!cognitoUserId) {
       throw new Error('Failed to get Cognito user ID after creation');
     }
-    try {
-      const myUser = await prisma.$transaction(
-        async (tx) => {
-          // Create the user in the database
-          const dbNewUser = {
-            ...(userToDB(userData) as DBUser),
-            id: cognitoUserId,
-          };
-          const dbUser = await tx.user.create({
-            data: dbNewUser,
-          });
 
-          // Set a permanent password (in production, this would happen after SMS verification)
-          // skipping this for e2e testing purposes-- how would we ever capture this new password?
-          // await cognito.adminSetUserPassword({
-          //   UserPoolId: userPoolId,
-          //   Username: cognitoUserId,
-          //   Password: generateSecurePassword(),
-          //   Permanent: true,
-          // });
-
-          return dbUser;
-        },
-        {
-          maxWait: 5000,
-          timeout: 10000,
-          isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
-        }
-      );
-      return { type: 'success', user: dbToUser(myUser) };
-    } catch (error) {
-      // If database transaction fails, clean up Cognito user
-      if (cognitoUserId) {
-        try {
-          await cognito.adminDeleteUser({
-            UserPoolId: userPoolId,
-            Username: cognitoUserId,
-          });
-        } catch (deleteError) {
-          console.error(
-            'Failed to delete Cognito user during rollback:',
-            deleteError
-          );
-        }
+    const myUser = await prisma.$transaction(
+      async (tx) => {
+        const dbNewUser = {
+          ...userToDB(userData),
+          id: cognitoUserId,
+        } as DBUser;
+        return await tx.user.create({
+          data: dbNewUser,
+        });
+      },
+      {
+        maxWait: 5000,
+        timeout: 10000,
+        isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
       }
-      throw error;
-    }
+    );
+
+    return { type: 'success', user: dbToUser(myUser) };
   } catch (error) {
-    // Handle Cognito-specific errors
+    // Clean up Cognito user if transaction fails
+    if (cognitoUserId) {
+      try {
+        await cognito.adminDeleteUser({
+          UserPoolId: userPoolId,
+          Username: cognitoUserId,
+        });
+      } catch (deleteError) {
+        console.error(
+          'Failed to delete Cognito user during rollback:',
+          deleteError
+        );
+      }
+    }
+
     if (isCognitoError(error)) {
-      switch (error.name) {
-        case 'UsernameExistsException':
-          return { type: 'phone_exists', phoneNumber: userData.phoneNumber };
-        // Assuming Zod would catch invalid input, but leaving them here just in case
-        // case 'InvalidParameterException':
-        //   if (error.message.includes('email')) {
-        //     // Cognito might also reject invalid emails
-        //     throw new Error(`Invalid email format: ${userData.email}`);
-        //   }
-        //   if (error.message.includes('phone')) {
-        //     throw new Error(`Invalid phone format: ${userData.phoneNumber}`);
-        //   }
-        //   throw error;
-        // case 'TooManyRequestsException':
-        //   throw new Error('Rate limit exceeded. Please try again later');
-        default:
-          throw error;
+      if (error.name === 'UsernameExistsException') {
+        return { type: 'phone_exists', phoneNumber: userData.phoneNumber };
       }
     }
-    if (
-      error instanceof Prisma.PrismaClientKnownRequestError &&
-      error.code === 'P2002'
-    ) {
-      const target = error.meta?.target as string[] | undefined;
-      if (target?.includes('email')) {
-        return { type: 'email_exists', email: userData.email };
-      }
-    }
-    throw error; // Re-throw the original error    throw error;
+
+    throw error;
   }
 };
 

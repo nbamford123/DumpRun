@@ -47,6 +47,7 @@
             "Effect": "Allow",
             "Action": [
               "cognito-idp:AdminCreateUser",
+              "cognito-idp:AdminDeleteUser",
               "cognito-idp:AdminSetUserPassword"
             ],
             "Resource": "arn:aws:cognito-idp:${AWS_REGION}:${AWS_ACCOUNT_ID}:userpool/*"
@@ -124,6 +125,7 @@
             "Effect": "Allow",
             "Action": [
               "cognito-idp:AdminCreateUser",
+              "cognito-idp:AdminDeleteUser",
               "cognito-idp:AdminSetUserPassword"
             ],
             "Resource": "arn:aws:cognito-idp:${AWS_REGION}:${AWS_ACCOUNT_ID}:userpool/*"

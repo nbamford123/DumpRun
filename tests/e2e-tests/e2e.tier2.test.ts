@@ -95,6 +95,16 @@ describe('Basic DB Operations', () => {
     });
 
     // Check email and phone 409s
+    response = await client.request('POST', '/users', {
+      token: adminUser.token,
+      body: {...newUser, email: 'another@email.com'},
+    });
+    expect(response.status).toBe(409);
+    response = await client.request('POST', '/users', {
+      token: adminUser.token,
+      body: {...newUser, phoneNumber: '800-867-5309'},
+    });
+    expect(response.status).toBe(409);
     // Check cognito rollback when db creation fails? Presumably on the duplicated email?
     // Cleanup with prisma deletion?
     // Authenticate new user
@@ -187,6 +197,16 @@ describe('Basic DB Operations', () => {
     });
 
     // Check email and phone 409s
+    response = await client.request('POST', '/drivers', {
+      token: adminUser.token,
+      body: {...newDriver, email: 'another@email.com'},
+    });
+    expect(response.status).toBe(409);
+    response = await client.request('POST', '/drivers', {
+      token: adminUser.token,
+      body: {...newDriver, phoneNumber: '800-867-5309'},
+    });
+    expect(response.status).toBe(409);
     // Check cognito rollback when db creation fails? Presumably on the duplicated email?
     // Cleanup with prisma deletion?
     // Authenticate new user

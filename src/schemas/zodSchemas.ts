@@ -240,6 +240,11 @@ const endpoints = makeApi([
         schema: Error,
       },
       {
+        status: 409,
+        description: `The request could not be completed due to a conflict with the current state of the target resource.`,
+        schema: Error,
+      },
+      {
         status: 500,
         description: `Internal Server Error`,
         schema: Error,
@@ -821,6 +826,11 @@ const endpoints = makeApi([
       {
         status: 400,
         description: `Bad request`,
+        schema: Error,
+      },
+      {
+        status: 409,
+        description: `The request could not be completed due to a conflict with the current state of the target resource.`,
         schema: Error,
       },
       {

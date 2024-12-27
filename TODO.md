@@ -1,8 +1,12 @@
 # Temporary ToDo File
 
 ## Backend
+- what kind of ci do we need to develop? Everything still handled manually
+- checking for email duplication up front which is better, but how to test cognito rollback?
+- should be forcing a email duplication check in integration tests
+- e2e tier2 tests are way too fragile-- have some kind of cleanup sweep or something so it's not necessary to manually clean the tables on failures
 - split the tier1 and tier2 e2e tests up by endpoint
-- make sure the 409 responses are specified in the openapi spec
+- When I didn't have the 409 response type specified in open api for create user/driver, I was still able to return a conflict response from the lambdas, shouldn't the typing have caught that?
 - consider implementing a periodic reconciliation job that checks for and cleans up any inconsistencies between Cognito and your database, as network issues or other factors could still occasionally lead to inconsistencies despite these safeguards.
 - note the create/update lambda functions read the database url from .env, and it is sometimes localhost depending on testing-- should we have a PRODUCTION_DATABASE_URL or something?
 - should terraform (and deploy bash scripts) be getting its variables from the environment vs. hardcoded?

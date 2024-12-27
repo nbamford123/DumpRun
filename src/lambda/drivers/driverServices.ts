@@ -83,9 +83,21 @@ export const createDriverService = async (
 ): Promise<CreateUserResult<Driver>> => {
   const cognito = cognitoClient.getInstance();
   const userPoolId = process.env.COGNITO_USER_POOL_ID;
+
+  // Check for existing email first
+  const existingUser = await prisma.driver.findUnique({
+    where: { email: driverData.email },
+    select: { email: true },
+  });
+
+  if (existingUser) {
+    return { type: 'email_exists', email: driverData.email };
+  }
+  let cognitoUserId: string | undefined;
+
   try {
     const formattedPhone = formatPhoneForCognito(driverData.phoneNumber);
-    // Create Cognito user with phone number as username (like we would in production)
+    // Create Cognito user with phone number as username (like we would in production), and test password for now
     const cognitoResponse = await cognito.adminCreateUser({
       UserPoolId: userPoolId,
       Username: formattedPhone, // Using phone as username like Uber
@@ -123,88 +135,51 @@ export const createDriverService = async (
       MessageAction: 'SUPPRESS', // We'll handle our own communication
     });
 
-    const cognitoUserId = cognitoResponse.User?.Username;
+    cognitoUserId = cognitoResponse.User?.Username;
     if (!cognitoUserId) {
       throw new Error('Failed to get Cognito user ID after creation');
     }
-    try {
-      const myDriver = await prisma.$transaction(
-        async (tx) => {
-          // Create the user in the database
-          const dbNewDriver = {
-            ...(driverToDB(driverData) as DBDriver),
-            id: cognitoUserId,
-          };
-          const dbDriver = await tx.driver.create({
-            data: dbNewDriver,
-          });
 
-          // // Set a permanent password (in production, this would happen after SMS verification)
-          // skipping this for e2e testing purposes-- how would we ever capture this new password?
-          // await cognito.adminSetUserPassword({
-          //   UserPoolId: userPoolId,
-          //   Username: cognitoUserId,
-          //   Password: generateSecurePassword(),
-          //   Permanent: true,
-          // });
-
-          return dbDriver;
-        },
-        {
-          maxWait: 5000,
-          timeout: 10000,
-          isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
-        }
-      );
-      return { type: 'success', user: dbToDriver(myDriver) };
-    } catch (error) {
-      // If database transaction fails, clean up Cognito user
-      if (cognitoUserId) {
-        try {
-          await cognito.adminDeleteUser({
-            UserPoolId: userPoolId,
-            Username: cognitoUserId,
-          });
-        } catch (deleteError) {
-          console.error(
-            'Failed to delete Cognito user during rollback:',
-            deleteError
-          );
-        }
+    const myDriver = await prisma.$transaction(
+      async (tx) => {
+        const dbNewDriver = {
+          ...driverToDB(driverData),
+          id: cognitoUserId,
+        } as DBDriver;
+        return await tx.driver.create({
+          data: dbNewDriver,
+        });
+      },
+      {
+        maxWait: 5000,
+        timeout: 10000,
+        isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
       }
-      throw error;
-    }
+    );
+
+    return { type: 'success', user: dbToDriver(myDriver) };
   } catch (error) {
-    // Handle Cognito-specific errors
+    // Clean up Cognito user if transaction fails
+    if (cognitoUserId) {
+      try {
+        await cognito.adminDeleteUser({
+          UserPoolId: userPoolId,
+          Username: cognitoUserId,
+        });
+      } catch (deleteError) {
+        console.error(
+          'Failed to delete Cognito user during rollback:',
+          deleteError
+        );
+      }
+    }
+
     if (isCognitoError(error)) {
-      switch (error.name) {
-        case 'UsernameExistsException':
-          return { type: 'phone_exists', phoneNumber: driverData.phoneNumber };
-        // Assuming Zod would catch invalid input, but leaving them here just in case
-        // case 'InvalidParameterException':
-        //   if (error.message.includes('email')) {
-        //     // Cognito might also reject invalid emails
-        //     throw new Error(`Invalid email format: ${userData.email}`);
-        //   }
-        //   if (error.message.includes('phone')) {
-        //     throw new Error(`Invalid phone format: ${userData.phoneNumber}`);
-        //   }
-        //   throw error;
-        // case 'TooManyRequestsException':
-        //   throw new Error('Rate limit exceeded. Please try again later');
-        default:
-          throw error;
+      if (error.name === 'UsernameExistsException') {
+        return { type: 'phone_exists', phoneNumber: driverData.phoneNumber };
       }
     }
-    if (
-      error instanceof Prisma.PrismaClientKnownRequestError &&
-      error.code === 'P2002'
-    ) {
-      const target = error.meta?.target as string[] | undefined;
-      if (target?.includes('email')) {
-        return { type: 'email_exists', email: driverData.email };
-      }
-    }
+
     throw error;
   }
 };

@@ -1,7 +1,7 @@
 # Infrastructure Management
 This directory contains infrastructure and deployment management scripts for the ride-sharing application backend.
 
-⚠️ Note this is a temporary solution, meant to be replaced by an IaC tool like Terraform!
+⚠️ Note this is a work in progess that's moving to terraform, but several bash scripts are still necessary
 
 ## Environment Setup
 Prerequisites:
@@ -16,11 +16,24 @@ Prerequisites:
 pnpm build
 ```
 
+## Terraform scripts
+The gateway deployment is handled via terraform, primarily in the `main.tf` file. That contains all of the steps to create the gateway from the openapi spec in `api/` and deploy it and set the cloudwatch permissions.
+Each individual endpoint arn is set in `variables.tf` and referenced in `main.tf`. 
+
+CORS support is folded into the open api spec programattically via terraform to keep the spec clean and focused on documentation.
+
+cd to `infrastructure/terraform` and
+```sh
+terraform plan
+```
+```sh
+terraform apply
+```
+
 ## Deployment Scripts
 - `create-update-lambda.sh`: creates or updates lambda function bundles from '`dist/`, detailed in `lambda-config.json`. Accepts an optional regular expression that will match against lambda function keys in the json file and only process those.
-- `import-api.sh`: deploys the open api spec (from `api/dumprun-openapi.json) to the api gateway
 - `lambda-gateway-permissions.sh`: gives the gateway endpoints permissions to execute their respective lambda functions
-- `trust-policy.sh`: Set up and configure AWS IAM roles and policies for API Gateway to push logs to CloudWatch, loads the policy for `trust-policy.json`
+- `trust-policy.sh`: Set up and configure AWS IAM roles and policies for API Gateway to push logs to CloudWatch, loads the policy from `trust-policy.json`
 
 ## Miscellaneous
 Because we're using prisma for postgres access, we need the binary available to the lambdas at runtime. This layer was created and loaded via the follwing process:

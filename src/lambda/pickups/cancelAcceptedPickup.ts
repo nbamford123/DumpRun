@@ -1,70 +1,48 @@
-import type { APIGatewayProxyHandler } from 'aws-lambda';
+import { schemas } from '@/schemas/zodSchemas.js';
 
-import { AuthInfo } from '@/schemas/authInfoSchema.js';
+import {
+	createDynamoHandler,
+	type DynamoOperationHandler,
+} from '../middleware/createHandlerDynamo.js';
+import { getPickupService, updatePickupService } from './pickupServices.js';
+import {
+	createSuccessResponse,
+	Conflict,
+	Forbidden,
+	NotFound,
+} from '../types/index.js';
 
-import { getPickupService } from './pickupServices.js';
+const cancelAcceptedPickupHandler: DynamoOperationHandler<
+	'cancelAcceptance'
+> = async (context) => {
+	const pickup = await getPickupService(
+		context.client,
+		context.params.pickupId,
+	);
+	if (pickup == null || pickup.status === 'deleted')
+		return NotFound('Pickup not found');
 
-export const handler: APIGatewayProxyHandler = async (event) => {
-  try {
-    const pickupId = event.pathParameters?.pickupId;
-    if (!pickupId) {
-      return {
-        statusCode: 400,
-        body: JSON.stringify({
-          message: 'Missing pickupId in path parameters',
-        }),
-      };
-    }
-    const authInfo = AuthInfo.parse(event.requestContext.authorizer?.claims);
-    // users can't cancel accepted pickupsq
-    if (authInfo['custom:role'] !== 'user') {
-      const pickupService = getPickupService();
-      const pickup = await pickupService.getPickup(pickupId);
-
-      // Can't cancel deleted pickup
-      if (!pickup || pickup.status === 'deleted') {
-        return {
-          statusCode: 404,
-          body: JSON.stringify({ message: 'Pickup not found' }),
-        };
-      }
-
-      if (
-        authInfo['custom:role'] === 'admin' ||
-        (authInfo['custom:role'] === 'driver' &&
-          pickup.driverId === authInfo.sub)
-      ) {
-        if (pickup.status !== 'accepted') {
-          return {
-            statusCode: 409,
-            body: JSON.stringify({
-              message: `Pickup can't be cancelled, current status is: ${pickup.status}`,
-            }),
-          };
-        }
-        // Is there any way a pickup could have a driverId and *not* the accepted state?
-        const updateData = { status: 'available' as const, driverId: null };
-        const returnVal = await pickupService.updatePickup(
-          pickupId,
-          updateData,
-        );
-        return {
-          statusCode: 200,
-          body: JSON.stringify(returnVal),
-        };
-      }
-    }
-    return {
-      statusCode: 403,
-      body: JSON.stringify({
-        message: 'Not authorized',
-      }),
-    };
-  } catch (error) {
-    console.error('Error cancelling pickup acceptance:', error);
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ message: 'Internal server error' }),
-    };
-  }
+	// If you're the user or driver, you can cancel (or admin)
+	if (
+		context.userRole === 'admin' ||
+		pickup.driverId === context.userId ||
+		pickup.userId === context.userId
+	) {
+		if (pickup.status !== 'accepted')
+			return Conflict(
+				`Pickup can't be cancelled, current status is: ${pickup.status}`,
+			);
+		const cancelledPickup = await updatePickupService(
+			context.client,
+			context.params.pickupId,
+			{ status: 'cancelled', driverId: null },
+		);
+		return createSuccessResponse<'cancelAcceptance'>(200, cancelledPickup);
+	}
+	return Forbidden("User doesn't have permission");
 };
+
+export const handler = createDynamoHandler(cancelAcceptedPickupHandler, {
+	requiredRole: ['driver', 'admin', 'user'],
+	operation: 'cancelAcceptance',
+});

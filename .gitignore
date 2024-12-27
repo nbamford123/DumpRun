@@ -3,7 +3,8 @@ secrets.txt
 node_modules
 dist
 dist-scripts
+infrastructure/terraform/.terraform
 .env
 .env.*
-!.env.test.sample
-!.env.sample
+!.env.test.example
+!.env.example

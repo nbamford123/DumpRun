@@ -1,6 +1,15 @@
 import { makeApi, Zodios, type ZodiosOptions } from "@zodios/core";
 import { z } from "zod";
 
+const HealthCheck = z
+  .object({
+    status: z.enum(["healthy", "unhealthy"]),
+    timestamp: z.string().datetime({ offset: true }),
+    latency: z.number().optional(),
+    error: z.string().optional(),
+  })
+  .strict()
+  .passthrough();
 const Error = z
   .object({ code: z.string(), message: z.string() })
   .partial()
@@ -8,41 +17,88 @@ const Error = z
   .passthrough();
 const NewUser = z
   .object({
-    name: z.string().min(1).max(100),
+    firstName: z.string().min(1).max(100),
+    lastName: z.string().min(1).max(100),
     email: z.string().email(),
-    phone: z.string().regex(/^\+?[1-9]\d{1,14}$|^\d{3}-\d{3}-\d{4}$/),
-    address: z.string(),
+    phoneNumber: z
+      .string()
+      .regex(
+        /^(\+1|1)?[-. ]?\(?([0-9]{3})\)?[-. ]?([0-9]{3})[-. ]?([0-9]{4})$/
+      ),
+    address: z
+      .object({
+        street: z.string().min(1).max(100),
+        city: z.string().min(1).max(100),
+        state: z.string().regex(/^[A-Z]{2}$/),
+        zipCode: z.string().regex(/^\d{5}(-\d{4})?$/),
+      })
+      .strict()
+      .passthrough(),
+    preferredContact: z.enum(["CALL", "TEXT"]).optional().default("TEXT"),
   })
   .strict()
   .passthrough();
 const User = z
   .object({
     id: z.string(),
-    name: z.string(),
-    email: z.string(),
-    phone: z.string(),
-    address: z.string(),
+    firstName: z.string(),
+    lastName: z.string(),
+    email: z.string().email(),
+    phoneNumber: z.string(),
+    address: z
+      .object({
+        street: z.string(),
+        city: z.string(),
+        state: z.string().regex(/^[A-Z]{2}$/),
+        zipCode: z.string().regex(/^\d{5}(-\d{4})?$/),
+      })
+      .strict()
+      .passthrough(),
+    preferredContact: z.enum(["CALL", "TEXT"]).optional(),
     createdAt: z.string().datetime({ offset: true }),
     updatedAt: z.string().datetime({ offset: true }),
   })
-  .partial()
   .strict()
   .passthrough();
 const UpdateUser = z
   .object({
-    name: z.string().min(1).max(100),
-    phone: z.string().regex(/^\+?[1-9]\d{1,14}$|^\d{3}-\d{3}-\d{4}$/),
-    address: z.string(),
+    firstName: z.string().min(1).max(100),
+    lastName: z.string().min(1).max(100),
+    email: z.string().email(),
+    address: z
+      .object({
+        street: z.string().min(1).max(100),
+        city: z.string().min(1).max(100),
+        state: z.string().regex(/^[A-Z]{2}$/),
+        zipCode: z.string().regex(/^\d{5}(-\d{4})?$/),
+      })
+      .strict()
+      .passthrough(),
+    preferredContact: z.enum(["CALL", "TEXT"]),
   })
   .partial()
   .strict()
   .passthrough();
 const NewDriver = z
   .object({
-    name: z.string().min(1).max(100),
+    firstName: z.string().min(1).max(100),
+    lastName: z.string().min(1).max(100),
     email: z.string().email(),
-    phone: z.string().regex(/^\+?[1-9]\d{1,14}$|^\d{3}-\d{3}-\d{4}$/),
-    address: z.string(),
+    phoneNumber: z
+      .string()
+      .regex(
+        /^(\+1|1)?[-. ]?\(?([0-9]{3})\)?[-. ]?([0-9]{3})[-. ]?([0-9]{4})$/
+      ),
+    address: z
+      .object({
+        street: z.string().min(1).max(100),
+        city: z.string().min(1).max(100),
+        state: z.string().regex(/^[A-Z]{2}$/),
+        zipCode: z.string().regex(/^\d{5}(-\d{4})?$/),
+      })
+      .strict()
+      .passthrough(),
+    preferredContact: z.enum(["CALL", "TEXT"]).optional().default("TEXT"),
     vehicleMake: z.string(),
     vehicleModel: z.string(),
     vehicleYear: z.number(),
@@ -52,24 +108,43 @@ const NewDriver = z
 const Driver = z
   .object({
     id: z.string(),
-    name: z.string(),
-    email: z.string(),
-    phone: z.string(),
-    address: z.string(),
-    vehicleMake: z.string(),
-    vehicleModel: z.string(),
-    vehicleYear: z.number(),
+    firstName: z.string(),
+    lastName: z.string(),
+    email: z.string().email(),
+    phoneNumber: z.string(),
+    address: z
+      .object({
+        street: z.string(),
+        city: z.string(),
+        state: z.string().regex(/^[A-Z]{2}$/),
+        zipCode: z.string().regex(/^\d{5}(-\d{4})?$/),
+      })
+      .strict()
+      .passthrough(),
+    preferredContact: z.enum(["CALL", "TEXT"]).optional(),
+    vehicleMake: z.string().optional(),
+    vehicleModel: z.string().optional(),
+    vehicleYear: z.number().optional(),
     createdAt: z.string().datetime({ offset: true }),
     updatedAt: z.string().datetime({ offset: true }),
   })
-  .partial()
   .strict()
   .passthrough();
 const UpdateDriver = z
   .object({
-    name: z.string().min(1).max(100),
-    phone: z.string().regex(/^\+?[1-9]\d{1,14}$|^\d{3}-\d{3}-\d{4}$/),
-    address: z.string(),
+    firstName: z.string().min(1).max(100),
+    lastName: z.string().min(1).max(100),
+    email: z.string().email(),
+    address: z
+      .object({
+        street: z.string().min(1).max(100),
+        city: z.string().min(1).max(100),
+        state: z.string().regex(/^[A-Z]{2}$/),
+        zipCode: z.string().regex(/^\d{5}(-\d{4})?$/),
+      })
+      .strict()
+      .passthrough(),
+    preferredContact: z.enum(["CALL", "TEXT"]),
     vehicleMake: z.string(),
     vehicleModel: z.string(),
     vehicleYear: z.number(),
@@ -131,6 +206,7 @@ const UpdatePickup = z
   .strict();
 
 export const schemas = {
+  HealthCheck,
   Error,
   NewUser,
   User,
@@ -146,7 +222,7 @@ export const schemas = {
 const endpoints = makeApi([
   {
     method: "post",
-    path: "/v1/drivers",
+    path: "/drivers",
     alias: "createDriver",
     requestFormat: "json",
     parameters: [
@@ -164,6 +240,11 @@ const endpoints = makeApi([
         schema: Error,
       },
       {
+        status: 409,
+        description: `The request could not be completed due to a conflict with the current state of the target resource.`,
+        schema: Error,
+      },
+      {
         status: 500,
         description: `Internal Server Error`,
         schema: Error,
@@ -172,7 +253,7 @@ const endpoints = makeApi([
   },
   {
     method: "get",
-    path: "/v1/drivers",
+    path: "/drivers",
     alias: "listDrivers",
     requestFormat: "json",
     parameters: [
@@ -188,7 +269,7 @@ const endpoints = makeApi([
       },
     ],
     response: z
-      .object({ users: z.array(Driver), total: z.number().int() })
+      .object({ drivers: z.array(Driver), total: z.number().int() })
       .partial()
       .strict()
       .passthrough(),
@@ -212,7 +293,7 @@ const endpoints = makeApi([
   },
   {
     method: "get",
-    path: "/v1/drivers/:driverId",
+    path: "/drivers/:driverId",
     alias: "getDriver",
     requestFormat: "json",
     parameters: [
@@ -253,7 +334,7 @@ const endpoints = makeApi([
   },
   {
     method: "put",
-    path: "/v1/drivers/:driverId",
+    path: "/drivers/:driverId",
     alias: "updateDriver",
     requestFormat: "json",
     parameters: [
@@ -299,7 +380,7 @@ const endpoints = makeApi([
   },
   {
     method: "delete",
-    path: "/v1/drivers/:driverId",
+    path: "/drivers/:driverId",
     alias: "deleteDriver",
     requestFormat: "json",
     parameters: [
@@ -309,7 +390,7 @@ const endpoints = makeApi([
         schema: z.string(),
       },
     ],
-    response: User,
+    response: Driver,
     errors: [
       {
         status: 400,
@@ -340,19 +421,10 @@ const endpoints = makeApi([
   },
   {
     method: "get",
-    path: "/v1/health/dynamodb",
+    path: "/health/dynamodb",
     alias: "checkDynamoDBHealth",
     requestFormat: "json",
-    response: z
-      .object({
-        status: z.literal("healthy"),
-        timestamp: z.string().datetime({ offset: true }),
-        table: z.string(),
-        latency: z.number(),
-      })
-      .partial()
-      .strict()
-      .passthrough(),
+    response: HealthCheck,
     errors: [
       {
         status: 401,
@@ -366,33 +438,17 @@ const endpoints = makeApi([
       },
       {
         status: 500,
-        description: `DynamoDB is unhealthy`,
-        schema: z
-          .object({
-            status: z.literal("unhealthy"),
-            timestamp: z.string().datetime({ offset: true }),
-            error: z.string(),
-          })
-          .partial()
-          .strict()
-          .passthrough(),
+        description: `Internal Server Error`,
+        schema: Error,
       },
     ],
   },
   {
     method: "get",
-    path: "/v1/health/postgres",
+    path: "/health/postgres",
     alias: "checkPostgresHealth",
     requestFormat: "json",
-    response: z
-      .object({
-        status: z.literal("healthy"),
-        timestamp: z.string().datetime({ offset: true }),
-        latency: z.number(),
-      })
-      .partial()
-      .strict()
-      .passthrough(),
+    response: HealthCheck,
     errors: [
       {
         status: 401,
@@ -406,22 +462,14 @@ const endpoints = makeApi([
       },
       {
         status: 500,
-        description: `PostgreSQL database is unhealthy`,
-        schema: z
-          .object({
-            status: z.literal("unhealthy"),
-            timestamp: z.string().datetime({ offset: true }),
-            error: z.string(),
-          })
-          .partial()
-          .strict()
-          .passthrough(),
+        description: `Internal Server Error`,
+        schema: Error,
       },
     ],
   },
   {
     method: "post",
-    path: "/v1/pickups",
+    path: "/pickups",
     alias: "createPickup",
     requestFormat: "json",
     parameters: [
@@ -452,7 +500,7 @@ const endpoints = makeApi([
   },
   {
     method: "get",
-    path: "/v1/pickups",
+    path: "/pickups",
     alias: "listPickups",
     requestFormat: "json",
     parameters: [
@@ -514,7 +562,7 @@ const endpoints = makeApi([
   },
   {
     method: "get",
-    path: "/v1/pickups/:pickupId",
+    path: "/pickups/:pickupId",
     alias: "getPickup",
     requestFormat: "json",
     parameters: [
@@ -560,7 +608,7 @@ const endpoints = makeApi([
   },
   {
     method: "put",
-    path: "/v1/pickups/:pickupId",
+    path: "/pickups/:pickupId",
     alias: "updatePickup",
     requestFormat: "json",
     parameters: [
@@ -606,7 +654,7 @@ const endpoints = makeApi([
   },
   {
     method: "delete",
-    path: "/v1/pickups/:pickupId",
+    path: "/pickups/:pickupId",
     alias: "deletePickup",
     requestFormat: "json",
     parameters: [
@@ -647,7 +695,7 @@ const endpoints = makeApi([
   },
   {
     method: "post",
-    path: "/v1/pickups/:pickupId/accept",
+    path: "/pickups/:pickupId/accept",
     alias: "acceptPickup",
     requestFormat: "json",
     parameters: [
@@ -693,7 +741,7 @@ const endpoints = makeApi([
   },
   {
     method: "post",
-    path: "/v1/pickups/:pickupId/cancel-acceptance",
+    path: "/pickups/:pickupId/cancel-acceptance",
     alias: "cancelAcceptance",
     requestFormat: "json",
     parameters: [
@@ -717,13 +765,13 @@ const endpoints = makeApi([
       },
       {
         status: 403,
-        description: `Not authorized to cancel this acceptance`,
-        schema: z.void(),
+        description: `Access forbidden`,
+        schema: Error,
       },
       {
         status: 404,
-        description: `Pickup not found or not currently accepted`,
-        schema: z.void(),
+        description: `Resource not found`,
+        schema: Error,
       },
       {
         status: 409,
@@ -739,7 +787,7 @@ const endpoints = makeApi([
   },
   {
     method: "get",
-    path: "/v1/pickups/available",
+    path: "/pickups/available",
     alias: "listAvailablePickups",
     requestFormat: "json",
     response: z.array(Pickup),
@@ -763,7 +811,7 @@ const endpoints = makeApi([
   },
   {
     method: "post",
-    path: "/v1/users",
+    path: "/users",
     alias: "createUser",
     requestFormat: "json",
     parameters: [
@@ -781,6 +829,11 @@ const endpoints = makeApi([
         schema: Error,
       },
       {
+        status: 409,
+        description: `The request could not be completed due to a conflict with the current state of the target resource.`,
+        schema: Error,
+      },
+      {
         status: 500,
         description: `Internal Server Error`,
         schema: Error,
@@ -789,7 +842,7 @@ const endpoints = makeApi([
   },
   {
     method: "get",
-    path: "/v1/users",
+    path: "/users",
     alias: "listUsers",
     requestFormat: "json",
     parameters: [
@@ -829,7 +882,7 @@ const endpoints = makeApi([
   },
   {
     method: "get",
-    path: "/v1/users/:userId",
+    path: "/users/:userId",
     alias: "getUser",
     requestFormat: "json",
     parameters: [
@@ -870,7 +923,7 @@ const endpoints = makeApi([
   },
   {
     method: "put",
-    path: "/v1/users/:userId",
+    path: "/users/:userId",
     alias: "updateUser",
     requestFormat: "json",
     parameters: [
@@ -916,7 +969,7 @@ const endpoints = makeApi([
   },
   {
     method: "delete",
-    path: "/v1/users/:userId",
+    path: "/users/:userId",
     alias: "deleteUser",
     requestFormat: "json",
     parameters: [

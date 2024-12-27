@@ -63,7 +63,7 @@ export class TestClient {
       token?: string;
       body?: Record<string, unknown>;
       params?: Record<string, string>;
-    } = {},
+    } = {}
   ) {
     const { token, body, params } = options;
 
@@ -80,7 +80,7 @@ export class TestClient {
     if (token) {
       headers.Authorization = `Bearer ${token}`;
     }
-
+    // console.log('making request ', fullUrl);
     return this.api.request({
       method,
       url: fullUrl,

@@ -1,43 +1,104 @@
-import { z } from 'zod';
-import type { ZodTypeAny } from 'zod';
+import { z, type ZodTypeAny } from 'zod';
+
 import { api } from './zodSchemas.js';
+import type { operations } from '@/schemas/apiSchema.ts';
 
 export const AuthInfo = z.object({
-  sub: z.string(),
-  'custom:role': z.enum(['user', 'driver', 'admin']),
+	sub: z.string(),
+	'custom:role': z.enum(['user', 'driver', 'admin']),
 });
 
-const endpoints = api.api;
+// Define types for the endpoint structure we're working with
+type Parameter = {
+  name: string;
+  type: 'Query' | 'Path';
+  schema: ZodTypeAny;
+};
 
-const listPickupsEndpoint = endpoints.find((e) => e.alias === 'listPickups');
+type Endpoint = {
+  alias: keyof operations;
+  parameters: Parameter[];
+};
 
-export const listPickupsQuerySchema = z.object(
-  listPickupsEndpoint?.parameters
-    .filter((p) => p.type === 'Query')
-    .reduce((acc: { [key: string]: ZodTypeAny }, param) => {
-      acc[param.name] = param?.schema;
-      return acc;
-    }, {}) || {},
-);
+const endpoints = api.api as Endpoint[];
 
-const listUsersEndpoint = endpoints.find((e) => e.alias === 'listUsers');
+export const getQuerySchema = <T extends keyof operations>(operation: T) => {
+  const schemaEndpoint = endpoints.find((e) => e.alias === operation);
+  return z.object(
+    schemaEndpoint?.parameters
+      .filter((p: Parameter) => p.type === 'Query')
+      .reduce(
+        (acc: Record<string, ZodTypeAny>, param) => {
+          acc[param.name] = param.schema;
+          return acc;
+        },
+        {},
+      ) || {},
+  );
+};
 
-export const listUsersQuerySchema = z.object(
-  listUsersEndpoint?.parameters
-    .filter((p) => p.type === 'Query')
-    .reduce((acc: { [key: string]: ZodTypeAny }, param) => {
-      acc[param.name] = param?.schema;
-      return acc;
-    }, {}) || {},
-);
+export const hasQueryParams = <T extends keyof operations>(
+  operation: T,
+): operation is T &
+  keyof {
+    [K in keyof operations as operations[K] extends {
+      parameters: Array<{ type: 'Query' }>;
+    }
+      ? K
+      : never]: true;
+  } => {
+  return Boolean(
+    endpoints
+      .find((e) => e.alias === operation)
+      ?.parameters.some((p: Parameter) => p.type === 'Query'),
+  );
+};
 
-const listDriversEndpoint = endpoints.find((e) => e.alias === 'listDrivers');
+export const getPathSchema = <T extends keyof operations>(operation: T) => {
+  const schemaEndpoint = endpoints.find((e) => e.alias === operation);
+  return z.object(
+    schemaEndpoint?.parameters
+      .filter((p: Parameter) => p.type === 'Path')
+      .reduce(
+        (acc: Record<string, ZodTypeAny>, param) => {
+          acc[param.name] = param.schema;
+          return acc;
+        },
+        {},
+      ) || {},
+  );
+};
 
-export const listDriversQuerySchema = z.object(
-  listDriversEndpoint?.parameters
-    .filter((p) => p.type === 'Query')
-    .reduce((acc: { [key: string]: ZodTypeAny }, param) => {
-      acc[param.name] = param?.schema;
-      return acc;
-    }, {}) || {},
-);
+export const hasPathParams = <T extends keyof operations>(
+  operation: T,
+): operation is T &
+  keyof {
+    [K in keyof operations as operations[K] extends {
+      parameters: Array<{ type: 'Path' }>;
+    }
+      ? K
+      : never]: true;
+  } => {
+  return Boolean(
+    endpoints
+      .find((e) => e.alias === operation)
+      ?.parameters.some((p: Parameter) => p.type === 'Path'),
+  );
+};
+
+// Helper function to create schema from endpoint parameters
+const createSchemaFromEndpoint = (endpointName: keyof operations) => {
+  const endpoint = endpoints.find((e) => e.alias === endpointName);
+  return z.object(
+    endpoint?.parameters
+      .filter((p: Parameter) => p.type === 'Query')
+      .reduce((acc: Record<string, ZodTypeAny>, param) => {
+        acc[param.name] = param.schema;
+        return acc;
+      }, {}) || {},
+  );
+};
+
+export const listPickupsQuerySchema = createSchemaFromEndpoint('listPickups');
+export const listUsersQuerySchema = createSchemaFromEndpoint('listUsers');
+export const listDriversQuerySchema = createSchemaFromEndpoint('listDrivers');

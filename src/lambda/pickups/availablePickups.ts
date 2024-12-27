@@ -1,38 +1,19 @@
-import type { APIGatewayProxyHandler } from 'aws-lambda';
+import { schemas } from '@/schemas/zodSchemas.js';
 
-import { AuthInfo } from '@/schemas/authInfoSchema.js';
+import {
+	createDynamoHandler,
+	type DynamoOperationHandler,
+} from '../middleware/createHandlerDynamo.js';
+import { availablePickupsService } from './pickupServices.js';
+import { createSuccessResponse } from '../types/index.js';
 
-import { getPickupService } from './pickupServices.js';
-
-export const handler: APIGatewayProxyHandler = async (event) => {
-  try {
-    const authInfo = AuthInfo.parse(event.requestContext.authorizer?.claims);
-    // I guess you have to be a driver to accept a pickup
-    // Should we also check that you haven't scheduled another one at the same time?
-    if (
-      authInfo['custom:role'] === 'driver' ||
-      authInfo['custom:role'] === 'admin'
-    ) {
-      const pickupService = getPickupService();
-      const pickups = await pickupService.availablePickups();
-      return {
-        statusCode: 200,
-        body: JSON.stringify(pickups),
-      };
-    }
-    return {
-      statusCode: 403,
-      body: JSON.stringify({
-        message: 'Not authorized to accept this pickup',
-      }),
-    };
-
-    // return error wrong role or whatever here. not a driver?
-  } catch (error) {
-    console.error('Error in acceptPickup:', error);
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ message: 'Internal server error' }),
-    };
-  }
+const availablePickupsHandler: DynamoOperationHandler<
+	'listAvailablePickups'
+> = async (context) => {
+	const pickups = await availablePickupsService(context.client);
+	return createSuccessResponse<'listAvailablePickups'>(200, pickups);
 };
+
+export const handler = createDynamoHandler(availablePickupsHandler, {
+	requiredRole: ['driver', 'admin'],
+});

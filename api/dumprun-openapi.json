@@ -5,66 +5,29 @@
     "version": "1.0.0",
     "description": "API for managing dump pickup requests, user accounts, and driver operations."
   },
-  "servers": [
-    {
-      "url": "https://api.dumppickup.com/v1"
-    }
-  ],
   "paths": {
-    "/v1/health/postgres": {
+    "/health/postgres": {
       "get": {
         "summary": "Check PostgreSQL database health",
         "operationId": "checkPostgresHealth",
         "tags": ["Health"],
         "security": [
           {
-            "CognitoAuth": ["admin"]
+            "CognitoAuth": []
           }
         ],
+        "x-amazon-apigateway-integration": {
+          "uri": "arn:aws:apigateway:${aws_region}:lambda:path/2015-03-31/functions/${postgres_health_lambda_arn}/invocations",
+          "httpMethod": "POST",
+          "type": "AWS_PROXY"
+        },
         "responses": {
           "200": {
             "description": "PostgreSQL database is healthy",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "status": {
-                      "type": "string",
-                      "enum": ["healthy"]
-                    },
-                    "timestamp": {
-                      "type": "string",
-                      "format": "date-time"
-                    },
-                    "latency": {
-                      "type": "number",
-                      "description": "Query latency in milliseconds"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "PostgreSQL database is unhealthy",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "status": {
-                      "type": "string",
-                      "enum": ["unhealthy"]
-                    },
-                    "timestamp": {
-                      "type": "string",
-                      "format": "date-time"
-                    },
-                    "error": {
-                      "type": "string"
-                    }
-                  }
+                  "$ref": "#/components/schemas/HealthCheck"
                 }
               }
             }
@@ -74,68 +37,35 @@
           },
           "403": {
             "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       }
     },
-    "/v1/health/dynamodb": {
+    "/health/dynamodb": {
       "get": {
         "summary": "Check DynamoDB health",
         "operationId": "checkDynamoDBHealth",
         "tags": ["Health"],
         "security": [
           {
-            "CognitoAuth": ["admin"]
+            "CognitoAuth": []
           }
         ],
+        "x-amazon-apigateway-integration": {
+          "uri": "arn:aws:apigateway:${aws_region}:lambda:path/2015-03-31/functions/${dynamodb_health_lambda_arn}/invocations",
+          "httpMethod": "POST",
+          "type": "AWS_PROXY"
+        },
         "responses": {
           "200": {
             "description": "DynamoDB is healthy",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "status": {
-                      "type": "string",
-                      "enum": ["healthy"]
-                    },
-                    "timestamp": {
-                      "type": "string",
-                      "format": "date-time"
-                    },
-                    "table": {
-                      "type": "string",
-                      "description": "Name of the DynamoDB table"
-                    },
-                    "latency": {
-                      "type": "number",
-                      "description": "Query latency in milliseconds"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "DynamoDB is unhealthy",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "status": {
-                      "type": "string",
-                      "enum": ["unhealthy"]
-                    },
-                    "timestamp": {
-                      "type": "string",
-                      "format": "date-time"
-                    },
-                    "error": {
-                      "type": "string"
-                    }
-                  }
+                  "$ref": "#/components/schemas/HealthCheck"
                 }
               }
             }
@@ -145,16 +75,28 @@
           },
           "403": {
             "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       }
     },
-    "/v1/users": {
+    "/users": {
       "post": {
         "summary": "Create a new user account",
         "operationId": "createUser",
         "tags": ["Users"],
-        "security": [],
+        "security": [
+          {
+            "CognitoAuth": []
+          }
+        ],
+        "x-amazon-apigateway-integration": {
+          "uri": "arn:aws:apigateway:${aws_region}:lambda:path/2015-03-31/functions/${create_user_lambda_arn}/invocations",
+          "httpMethod": "POST",
+          "type": "AWS_PROXY"
+        },
         "requestBody": {
           "required": true,
           "content": {
@@ -179,6 +121,9 @@
           "400": {
             "$ref": "#/components/responses/BadRequest"
           },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
           "500": {
             "$ref": "#/components/responses/InternalServerError"
           }
@@ -190,9 +135,14 @@
         "tags": ["Users"],
         "security": [
           {
-            "CognitoAuth": ["admin"]
+            "CognitoAuth": []
           }
         ],
+        "x-amazon-apigateway-integration": {
+          "uri": "arn:aws:apigateway:${aws_region}:lambda:path/2015-03-31/functions/${list_users_lambda_arn}/invocations",
+          "httpMethod": "POST",
+          "type": "AWS_PROXY"
+        },
         "parameters": [
           {
             "in": "query",
@@ -248,16 +198,21 @@
         }
       }
     },
-    "/v1/users/{userId}": {
+    "/users/{userId}": {
       "get": {
         "summary": "Get a user by ID",
         "operationId": "getUser",
         "tags": ["Users"],
         "security": [
           {
-            "CognitoAuth": ["admin", "user"]
+            "CognitoAuth": []
           }
         ],
+        "x-amazon-apigateway-integration": {
+          "uri": "arn:aws:apigateway:${aws_region}:lambda:path/2015-03-31/functions/${get_user_lambda_arn}/invocations",
+          "httpMethod": "POST",
+          "type": "AWS_PROXY"
+        },
         "parameters": [
           {
             "in": "path",
@@ -302,9 +257,14 @@
         "tags": ["Users"],
         "security": [
           {
-            "CognitoAuth": ["admin", "user"]
+            "CognitoAuth": []
           }
         ],
+        "x-amazon-apigateway-integration": {
+          "uri": "arn:aws:apigateway:${aws_region}:lambda:path/2015-03-31/functions/${update_user_lambda_arn}/invocations",
+          "httpMethod": "POST",
+          "type": "AWS_PROXY"
+        },
         "parameters": [
           {
             "in": "path",
@@ -359,9 +319,14 @@
         "tags": ["Users"],
         "security": [
           {
-            "CognitoAuth": ["admin", "user"]
+            "CognitoAuth": []
           }
         ],
+        "x-amazon-apigateway-integration": {
+          "uri": "arn:aws:apigateway:${aws_region}:lambda:path/2015-03-31/functions/${delete_user_lambda_arn}/invocations",
+          "httpMethod": "POST",
+          "type": "AWS_PROXY"
+        },
         "parameters": [
           {
             "in": "path",
@@ -373,7 +338,7 @@
           }
         ],
         "responses": {
-          "200": {
+          "204": {
             "description": "User deleted successfully",
             "content": {
               "application/json": {
@@ -401,12 +366,21 @@
         }
       }
     },
-    "/v1/drivers": {
+    "/drivers": {
       "post": {
         "summary": "Create a new driver account",
         "operationId": "createDriver",
         "tags": ["Drivers"],
-        "security": [],
+        "security": [
+          {
+            "CognitoAuth": []
+          }
+        ],
+        "x-amazon-apigateway-integration": {
+          "uri": "arn:aws:apigateway:${aws_region}:lambda:path/2015-03-31/functions/${create_driver_lambda_arn}/invocations",
+          "httpMethod": "POST",
+          "type": "AWS_PROXY"
+        },
         "requestBody": {
           "required": true,
           "content": {
@@ -431,6 +405,9 @@
           "400": {
             "$ref": "#/components/responses/BadRequest"
           },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
           "500": {
             "$ref": "#/components/responses/InternalServerError"
           }
@@ -442,9 +419,14 @@
         "tags": ["Drivers"],
         "security": [
           {
-            "CognitoAuth": ["admin"]
+            "CognitoAuth": []
           }
         ],
+        "x-amazon-apigateway-integration": {
+          "uri": "arn:aws:apigateway:${aws_region}:lambda:path/2015-03-31/functions/${list_drivers_lambda_arn}/invocations",
+          "httpMethod": "POST",
+          "type": "AWS_PROXY"
+        },
         "parameters": [
           {
             "in": "query",
@@ -476,7 +458,7 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "users": {
+                    "drivers": {
                       "type": "array",
                       "items": {
                         "$ref": "#/components/schemas/Driver"
@@ -502,16 +484,21 @@
         }
       }
     },
-    "/v1/drivers/{driverId}": {
+    "/drivers/{driverId}": {
       "get": {
         "summary": "Get a driver by ID",
         "operationId": "getDriver",
         "tags": ["Driver"],
         "security": [
           {
-            "CognitoAuth": ["admin", "driver"]
+            "CognitoAuth": []
           }
         ],
+        "x-amazon-apigateway-integration": {
+          "uri": "arn:aws:apigateway:${aws_region}:lambda:path/2015-03-31/functions/${get_driver_lambda_arn}/invocations",
+          "httpMethod": "POST",
+          "type": "AWS_PROXY"
+        },
         "parameters": [
           {
             "in": "path",
@@ -556,9 +543,14 @@
         "tags": ["Drivers"],
         "security": [
           {
-            "CognitoAuth": ["admin", "driver"]
+            "CognitoAuth": []
           }
         ],
+        "x-amazon-apigateway-integration": {
+          "uri": "arn:aws:apigateway:${aws_region}:lambda:path/2015-03-31/functions/${update_driver_lambda_arn}/invocations",
+          "httpMethod": "POST",
+          "type": "AWS_PROXY"
+        },
         "parameters": [
           {
             "in": "path",
@@ -613,9 +605,14 @@
         "tags": ["Drivers"],
         "security": [
           {
-            "CognitoAuth": ["admin", "driver"]
+            "CognitoAuth": []
           }
         ],
+        "x-amazon-apigateway-integration": {
+          "uri": "arn:aws:apigateway:${aws_region}:lambda:path/2015-03-31/functions/${delete_driver_lambda_arn}/invocations",
+          "httpMethod": "POST",
+          "type": "AWS_PROXY"
+        },
         "parameters": [
           {
             "in": "path",
@@ -627,12 +624,12 @@
           }
         ],
         "responses": {
-          "200": {
-            "description": "User deleted successfully",
+          "204": {
+            "description": "Driver deleted successfully",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/User"
+                  "$ref": "#/components/schemas/Driver"
                 }
               }
             }
@@ -655,16 +652,21 @@
         }
       }
     },
-    "/v1/pickups": {
+    "/pickups": {
       "post": {
         "summary": "Create a new pickup request",
         "operationId": "createPickup",
         "tags": ["Pickups"],
         "security": [
           {
-            "CognitoAuth": ["user", "admin"]
+            "CognitoAuth": []
           }
         ],
+        "x-amazon-apigateway-integration": {
+          "uri": "arn:aws:apigateway:${aws_region}:lambda:path/2015-03-31/functions/${create_pickup_lambda_arn}/invocations",
+          "httpMethod": "POST",
+          "type": "AWS_PROXY"
+        },
         "requestBody": {
           "required": true,
           "content": {
@@ -703,9 +705,14 @@
         "tags": ["Pickups"],
         "security": [
           {
-            "CognitoAuth": ["admin"]
+            "CognitoAuth": []
           }
         ],
+        "x-amazon-apigateway-integration": {
+          "uri": "arn:aws:apigateway:${aws_region}:lambda:path/2015-03-31/functions/${list_pickups_lambda_arn}/invocations",
+          "httpMethod": "POST",
+          "type": "AWS_PROXY"
+        },
         "parameters": [
           {
             "in": "query",
@@ -796,16 +803,21 @@
         }
       }
     },
-    "/v1/pickups/{pickupId}": {
+    "/pickups/{pickupId}": {
       "get": {
         "summary": "Get a pickup by ID",
         "operationId": "getPickup",
         "tags": ["Pickups"],
         "security": [
           {
-            "CognitoAuth": ["user", "driver", "admin"]
+            "CognitoAuth": []
           }
         ],
+        "x-amazon-apigateway-integration": {
+          "uri": "arn:aws:apigateway:${aws_region}:lambda:path/2015-03-31/functions/${get_pickup_lambda_arn}/invocations",
+          "httpMethod": "POST",
+          "type": "AWS_PROXY"
+        },
         "parameters": [
           {
             "in": "path",
@@ -859,9 +871,14 @@
         "tags": ["Pickups"],
         "security": [
           {
-            "CognitoAuth": ["admin", "user"]
+            "CognitoAuth": []
           }
         ],
+        "x-amazon-apigateway-integration": {
+          "uri": "arn:aws:apigateway:${aws_region}:lambda:path/2015-03-31/functions/${update_pickup_lambda_arn}/invocations",
+          "httpMethod": "POST",
+          "type": "AWS_PROXY"
+        },
         "parameters": [
           {
             "in": "path",
@@ -916,9 +933,14 @@
         "tags": ["Pickups"],
         "security": [
           {
-            "CognitoAuth": ["admin", "user"]
+            "CognitoAuth": []
           }
         ],
+        "x-amazon-apigateway-integration": {
+          "uri": "arn:aws:apigateway:${aws_region}:lambda:path/2015-03-31/functions/${delete_pickup_lambda_arn}/invocations",
+          "httpMethod": "POST",
+          "type": "AWS_PROXY"
+        },
         "parameters": [
           {
             "in": "path",
@@ -954,16 +976,21 @@
         }
       }
     },
-    "/v1/pickups/available": {
+    "/pickups/available": {
       "get": {
         "summary": "List available pickups for drivers",
         "operationId": "listAvailablePickups",
         "tags": ["Pickups"],
         "security": [
           {
-            "CognitoAuth": ["admin", "driver"]
+            "CognitoAuth": []
           }
         ],
+        "x-amazon-apigateway-integration": {
+          "uri": "arn:aws:apigateway:${aws_region}:lambda:path/2015-03-31/functions/${available_pickups_lambda_arn}/invocations",
+          "httpMethod": "POST",
+          "type": "AWS_PROXY"
+        },
         "responses": {
           "200": {
             "description": "List of available pickup requests",
@@ -990,16 +1017,21 @@
         }
       }
     },
-    "/v1/pickups/{pickupId}/accept": {
+    "/pickups/{pickupId}/accept": {
       "post": {
         "summary": "Accept a pickup request",
         "operationId": "acceptPickup",
         "tags": ["Pickups"],
         "security": [
           {
-            "CognitoAuth": ["driver", "admin"]
+            "CognitoAuth": []
           }
         ],
+        "x-amazon-apigateway-integration": {
+          "uri": "arn:aws:apigateway:${aws_region}:lambda:path/2015-03-31/functions/${accept_pickup_lambda_arn}/invocations",
+          "httpMethod": "POST",
+          "type": "AWS_PROXY"
+        },
         "parameters": [
           {
             "in": "path",
@@ -1042,16 +1074,21 @@
         }
       }
     },
-    "/v1/pickups/{pickupId}/cancel-acceptance": {
+    "/pickups/{pickupId}/cancel-acceptance": {
       "post": {
         "summary": "Cancel acceptance of a pickup",
         "operationId": "cancelAcceptance",
         "tags": ["Pickups"],
         "security": [
           {
-            "CognitoAuth": ["admin", "driver"]
+            "CognitoAuth": []
           }
         ],
+        "x-amazon-apigateway-integration": {
+          "uri": "arn:aws:apigateway:${aws_region}:lambda:path/2015-03-31/functions/${cancel_pickup_acceptance_lambda_arn}/invocations",
+          "httpMethod": "POST",
+          "type": "AWS_PROXY"
+        },
         "parameters": [
           {
             "in": "path",
@@ -1080,10 +1117,10 @@
             "$ref": "#/components/responses/Unauthorized"
           },
           "403": {
-            "description": "Not authorized to cancel this acceptance"
+            "$ref": "#/components/responses/Forbidden"
           },
           "404": {
-            "description": "Pickup not found or not currently accepted"
+            "$ref": "#/components/responses/NotFound"
           },
           "409": {
             "$ref": "#/components/responses/Conflict"
@@ -1104,107 +1141,316 @@
         "x-amazon-apigateway-authtype": "cognito_user_pools",
         "x-amazon-apigateway-authorizer": {
           "type": "cognito_user_pools",
-          "providerARNs": [
-            "arn:aws:cognito-idp:us-west-2:369547265320:userpool/us-west-2_vriluhdDN"
-          ]
+          "providerARNs": ["${cognito_user_pool_arn}"]
         }
       }
     },
     "schemas": {
+      "HealthCheck": {
+        "type": "object",
+        "required": ["status", "timestamp"],
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": ["healthy", "unhealthy"],
+            "description": "Current health status of the PostgreSQL database"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Time when the health check was performed"
+          },
+          "latency": {
+            "type": "number",
+            "description": "Query latency in milliseconds"
+          },
+          "error": {
+            "type": "string",
+            "description": "Error message when status is unhealthy"
+          }
+        }
+      },
       "NewUser": {
         "type": "object",
-        "required": ["name", "email", "phone", "address"],
+        "required": [
+          "firstName",
+          "lastName",
+          "email",
+          "phoneNumber",
+          "address"
+        ],
         "properties": {
-          "name": {
+          "firstName": {
             "type": "string",
             "minLength": 1,
-            "maxLength": 100
+            "maxLength": 100,
+            "description": "User's first name"
+          },
+          "lastName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+            "description": "User's last name"
           },
           "email": {
             "type": "string",
-            "format": "email"
+            "format": "email",
+            "description": "User's email address"
           },
-          "phone": {
+          "phoneNumber": {
             "type": "string",
-            "pattern": "^\\+?[1-9]\\d{1,14}$|^\\d{3}-\\d{3}-\\d{4}$"
+            "pattern": "^(\\+1|1)?[-. ]?\\(?([0-9]{3})\\)?[-. ]?([0-9]{3})[-. ]?([0-9]{4})$",
+            "description": "US phone number (accepts formats: (123) 456-7890, 123-456-7890, 123.456.7890, or just 1234567890)",
+            "example": "123-456-7890"
           },
           "address": {
-            "type": "string"
+            "type": "object",
+            "required": ["street", "city", "state", "zipCode"],
+            "properties": {
+              "street": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100,
+                "description": "Street address",
+                "example": "123 Main St"
+              },
+              "city": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100,
+                "description": "City name",
+                "example": "Denver"
+              },
+              "state": {
+                "type": "string",
+                "pattern": "^[A-Z]{2}$",
+                "description": "Two-letter state code",
+                "example": "CO"
+              },
+              "zipCode": {
+                "type": "string",
+                "pattern": "^\\d{5}(-\\d{4})?$",
+                "description": "5-digit ZIP code or ZIP+4",
+                "example": "80203"
+              }
+            }
+          },
+          "preferredContact": {
+            "type": "string",
+            "enum": ["CALL", "TEXT"],
+            "description": "Preferred method of contact",
+            "default": "TEXT"
           }
         }
       },
       "UpdateUser": {
         "type": "object",
         "properties": {
-          "name": {
+          "firstName": {
             "type": "string",
             "minLength": 1,
-            "maxLength": 100
+            "maxLength": 100,
+            "description": "User's first name"
           },
-          "phone": {
+          "lastName": {
             "type": "string",
-            "pattern": "^\\+?[1-9]\\d{1,14}$|^\\d{3}-\\d{3}-\\d{4}$"
+            "minLength": 1,
+            "maxLength": 100,
+            "description": "User's last name"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "User's email address"
           },
           "address": {
-            "type": "string"
+            "type": "object",
+            "properties": {
+              "street": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100,
+                "description": "Street address",
+                "example": "123 Main St"
+              },
+              "city": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100,
+                "description": "City name",
+                "example": "San Francisco"
+              },
+              "state": {
+                "type": "string",
+                "pattern": "^[A-Z]{2}$",
+                "description": "Two-letter state code",
+                "example": "CA"
+              },
+              "zipCode": {
+                "type": "string",
+                "pattern": "^\\d{5}(-\\d{4})?$",
+                "description": "5-digit ZIP code or ZIP+4",
+                "example": "94105"
+              }
+            },
+            "required": ["street", "city", "state", "zipCode"]
+          },
+          "preferredContact": {
+            "type": "string",
+            "enum": ["CALL", "TEXT"],
+            "description": "Preferred method of contact"
           }
         }
       },
       "User": {
         "type": "object",
+        "required": [
+          "id",
+          "firstName",
+          "lastName",
+          "email",
+          "phoneNumber",
+          "address",
+          "createdAt",
+          "updatedAt"
+        ],
         "properties": {
           "id": {
-            "type": "string"
+            "type": "string",
+            "description": "User's unique identifier (same as Cognito ID)"
           },
-          "name": {
-            "type": "string"
+          "firstName": {
+            "type": "string",
+            "description": "User's first name"
+          },
+          "lastName": {
+            "type": "string",
+            "description": "User's last name"
           },
           "email": {
-            "type": "string"
+            "type": "string",
+            "format": "email",
+            "description": "User's email address"
           },
-          "phone": {
-            "type": "string"
+          "phoneNumber": {
+            "type": "string",
+            "description": "User's phone number (used as primary identifier)",
+            "example": "123-456-7890"
           },
           "address": {
-            "type": "string"
+            "type": "object",
+            "properties": {
+              "street": {
+                "type": "string",
+                "description": "Street address"
+              },
+              "city": {
+                "type": "string",
+                "description": "City name"
+              },
+              "state": {
+                "type": "string",
+                "pattern": "^[A-Z]{2}$",
+                "description": "Two-letter state code"
+              },
+              "zipCode": {
+                "type": "string",
+                "pattern": "^\\d{5}(-\\d{4})?$",
+                "description": "ZIP code"
+              }
+            },
+            "required": ["street", "city", "state", "zipCode"]
+          },
+          "preferredContact": {
+            "type": "string",
+            "enum": ["CALL", "TEXT"],
+            "description": "Preferred method of contact"
           },
           "createdAt": {
             "type": "string",
-            "format": "date-time"
+            "format": "date-time",
+            "description": "Timestamp of user creation"
           },
           "updatedAt": {
             "type": "string",
-            "format": "date-time"
+            "format": "date-time",
+            "description": "Timestamp of last update"
           }
         }
       },
       "NewDriver": {
         "type": "object",
         "required": [
-          "name",
+          "firstName",
+          "lastName",
           "email",
-          "phone",
+          "phoneNumber",
           "address",
           "vehicleMake",
           "vehicleModel",
           "vehicleYear"
         ],
         "properties": {
-          "name": {
+          "firstName": {
             "type": "string",
             "minLength": 1,
-            "maxLength": 100
+            "maxLength": 100,
+            "description": "User's first name"
+          },
+          "lastName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+            "description": "User's last name"
           },
           "email": {
             "type": "string",
-            "format": "email"
+            "format": "email",
+            "description": "User's email address"
           },
-          "phone": {
+          "phoneNumber": {
             "type": "string",
-            "pattern": "^\\+?[1-9]\\d{1,14}$|^\\d{3}-\\d{3}-\\d{4}$"
+            "pattern": "^(\\+1|1)?[-. ]?\\(?([0-9]{3})\\)?[-. ]?([0-9]{3})[-. ]?([0-9]{4})$",
+            "description": "US phone number (accepts formats: (123) 456-7890, 123-456-7890, 123.456.7890, or just 1234567890)",
+            "example": "123-456-7890"
           },
           "address": {
-            "type": "string"
+            "type": "object",
+            "required": ["street", "city", "state", "zipCode"],
+            "properties": {
+              "street": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100,
+                "description": "Street address",
+                "example": "123 Main St"
+              },
+              "city": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100,
+                "description": "City name",
+                "example": "Denver"
+              },
+              "state": {
+                "type": "string",
+                "pattern": "^[A-Z]{2}$",
+                "description": "Two-letter state code",
+                "example": "CO"
+              },
+              "zipCode": {
+                "type": "string",
+                "pattern": "^\\d{5}(-\\d{4})?$",
+                "description": "5-digit ZIP code or ZIP+4",
+                "example": "80203"
+              }
+            }
+          },
+          "preferredContact": {
+            "type": "string",
+            "enum": ["CALL", "TEXT"],
+            "description": "Preferred method of contact",
+            "default": "TEXT"
           },
           "vehicleMake": {
             "type": "string"
@@ -1220,17 +1466,59 @@
       "UpdateDriver": {
         "type": "object",
         "properties": {
-          "name": {
+          "firstName": {
             "type": "string",
             "minLength": 1,
-            "maxLength": 100
+            "maxLength": 100,
+            "description": "User's first name"
           },
-          "phone": {
+          "lastName": {
             "type": "string",
-            "pattern": "^\\+?[1-9]\\d{1,14}$|^\\d{3}-\\d{3}-\\d{4}$"
+            "minLength": 1,
+            "maxLength": 100,
+            "description": "User's last name"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "User's email address"
           },
           "address": {
-            "type": "string"
+            "type": "object",
+            "properties": {
+              "street": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100,
+                "description": "Street address",
+                "example": "123 Main St"
+              },
+              "city": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100,
+                "description": "City name",
+                "example": "San Francisco"
+              },
+              "state": {
+                "type": "string",
+                "pattern": "^[A-Z]{2}$",
+                "description": "Two-letter state code",
+                "example": "CA"
+              },
+              "zipCode": {
+                "type": "string",
+                "pattern": "^\\d{5}(-\\d{4})?$",
+                "description": "5-digit ZIP code or ZIP+4",
+                "example": "94105"
+              }
+            },
+            "required": ["street", "city", "state", "zipCode"]
+          },
+          "preferredContact": {
+            "type": "string",
+            "enum": ["CALL", "TEXT"],
+            "description": "Preferred method of contact"
           },
           "vehicleMake": {
             "type": "string"
@@ -1245,21 +1533,67 @@
       },
       "Driver": {
         "type": "object",
+        "required": [
+          "id",
+          "firstName",
+          "lastName",
+          "email",
+          "phoneNumber",
+          "address",
+          "createdAt",
+          "updatedAt"
+        ],
         "properties": {
           "id": {
-            "type": "string"
+            "type": "string",
+            "description": "User's unique identifier (same as Cognito ID)"
           },
-          "name": {
-            "type": "string"
+          "firstName": {
+            "type": "string",
+            "description": "User's first name"
+          },
+          "lastName": {
+            "type": "string",
+            "description": "User's last name"
           },
           "email": {
-            "type": "string"
+            "type": "string",
+            "format": "email",
+            "description": "User's email address"
           },
-          "phone": {
-            "type": "string"
+          "phoneNumber": {
+            "type": "string",
+            "description": "User's phone number (used as primary identifier)",
+            "example": "123-456-7890"
           },
           "address": {
-            "type": "string"
+            "type": "object",
+            "properties": {
+              "street": {
+                "type": "string",
+                "description": "Street address"
+              },
+              "city": {
+                "type": "string",
+                "description": "City name"
+              },
+              "state": {
+                "type": "string",
+                "pattern": "^[A-Z]{2}$",
+                "description": "Two-letter state code"
+              },
+              "zipCode": {
+                "type": "string",
+                "pattern": "^\\d{5}(-\\d{4})?$",
+                "description": "ZIP code"
+              }
+            },
+            "required": ["street", "city", "state", "zipCode"]
+          },
+          "preferredContact": {
+            "type": "string",
+            "enum": ["CALL", "TEXT"],
+            "description": "Preferred method of contact"
           },
           "vehicleMake": {
             "type": "string"

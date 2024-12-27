@@ -1,18 +1,12 @@
 import { config } from 'dotenv';
-import {
-  describe,
-  it,
-  expect,
-  beforeAll,
-  afterAll,
-  afterEach,
-  vi,
-} from 'vitest';
+import { describe, it, beforeAll, expect, afterAll } from 'vitest';
 import { DynamoDB } from '@aws-sdk/client-dynamodb';
+
 import {
   checkPostgresHealth,
   checkDynamoDBHealth,
 } from '@/lambda/health/healthServices';
+import { getPrismaClient } from '@/lambda/middleware/createHandlerPostgres';
 
 // Load environment variables from .env.test
 config({ path: '.env.test' });
@@ -25,16 +19,23 @@ const dynamoConfig = {
     secretAccessKey: process.env.DYNAMODB_SECRET_ACCESS_KEY || '',
   },
 };
-console.log(dynamoConfig)
 const dynamoDb = new DynamoDB(dynamoConfig);
 
-describe('Pickup Service Integration Tests', () => {
+const prisma = getPrismaClient();
+
+describe('Health Service Integration Tests', () => {
+  beforeAll(async () => {
+    // Connect to the test database
+    await prisma.$connect();
+  });
   afterAll(async () => {
     dynamoDb.destroy();
+    // Disconnect from the test database
+    await prisma.$disconnect();
   });
 
   it('should get a healthy response from postgrest', async () => {
-    const health = await checkPostgresHealth();
+    const health = await checkPostgresHealth(prisma);
     expect(health).toEqual({
       status: 'healthy',
       timestamp: expect.any(String),
@@ -47,7 +48,6 @@ describe('Pickup Service Integration Tests', () => {
     expect(health).toEqual({
       status: 'healthy',
       timestamp: expect.any(String),
-      table: process.env.TABLE_NAME,
       latency: expect.any(Number),
     });
   });

@@ -11,7 +11,7 @@ COPY pnpm-lock.yaml ./
 RUN pnpm i
 
 COPY tsconfig.json ./
-COPY tests/integration-tests/.env.test ./
+COPY .env.test ./
 COPY dynamodb ./dynamodb
 
 CMD ["tsx", "dynamodb/schema.ts"]

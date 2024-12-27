@@ -13,11 +13,11 @@ describe('Basic DB Operations', () => {
 
   const username = process.env.USER_TEST_USER_USERNAME || '';
   const drivername = process.env.DRIVER_TEST_USER_USERNAME || '';
+  const shared_password = process.env.TEST_USER_PASSWORD || '';
 
   beforeAll(async () => {
     client = new TestClient();
 
-    const shared_password = process.env.TEST_USER_PASSWORD || '';
     // Set up test users
     adminUser = {
       username: process.env.ADMIN_TEST_USER_USERNAME || '',
@@ -35,25 +35,25 @@ describe('Basic DB Operations', () => {
     // Authenticate users
     adminUser.token = await client.authenticateUser(
       adminUser.username,
-      adminUser.password,
+      adminUser.password
     );
     regularUser.token = await client.authenticateUser(
       regularUser.username,
-      regularUser.password,
+      regularUser.password
     );
     driver.token = await client.authenticateUser(
       driver.username,
-      driver.password,
+      driver.password
     );
   });
 
   it('should verify system health', async () => {
-    const response = await client.request('GET', '/v1/health/postgres', {
+    const response = await client.request('GET', '/health/postgres', {
       token: adminUser.token,
     });
     expect(response.status).toBe(200);
 
-    const dynamoResponse = await client.request('GET', '/v1/health/dynamodb', {
+    const dynamoResponse = await client.request('GET', '/health/dynamodb', {
       token: adminUser.token,
     });
     expect(dynamoResponse.status).toBe(200);
@@ -61,146 +61,197 @@ describe('Basic DB Operations', () => {
 
   it('basic user CRUD', async () => {
     const newUser = {
-      address: '11382 High St. Northglenn, CO 80233',
-      name: 'John Doe',
+      address: {
+        street: '11382 High St.',
+        city: 'Northglenn',
+        state: 'CO',
+        zipCode: '80233',
+      },
+      firstName: 'John',
+      lastName: 'Doe',
       email: 'john-d@example.com',
-      phone: '303-451-6266',
+      phoneNumber: '303-451-6266',
     };
-    let response = await client.request('GET', '/v1/users', {
+    let response = await client.request('GET', '/users', {
       token: adminUser.token,
     });
     expect(response.status).toBe(200);
 
-    response = await client.request('POST', '/v1/users', {
-      token: regularUser.token,
+    response = await client.request('POST', '/users', {
+      token: adminUser.token,
       body: newUser,
     });
     expect(response.status).toBe(201);
-    expect(response.data).toEqual({
+    const createdUser = response.data;
+    expect(createdUser).toEqual({
       ...newUser,
-      id: regularUser.username,
+      id: createdUser.id,
+      deletedAt: null,
+      isDeleted: false,
+      pickupNotes: null,
+      preferredContact: 'TEXT',
       createdAt: expect.any(String),
       updatedAt: expect.any(String),
     });
 
-    response = await client.request(
-      'GET',
-      `/v1/users/${regularUser.username}`,
-      {
-        token: regularUser.token,
-      },
+    // Check email and phone 409s
+    response = await client.request('POST', '/users', {
+      token: adminUser.token,
+      body: {...newUser, email: 'another@email.com'},
+    });
+    expect(response.status).toBe(409);
+    response = await client.request('POST', '/users', {
+      token: adminUser.token,
+      body: {...newUser, phoneNumber: '800-867-5309'},
+    });
+    expect(response.status).toBe(409);
+    // Check cognito rollback when db creation fails? Presumably on the duplicated email?
+    // Cleanup with prisma deletion?
+    // Authenticate new user
+    const newUserToken = await client.authenticateUser(
+      createdUser.id,
+      shared_password
     );
+    expect(newUserToken).toBeDefined();
+    response = await client.request('GET', `/users/${createdUser.id}`, {
+      token: newUserToken,
+    });
     expect(response.status).toBe(200);
     expect(response.data).toEqual({
       ...newUser,
-      id: regularUser.username,
+      id: createdUser.id,
+      deletedAt: null,
+      isDeleted: false,
+      pickupNotes: null,
+      preferredContact: 'TEXT',
       createdAt: expect.any(String),
       updatedAt: expect.any(String),
     });
 
-    response = await client.request(
-      'PUT',
-      `/v1/users/${regularUser.username}`,
-      {
-        token: regularUser.token,
-        body: {
-          name: 'Doe John',
-        },
+    response = await client.request('PUT', `/users/${createdUser.id}`, {
+      token: newUserToken,
+      body: {
+        firstName: 'Doe',
+        lastName: 'John',
       },
-    );
+    });
     expect(response.status).toBe(200);
     expect(response.data).toEqual({
       ...newUser,
-      id: regularUser.username,
-      name: 'Doe John',
+      id: createdUser.id,
+      firstName: 'Doe',
+      lastName: 'John',
+      deletedAt: null,
+      isDeleted: false,
+      pickupNotes: null,
+      preferredContact: 'TEXT',
       createdAt: expect.any(String),
       updatedAt: expect.any(String),
     });
 
-    response = await client.request(
-      'DELETE',
-      `/v1/users/${regularUser.username}`,
-      {
-        token: regularUser.token,
-      },
-    );
+    response = await client.request('DELETE', `/users/${createdUser.id}`, {
+      token: newUserToken,
+    });
     expect(response.status).toBe(204);
 
-    response = await client.request(
-      'GET',
-      `/v1/users/${regularUser.username}`,
-      {
-        token: regularUser.token,
-      },
-    );
+    response = await client.request('GET', `/users/${createdUser.id}`, {
+      token: adminUser.token,
+    });
     expect(response.status).toBe(404);
   }, 20000);
 
   it('basic driver CRUD', async () => {
     const newDriver = {
       email: 'test-driver@example.com',
-      name: 'Test Driver',
-      phone: '303-555-1212',
-      address: '11382 High St. Northglenn, CO 80233',
+      firstName: 'Test',
+      lastName: 'Driver',
+      phoneNumber: '303-555-1212',
+      address: {
+        street: '11382 High St.',
+        city: 'Northglenn',
+        state: 'CO',
+        zipCode: '80233',
+      },
       vehicleMake: 'Ford',
       vehicleModel: 'F150',
       vehicleYear: 1998,
     };
 
-    let response = await client.request('GET', '/v1/drivers', {
+    let response = await client.request('GET', '/drivers', {
       token: adminUser.token,
     });
     expect(response.status).toBe(200);
 
-    response = await client.request('POST', '/v1/drivers', {
-      token: driver.token,
+    response = await client.request('POST', '/drivers', {
+      token: adminUser.token,
       body: newDriver,
     });
     expect(response.status).toBe(201);
-    expect(response.data).toEqual({
+    const createdDriver = response.data;
+    expect(createdDriver).toEqual({
       ...newDriver,
-      id: driver.username,
+      id: createdDriver.id,
+      preferredContact: 'TEXT',
       createdAt: expect.any(String),
       updatedAt: expect.any(String),
     });
 
-    response = await client.request('GET', `/v1/drivers/${driver.username}`, {
-      token: driver.token,
+    // Check email and phone 409s
+    response = await client.request('POST', '/drivers', {
+      token: adminUser.token,
+      body: {...newDriver, email: 'another@email.com'},
     });
-    expect(response.status).toBe(200);
-    expect(response.data).toEqual({
-      ...newDriver,
-      id: driver.username,
-      createdAt: expect.any(String),
-      updatedAt: expect.any(String),
+    expect(response.status).toBe(409);
+    response = await client.request('POST', '/drivers', {
+      token: adminUser.token,
+      body: {...newDriver, phoneNumber: '800-867-5309'},
     });
-
-    response = await client.request('PUT', `/v1/drivers/${driver.username}`, {
-      token: driver.token,
-      body: {
-        name: 'Doe John',
-      },
-    });
-    expect(response.status).toBe(200);
-    expect(response.data).toEqual({
-      ...newDriver,
-      id: driver.username,
-      name: 'Doe John',
-      createdAt: expect.any(String),
-      updatedAt: expect.any(String),
-    });
-
-    response = await client.request(
-      'DELETE',
-      `/v1/drivers/${driver.username}`,
-      {
-        token: driver.token,
-      },
+    expect(response.status).toBe(409);
+    // Check cognito rollback when db creation fails? Presumably on the duplicated email?
+    // Cleanup with prisma deletion?
+    // Authenticate new user
+    const newDriverToken = await client.authenticateUser(
+      createdDriver.id,
+      shared_password
     );
+    expect(newDriverToken).toBeDefined();
+    response = await client.request('GET', `/drivers/${createdDriver.id}`, {
+      token: newDriverToken,
+    });
+    expect(response.status).toBe(200);
+    expect(response.data).toEqual({
+      ...newDriver,
+      id: createdDriver.id,
+      preferredContact: 'TEXT',
+      createdAt: expect.any(String),
+      updatedAt: expect.any(String),
+    });
+
+    response = await client.request('PUT', `/drivers/${createdDriver.id}`, {
+      token: newDriverToken,
+      body: {
+        firstName: 'Doe',
+        lastName: 'John',
+      },
+    });
+    expect(response.status).toBe(200);
+    expect(response.data).toEqual({
+      ...newDriver,
+      id: createdDriver.id,
+      firstName: 'Doe',
+      lastName: 'John',
+      preferredContact: 'TEXT',
+      createdAt: expect.any(String),
+      updatedAt: expect.any(String),
+    });
+
+    response = await client.request('DELETE', `/drivers/${createdDriver.id}`, {
+      token: newDriverToken,
+    });
     expect(response.status).toBe(204);
 
-    response = await client.request('GET', `/v1/drivers/${driver.username}`, {
-      token: driver.token,
+    response = await client.request('GET', `/drivers/${createdDriver.id}`, {
+      token: adminUser.token,
     });
     expect(response.status).toBe(404);
   }, 20000);
@@ -213,7 +264,7 @@ describe('Basic DB Operations', () => {
       wasteType: 'green',
     };
 
-    let response = await client.request('GET', '/v1/pickups', {
+    let response = await client.request('GET', '/pickups', {
       token: adminUser.token,
       params: {
         status: 'pending',
@@ -221,7 +272,7 @@ describe('Basic DB Operations', () => {
     });
     expect(response.status).toBe(200);
 
-    response = await client.request('POST', '/v1/pickups', {
+    response = await client.request('POST', '/pickups', {
       token: regularUser.token,
       body: newPickup,
     });
@@ -234,7 +285,7 @@ describe('Basic DB Operations', () => {
     });
     const pickupId = response.data.id;
 
-    response = await client.request('GET', `/v1/pickups/${pickupId}`, {
+    response = await client.request('GET', `/pickups/${pickupId}`, {
       token: regularUser.token,
     });
     expect(response.status).toBe(200);
@@ -245,7 +296,7 @@ describe('Basic DB Operations', () => {
       status: 'pending',
     });
 
-    response = await client.request('PUT', `/v1/pickups/${pickupId}`, {
+    response = await client.request('PUT', `/pickups/${pickupId}`, {
       token: regularUser.token,
       body: {
         status: 'available',
@@ -259,7 +310,7 @@ describe('Basic DB Operations', () => {
       status: 'available',
     });
 
-    response = await client.request('GET', '/v1/pickups/available', {
+    response = await client.request('GET', '/pickups/available', {
       token: driver.token,
     });
     expect(response.status).toBe(200);
@@ -272,7 +323,7 @@ describe('Basic DB Operations', () => {
       },
     ]);
 
-    response = await client.request('POST', `/v1/pickups/${pickupId}/accept`, {
+    response = await client.request('POST', `/pickups/${pickupId}/accept`, {
       token: driver.token,
     });
     expect(response.status).toBe(200);
@@ -286,20 +337,20 @@ describe('Basic DB Operations', () => {
 
     response = await client.request(
       'POST',
-      `/v1/pickups/${pickupId}/cancel-acceptance`,
+      `/pickups/${pickupId}/cancel-acceptance`,
       {
         token: driver.token,
-      },
+      }
     );
     expect(response.status).toBe(200);
     expect(response.data).toEqual({
       ...newPickup,
       id: pickupId,
       userId: regularUser.username,
-      status: 'available',
+      status: 'cancelled',
     });
 
-    response = await client.request('DELETE', `/v1/pickups/${pickupId}`, {
+    response = await client.request('DELETE', `/pickups/${pickupId}`, {
       token: adminUser.token,
       params: {
         hardDelete: 'true',
@@ -307,10 +358,10 @@ describe('Basic DB Operations', () => {
     });
     expect(response.status).toBe(204);
 
-    response = await client.request('GET', `/v1/pickups/${pickupId}`, {
+    response = await client.request('GET', `/pickups/${pickupId}`, {
       token: driver.token,
     });
     // This should be a 404, needs to be fixed in the lambda
-    expect(response.status).toBe(500);
+    expect(response.status).toBe(404);
   }, 20000);
 });

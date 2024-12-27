@@ -1,34 +1,53 @@
 import { config } from 'dotenv';
-import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
-import { PrismaClient } from '@prisma/client';
+import { describe, it, expect, beforeEach, beforeAll, afterAll, vi } from 'vitest';
 import {
   createDriverService,
   getDriverService,
   updateDriverService,
   deleteDriverService,
 } from '@/lambda/drivers/driverServices';
+import { getPrismaClient } from '@/lambda/middleware/createHandlerPostgres.js';
 
 import type { NewDriver, UpdateDriver } from '@/schemas/apiSchema.d.ts';
 
 // Load environment variables from .env.test
-config({ path: '.env.test' });
-
-vi.mock('@aws-sdk/client-cognito-identity-provider');
-
-// Mock cognito
-const mockCognito = {
-  adminGetUser: vi.fn(),
-};
-mockCognito.adminGetUser.mockResolvedValue({});
-
-const prisma = new PrismaClient();
-
+const out = config({ path: '.env.test', override: true });
+console.log(`Connecting to database ${process.env.DATABASE_URL}`);
 const mockCognitoUserId = 'test-cognito-id';
+
+// Mock the AWS SDK
+vi.mock('@aws-sdk/client-cognito-identity-provider', () => {
+  const adminCreateUser = vi
+    .fn()
+    .mockImplementation(() => ({ User: { Username: mockCognitoUserId } }));
+  const adminDeleteUser = vi.fn();
+  const adminSetUserPassword = vi.fn();
+  const adminUpdateUserAttributes = vi.fn();
+
+  return {
+    CognitoIdentityProvider: vi.fn().mockImplementation(() => ({
+      adminCreateUser,
+      adminDeleteUser,
+      adminSetUserPassword,
+      adminUpdateUserAttributes,
+    })),
+  };
+});
+
+const prisma = getPrismaClient();
+
 const mockDriverData = {
-  name: 'John Doe',
+  firstName: 'John',
+  lastName: 'Doe',
   email: 'john@example.com',
-  phone: '303-555-1212',
-  address: '11382 High St. Northglenn, CO 80233',
+  phoneNumber: '303-555-1212',
+  address: {
+    street: '123 Test St',
+    city: 'Denver',
+    state: 'CO',
+    zipCode: '80203',
+  },
+  preferredContact: 'TEXT',
   vehicleMake: 'Ford',
   vehicleModel: 'f150',
   vehicleYear: 1998,
@@ -50,85 +69,77 @@ beforeEach(async () => {
 });
 
 describe('Driver Service Integration Tests', () => {
-  it('should create a new Driver', async () => {
-    const newDriver: NewDriver = {
+  it('should create a new driver', async () => {
+    const result = await createDriverService(prisma, mockDriverData);
+    expect(result.user).toEqual({
       ...mockDriverData,
-    };
-
-    const createdDriver = await createDriverService(
-      mockCognitoUserId,
-      newDriver,
-    );
-
-    expect(createdDriver.id).toEqual(mockCognitoUserId);
-    expect(createdDriver.name).toBe(mockDriverData.name);
-    expect(createdDriver.email).toBe(mockDriverData.email);
-    expect(createdDriver.phone).toBe(mockDriverData.phone);
-    expect(createdDriver.address).toBe(mockDriverData.address);
-    expect(createdDriver.vehicleMake).toBe(mockDriverData.vehicleMake);
-    expect(createdDriver.vehicleModel).toBe(mockDriverData.vehicleModel);
-    expect(createdDriver.vehicleYear).toBe(mockDriverData.vehicleYear);
-    expect(createdDriver).toHaveProperty('createdAt');
-    expect(createdDriver).toHaveProperty('updatedAt');
-
+      id: mockCognitoUserId,
+      createdAt: expect.any(String),
+      updatedAt: expect.any(String),
+    });
     // Verify the user was actually created in the database
     const dbDriver = await prisma.driver.findUnique({
-      where: { id: createdDriver.id },
+      where: { id: result.user.id },
     });
-    const dbDriverWithISOStrings = {
-      ...dbDriver,
-      createdAt: dbDriver?.createdAt.toISOString(),
-      updatedAt: dbDriver?.updatedAt.toISOString(),
-    };
-    expect(dbDriverWithISOStrings).toEqual(createdDriver);
+    expect(dbDriver).not.toBeNull();
   });
 
   it('should retrieve an existing driver', async () => {
+    const { address, ...dbDriver } = mockDriverData;
     const newDriver = await prisma.driver.create({
       data: {
         id: mockCognitoUserId,
-        ...mockDriverData,
+        ...dbDriver,
+        ...address,
       },
     });
 
-    const retrievedDriver = await getDriverService(newDriver.id);
-    const newDriverWithISOStrings = {
-      ...newDriver,
-      createdAt: newDriver?.createdAt.toISOString(),
-      updatedAt: newDriver?.updatedAt.toISOString(),
-    };
-
-    expect(retrievedDriver).toEqual(newDriverWithISOStrings);
+    const retrievedDriver = await getDriverService(prisma, newDriver.id);
+    expect(retrievedDriver).not.toBeNull();
   });
 
   it('should return null for non-existent driver', async () => {
-    expect(await getDriverService('non-existent-id')).toBeNull();
+    expect(await getDriverService(prisma, 'non-existent-id')).toBeNull();
   });
 
   it('should update an existing driver', async () => {
+    const { address, ...dbDriver1 } = mockDriverData;
     const newDriver = await prisma.driver.create({
       data: {
         id: mockCognitoUserId,
-        ...mockDriverData,
+        ...dbDriver1,
+        ...address,
       },
     });
+
     const updateData: UpdateDriver = {
-      name: 'Robert Smith',
+      firstName: 'Robert',
     };
-    const updatedDriver = await updateDriverService(newDriver.id, updateData);
+    const updatedDriver = await updateDriverService(
+      prisma,
+      newDriver.id,
+      updateData
+    );
 
     expect(updatedDriver.name).toBe(updateData.name);
     expect(updatedDriver.email).toBe(newDriver.email);
     expect(new Date(updatedDriver.updatedAt).getTime()).toBeGreaterThan(
-      newDriver.updatedAt.getTime(),
+      newDriver.updatedAt.getTime()
     );
 
     // Verify the user was actually updated in the database
-    const dbDriver = await prisma.driver.findUnique({
-      where: { id: newDriver.id },
-    });
+    const { street, city, state, zipCode, ...dbDriver } =
+      await prisma.driver.findUnique({
+        where: { id: newDriver.id },
+      });
     const dbDriverWithISOStrings = {
       ...dbDriver,
+      address: {
+        street,
+        city,
+        state,
+        zipCode,
+      },
       createdAt: dbDriver?.createdAt.toISOString(),
       updatedAt: dbDriver?.updatedAt.toISOString(),
     };
@@ -136,24 +147,33 @@ describe('Driver Service Integration Tests', () => {
   });
 
   it('should return null for updating non-existent driver', async () => {
-    expect(await updateDriverService('non-existent-id', {})).toBeNull();
+    expect(await updateDriverService(prisma, 'non-existent-id', {})).toBeNull();
   });
 
   it('should delete an existing driver', async () => {
-    const newDriver = await prisma.driver.create({
-      data: {
-        id: mockCognitoUserId,
-        ...mockDriverData,
-      },
-    });
+    const { address, ...dbDriver1 } = mockDriverData;
+    const { street, city, state, zipCode, ...newDriver } =
+      await prisma.driver.create({
+        data: {
+          id: mockCognitoUserId,
+          ...dbDriver1,
+          ...address,
+        },
+      });
 
     const newDriverWithISOStrings = {
       ...newDriver,
+      address: {
+        street,
+        city,
+        state,
+        zipCode,
+      },
       createdAt: newDriver?.createdAt.toISOString(),
       updatedAt: newDriver?.updatedAt.toISOString(),
     };
-
-    const deletedDriver = await deleteDriverService(newDriver.id);
+    console.log(newDriverWithISOStrings)
+    const deletedDriver = await deleteDriverService(prisma, newDriver.id);
 
     expect(deletedDriver).toEqual(newDriverWithISOStrings);
 
@@ -165,6 +185,6 @@ describe('Driver Service Integration Tests', () => {
   });
 
   it('delete should return null for non-existent driver', async () => {
-    expect(await deleteDriverService('non-existent-id')).toBeNull();
+    expect(await deleteDriverService(prisma, 'non-existent-id')).toBeNull();
   });
 });

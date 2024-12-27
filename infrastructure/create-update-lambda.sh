@@ -12,7 +12,7 @@ else
 fi
 
 # Add environment variable validation
-required_vars=("AWS_REGION" "AWS_ACCOUNT_ID" "DATABASE_URL" "COGNITO_USER_POOL_ID" "LAMBDA_LAYER_ARN" "DYNAMO_TABLE_NAME" "GATEWAY_API_ID")
+required_vars=("AWS_REGION" "AWS_ACCOUNT_ID" "COGNITO_USER_POOL_ID" "DATABASE_URL" "COGNITO_USER_POOL_ID" "LAMBDA_LAYER_ARN" "DYNAMO_TABLE_NAME" "GATEWAY_API_ID" "ALLOWED_ORIGINS" "TEST_USER_PASSWORD")
 for var in "${required_vars[@]}"; do
     if [ -z "${!var}" ]; then
         echo "Error: Required environment variable $var is not set"
@@ -26,13 +26,21 @@ parse_json() {
     jq -r \
         --arg AWS_REGION "$AWS_REGION" \
         --arg AWS_ACCOUNT_ID "$AWS_ACCOUNT_ID" \
+        --arg COGNITO_USER_POOL_ID "$COGNITO_USER_POOL_ID" \
+        --arg DATABASE_URL "$DATABASE_URL" \
         --arg DYNAMO_TABLE_NAME "$DYNAMO_TABLE_NAME" \
         --arg LAMBDA_LAYER_ARN "$LAMBDA_LAYER_ARN" \
+        --arg ALLOWED_ORIGINS "$ALLOWED_ORIGINS" \
+        --arg TEST_USER_PASSWORD "$TEST_USER_PASSWORD" \
         "$query | walk(if type == \"string\" then
             gsub(\"\\\\$\\\\{AWS_REGION\\\\}\"; \$AWS_REGION) |
             gsub(\"\\\\$\\\\{AWS_ACCOUNT_ID\\\\}\"; \$AWS_ACCOUNT_ID) |
+            gsub(\"\\\\$\\\\{COGNITO_USER_POOL_ID\\\\}\"; \$COGNITO_USER_POOL_ID) |
+            gsub(\"\\\\$\\\\{DATABASE_URL\\\\}\"; \$DATABASE_URL) |
             gsub(\"\\\\$\\\\{DYNAMO_TABLE_NAME\\\\}\"; \$DYNAMO_TABLE_NAME) |
-            gsub(\"\\\\$\\\\{LAMBDA_LAYER_ARN\\\\}\"; \$LAMBDA_LAYER_ARN)
+            gsub(\"\\\\$\\\\{LAMBDA_LAYER_ARN\\\\}\"; \$LAMBDA_LAYER_ARN) |
+            gsub(\"\\\\$\\\\{ALLOWED_ORIGINS\\\\}\"; \$ALLOWED_ORIGINS) |
+            gsub(\"\\\\$\\\\{TEST_USER_PASSWORD\\\\}\"; \$TEST_USER_PASSWORD)
           else . end)" "$CONFIG_FILE"
 }
 

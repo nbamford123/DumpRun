@@ -1,20 +1,21 @@
 import { config } from 'dotenv';
-import {
-  describe,
-  it,
-  expect,
-  beforeAll,
-  afterAll,
-  afterEach,
-  vi,
-} from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, afterEach } from 'vitest';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import {
   DynamoDBDocumentClient,
   DeleteCommand,
   ScanCommand,
 } from '@aws-sdk/lib-dynamodb';
-import { PickupService } from '@/lambda/pickups/pickupServices';
+
+import {
+  createPickupService,
+  deletePickupService,
+  getPickupService,
+  getPickupsService,
+  acceptPickupService,
+  availablePickupsService,
+  updatePickupService,
+} from '@/lambda/pickups/pickupServices';
 
 // Load environment variables from .env.test
 config({ path: '.env.test' });
@@ -27,7 +28,6 @@ const dynamoConfig = {
     secretAccessKey: process.env.DYNAMODB_SECRET_ACCESS_KEY || '',
   },
 };
-const pickupService = new PickupService('Pickups', dynamoConfig);
 
 describe('Pickup Service Integration Tests', () => {
   let dynamoDB: DynamoDBDocumentClient;
@@ -38,26 +38,20 @@ describe('Pickup Service Integration Tests', () => {
   });
 
   afterEach(async () => {
-    try {
-      const scanParams = {
-        TableName: 'Pickups',
-      };
-      const scanResult = await dynamoDB.send(new ScanCommand(scanParams));
-      const deletePromises = scanResult.Items?.map((item) =>
-        dynamoDB.send(
-          new DeleteCommand({
-            TableName: 'Pickups',
-            Key: { id: item.id },
-          }),
-        ),
-      );
-      if (deletePromises) {
-        await Promise.all(deletePromises);
-      }
-      console.log('aftereach complete!');
-    } catch (error) {
-      console.error('Error in afterEach:', error);
-      throw error; // Re-throw the error so Vitest knows the hook failed
+    const scanParams = {
+      TableName: 'Pickups',
+    };
+    const scanResult = await dynamoDB.send(new ScanCommand(scanParams));
+    const deletePromises = scanResult.Items?.map((item) =>
+      dynamoDB.send(
+        new DeleteCommand({
+          TableName: 'Pickups',
+          Key: { id: item.id },
+        })
+      )
+    );
+    if (deletePromises) {
+      await Promise.all(deletePromises);
     }
   });
 
@@ -74,7 +68,11 @@ describe('Pickup Service Integration Tests', () => {
       requestedTime: '2023-04-01T10:00:00Z',
     };
 
-    const createdPickup = await pickupService.createPickup(userId, newPickup);
+    const createdPickup = await createPickupService(
+      dynamoDB,
+      userId,
+      newPickup
+    );
 
     expect(createdPickup).toBeDefined();
     expect(createdPickup.id).toBeDefined();
@@ -86,11 +84,11 @@ describe('Pickup Service Integration Tests', () => {
     expect(createdPickup.requestedTime).toBe(newPickup.requestedTime);
 
     // Verify the pickup was actually created in the database
-    const retrievedPickup = await pickupService.getPickup(createdPickup.id);
+    const retrievedPickup = await getPickupService(dynamoDB, createdPickup.id);
     expect(retrievedPickup).toEqual(createdPickup);
   });
 
-  it('should throw on get nonexistant pickup', async () => {
+  it('should return null on get nonexistant pickup', async () => {
     const userId = 'testUser123';
     const newPickup = {
       location: '123 Test St, Test City',
@@ -99,10 +97,9 @@ describe('Pickup Service Integration Tests', () => {
       requestedTime: '2023-04-01T10:00:00Z',
     };
 
-    await pickupService.createPickup(userId, newPickup);
-    await expect(pickupService.getPickup('nonExistentId')).rejects.toThrow(
-      'Failed to retrieve pickup',
-    );
+    await createPickupService(dynamoDB, userId, newPickup);
+    const pickup = await getPickupService(dynamoDB, 'nonExistentId');
+    expect(pickup).toBeNull();
   });
 
   it('should update a pickup', async () => {
@@ -114,13 +111,18 @@ describe('Pickup Service Integration Tests', () => {
       requestedTime: '2023-04-01T10:00:00Z',
     };
 
-    const createdPickup = await pickupService.createPickup(userId, newPickup);
+    const createdPickup = await createPickupService(
+      dynamoDB,
+      userId,
+      newPickup
+    );
     const updateData = {
       estimatedWeight: 250,
     };
-    const updatedPickup = await pickupService.updatePickup(
+    const updatedPickup = await updatePickupService(
+      dynamoDB,
       createdPickup.id,
-      updateData,
+      updateData
     );
     expect(updatedPickup).toEqual({ ...createdPickup, ...updateData });
   });
@@ -134,17 +136,21 @@ describe('Pickup Service Integration Tests', () => {
       requestedTime: '2023-04-01T10:00:00Z',
     };
 
-    const createdPickup = await pickupService.createPickup(userId, newPickup);
-    const deletedPickup = await pickupService.deletePickup(
+    const createdPickup = await createPickupService(
+      dynamoDB,
+      userId,
+      newPickup
+    );
+    const deletedPickup = await deletePickupService(
+      dynamoDB,
       createdPickup.id,
-      true,
+      true
     );
     expect(deletedPickup).toEqual(createdPickup);
 
     // Perform a get operation to verify the status in the database
-    await expect(pickupService.getPickup(createdPickup.id)).rejects.toThrow(
-      'Failed to retrieve pickup',
-    );
+    const pickup = await getPickupService(dynamoDB, createdPickup.id);
+    expect(pickup).toBeNull();
   });
 
   it('should soft delete a pickup', async () => {
@@ -156,17 +162,21 @@ describe('Pickup Service Integration Tests', () => {
       requestedTime: '2023-04-01T10:00:00Z',
     };
 
-    const createdPickup = await pickupService.createPickup(userId, newPickup);
-    const deletedPickup = await pickupService.deletePickup(createdPickup.id);
+    const createdPickup = await createPickupService(
+      dynamoDB,
+      userId,
+      newPickup
+    );
+    const deletedPickup = await deletePickupService(dynamoDB, createdPickup.id);
     expect(deletedPickup.id).toEqual(createdPickup.id);
     expect(deletedPickup.status).toEqual('deleted');
     expect(deletedPickup).toHaveProperty('deletedAt');
     expect(new Date(deletedPickup.deletedAt).toISOString()).toEqual(
-      deletedPickup.deletedAt,
+      deletedPickup.deletedAt
     );
 
     // Perform a get operation to verify the status in the database
-    const retrievedPickup = await pickupService.getPickup(createdPickup.id);
+    const retrievedPickup = await getPickupService(dynamoDB, createdPickup.id);
     expect(deletedPickup).toEqual(retrievedPickup);
   });
 
@@ -178,23 +188,23 @@ describe('Pickup Service Integration Tests', () => {
       wasteType: 'recyclable',
       requestedTime: '2023-04-01T10:00:00Z',
     };
-    const p1 = await pickupService.createPickup(userId, pickup);
-    const p2 = await pickupService.createPickup(userId, {
+    const p1 = await createPickupService(dynamoDB, userId, pickup);
+    const p2 = await createPickupService(dynamoDB, userId, {
       ...pickup,
       estimatedWeight: 60,
       requestedTime: '2024-04-01T10:00:00Z',
     });
-    const p3 = await pickupService.createPickup(userId, {
+    const p3 = await createPickupService(dynamoDB, userId, {
       ...pickup,
       estimatedWeight: 70,
       requestedTime: '2024-05-01T10:00:00Z',
     });
-    const p4 = await pickupService.createPickup(userId, {
+    const p4 = await createPickupService(dynamoDB, userId, {
       ...pickup,
       estimatedWeight: 80,
       requestedTime: '2024-06-01T10:00:00Z',
     });
-    const pickups = await pickupService.getPickups('pending');
+    const pickups = await getPickupsService(dynamoDB, 'pending');
     const srt = (a, b) => a.id.localeCompare(b.id);
     expect(pickups.pickups.sort(srt)).toEqual([p1, p2, p3, p4].sort(srt));
   });
@@ -207,19 +217,20 @@ describe('Pickup Service Integration Tests', () => {
       wasteType: 'recyclable',
       requestedTime: '2023-04-01T10:00:00Z',
     };
-    const p1 = await pickupService.createPickup(userId, pickup);
-    const p2 = await pickupService.createPickup(userId, pickup);
-    const p3 = await pickupService.createPickup(userId, pickup);
-    const p4 = await pickupService.createPickup(userId, {
+    const p1 = await createPickupService(dynamoDB, userId, pickup);
+    const p2 = await createPickupService(dynamoDB, userId, pickup);
+    const p3 = await createPickupService(dynamoDB, userId, pickup);
+    const p4 = await createPickupService(dynamoDB, userId, {
       ...pickup,
       requestedTime: '2024-04-01T10:00:00Z',
     });
-    const pickups = await pickupService.getPickups(
+    const pickups = await getPickupsService(
+      dynamoDB,
       'pending',
       undefined,
       undefined,
       '2024-03-01T10:00:00Z',
-      '2024-04-10T10:00:00Z',
+      '2024-04-10T10:00:00Z'
     );
     expect(pickups.pickups[0]).toEqual(p4);
   });
@@ -232,41 +243,41 @@ describe('Pickup Service Integration Tests', () => {
       wasteType: 'recyclable',
       requestedTime: '2023-04-01T10:00:00Z',
     };
-    const p1 = await pickupService.createPickup(userId, pickup);
-    const p2 = await pickupService.createPickup(userId, {
+    const p1 = await createPickupService(dynamoDB, userId, pickup);
+    const p2 = await createPickupService(dynamoDB, userId, {
       ...pickup,
       estimatedWeight: 60,
       requestedTime: '2024-04-01T10:00:00Z',
     });
-    const p3 = await pickupService.createPickup(userId, {
+    const p3 = await createPickupService(dynamoDB, userId, {
       ...pickup,
       estimatedWeight: 70,
       requestedTime: '2024-05-01T10:00:00Z',
     });
-    const p4 = await pickupService.createPickup(userId, {
+    const p4 = await createPickupService(dynamoDB, userId, {
       ...pickup,
       estimatedWeight: 80,
       requestedTime: '2024-06-01T10:00:00Z',
     });
-    const pickups = await pickupService.getPickups(
+    const pickups = await getPickupsService(
+      dynamoDB,
       'pending',
       2,
       undefined,
       undefined,
       undefined,
-      true,
+      true
     );
     expect(pickups.pickups).toEqual([p4, p3]);
-    console.log(pickups);
-    const pickups2 = await pickupService.getPickups(
+    const pickups2 = await getPickupsService(
+      dynamoDB,
       'pending',
       2,
       pickups.nextCursor,
       undefined,
       undefined,
-      true,
+      true
     );
-    console.log(pickups2);
     expect(pickups2.pickups).toEqual([p2, p1]);
   });
 
@@ -278,17 +289,17 @@ describe('Pickup Service Integration Tests', () => {
       wasteType: 'recyclable',
       requestedTime: '2023-04-01T10:00:00Z',
     };
-    const p1 = await pickupService.createPickup(userId, pickup);
-    const p2 = await pickupService.createPickup(userId, pickup);
-    const p3 = await pickupService.createPickup(userId, pickup);
-    const p4 = await pickupService.createPickup(userId, pickup);
+    const p1 = await createPickupService(dynamoDB, userId, pickup);
+    const p2 = await createPickupService(dynamoDB, userId, pickup);
+    const p3 = await createPickupService(dynamoDB, userId, pickup);
+    const p4 = await createPickupService(dynamoDB, userId, pickup);
     const update = {
       status: 'available',
     };
-    const p2a = await pickupService.updatePickup(p2.id, update);
-    const p4a = await pickupService.updatePickup(p4.id, update);
+    const p2a = await updatePickupService(dynamoDB, p2.id, update);
+    const p4a = await updatePickupService(dynamoDB, p4.id, update);
 
-    const avail = await pickupService.availablePickups();
+    const avail = await availablePickupsService(dynamoDB);
     const srt = (a, b) => a.id.localeCompare(b.id);
     expect(avail.sort(srt)).toEqual([p2a, p4a].sort(srt));
   });
@@ -301,17 +312,17 @@ describe('Pickup Service Integration Tests', () => {
       wasteType: 'recyclable',
       requestedTime: '2023-04-01T10:00:00Z',
     };
-    const p1 = await pickupService.createPickup(userId, pickup);
-    const p2 = await pickupService.createPickup(userId, pickup);
-    const p3 = await pickupService.createPickup(userId, pickup);
-    const p4 = await pickupService.createPickup(userId, pickup);
+    const p1 = await createPickupService(dynamoDB, userId, pickup);
+    const p2 = await createPickupService(dynamoDB, userId, pickup);
+    const p3 = await createPickupService(dynamoDB, userId, pickup);
+    const p4 = await createPickupService(dynamoDB, userId, pickup);
     const update = {
       status: 'available',
     };
-    const p2a = await pickupService.updatePickup(p2.id, update);
-    const p4a = await pickupService.updatePickup(p4.id, update);
+    const p2a = await updatePickupService(dynamoDB, p2.id, update);
+    const p4a = await updatePickupService(dynamoDB, p4.id, update);
 
-    const accepted = await pickupService.acceptPickup(p2.id, 'driver123');
+    const accepted = await acceptPickupService(dynamoDB, p2.id, 'driver123');
     expect(accepted).toEqual({
       ...p2,
       driverId: 'driver123',
@@ -321,7 +332,7 @@ describe('Pickup Service Integration Tests', () => {
 
   it('should fail to accept a pickup that doesnt exist', async () => {
     await expect(
-      pickupService.acceptPickup('fakeid', 'driver123'),
+      acceptPickupService(dynamoDB, 'fakeid', 'driver123')
     ).rejects.toThrow('Pickup not found');
   });
 });

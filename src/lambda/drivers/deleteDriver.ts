@@ -1,50 +1,34 @@
-import type { APIGatewayProxyHandler } from 'aws-lambda';
+import {
+  createPrismaHandler,
+  type PrismaOperationHandler,
+} from '../middleware/createHandlerPostgres.js';
+import { createSuccessResponse, NotFound, Forbidden } from '../types/index.js';
+import type { Driver } from '../types/schemaTypes.js';
 
-import { AuthInfo } from '@/schemas/authInfoSchema.js';
+import { getDriverService, deleteDriverService } from './driverServices.js';
 
-import { deleteDriverService } from './driverServices.js';
+const deleteDriverHandler: PrismaOperationHandler<'deleteDriver'> = async (
+  context
+) => {
+  const driver = await getDriverService(context.client, context.userId);
+  if (driver === null) return NotFound('Driver not found');
 
-export const handler: APIGatewayProxyHandler = async (event) => {
-  try {
-    const authInfo = AuthInfo.parse(event.requestContext.authorizer?.claims);
-    const driverId = event.pathParameters?.driverId;
-    if (!driverId) {
-      return {
-        statusCode: 400,
-        body: JSON.stringify({
-          message: 'Missing driverId in path parameters',
-        }),
-      };
-    }
+  // Only admin or *this* user can delete
+  if (context.userRole === 'admin' || context.userId === driver.id) {
+    const deletedDriver = (await deleteDriverService(
+      context.client,
+      context.userId
+    )) as NonNullable<Driver>;
 
-    if (
-      authInfo['custom:role'] === 'admin' ||
-      (authInfo['custom:role'] === 'driver' && authInfo.sub === driverId)
-    ) {
-      const deletedDriver = await deleteDriverService(driverId);
-
-      if (!deletedDriver) {
-        return {
-          statusCode: 404,
-          body: JSON.stringify({ message: 'Driver not found' }),
-        };
-      }
-      return {
-        statusCode: 204,
-        body: JSON.stringify(deletedDriver),
-      };
-    }
-    return {
-      statusCode: 403,
-      body: JSON.stringify({
-        message: 'Not authorized',
-      }),
-    };
-  } catch (error) {
-    console.error('Error in deleteDriver:', error);
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ message: 'Internal Server Error' }),
-    };
+    return createSuccessResponse<'deleteDriver'>(204, deletedDriver);
   }
+  console.warn('Unauthorized access attempt', {
+    requestId: context.requestId,
+  });
+  return Forbidden("User doesn't have permission");
 };
+
+export const handler = createPrismaHandler(deleteDriverHandler, {
+  requiredRole: ['driver', 'admin'],
+  operation: 'deleteDriver',
+});

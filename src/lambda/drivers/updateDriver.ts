@@ -12,7 +12,6 @@ import { getDriverService, updateDriverService } from './driverServices.js';
 const updateDriverHandler: PrismaOperationHandler<'updateDriver'> = async (
   context
 ) => {
-  // Only admin or this user can update
   const user = await getDriverService(context.client, context.userId);
   if (user === null) return NotFound('Driver not found');
   if (context.userRole !== 'admin' && context.userId !== user.id) {

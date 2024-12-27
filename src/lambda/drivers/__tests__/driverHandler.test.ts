@@ -67,7 +67,7 @@ describe('driver lambdas', () => {
     ).mockResolvedValue({ type: 'success', user: mockDriver });
 
     const event: DeepPartial<APIGatewayProxyEvent> = {
-      requestContext: requestContextDriver,
+      requestContext: requestContextAdmin,
       body: JSON.stringify(mockDriver),
     };
 
@@ -85,7 +85,7 @@ describe('driver lambdas', () => {
       // Missing required fields
     };
     const event: DeepPartial<APIGatewayProxyEvent> = {
-      requestContext: requestContextDriver,
+      requestContext: requestContextAdmin,
       body: JSON.stringify(invalidDriver),
     };
     const result = await createDriver(event, mockLambdaContext);
@@ -103,7 +103,7 @@ describe('driver lambdas', () => {
     });
 
     const event: DeepPartial<APIGatewayProxyEvent> = {
-      requestContext: requestContextDriver,
+      requestContext: requestContextAdmin,
       body: JSON.stringify(mockDriver),
     };
 
@@ -114,14 +114,14 @@ describe('driver lambdas', () => {
     );
   });
 
-  it('should return 409 for create user email exists', async () => {
+  it('should return 409 for create driver email exists', async () => {
     // Mock createDriverService
     (
       createDriverService as vi.MockedFunction<typeof createDriverService>
     ).mockResolvedValue({ type: 'email_exists', email: mockDriver.email });
 
     const event: DeepPartial<APIGatewayProxyEvent> = {
-      requestContext: requestContextDriver,
+      requestContext: requestContextAdmin,
       body: JSON.stringify(mockDriver),
     };
 

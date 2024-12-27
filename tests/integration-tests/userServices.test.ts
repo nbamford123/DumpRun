@@ -87,6 +87,8 @@ describe('User Service Integration Tests', () => {
       pickupNotes: null,
     });
 
+    // TODO: should verify cognito functions were called with the appropriate attributes
+
     // Verify the user was actually created in the database
     const dbUser = await prisma.user.findUnique({
       where: { id: result.user.id },

@@ -1,5 +1,5 @@
 import { config } from 'dotenv';
-import { describe, it, expect, beforeEach, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeEach, beforeAll, afterAll, vi } from 'vitest';
 import {
   createDriverService,
   getDriverService,
@@ -172,7 +172,7 @@ describe('Driver Service Integration Tests', () => {
       createdAt: newDriver?.createdAt.toISOString(),
       updatedAt: newDriver?.updatedAt.toISOString(),
     };
-
+    console.log(newDriverWithISOStrings)
     const deletedDriver = await deleteDriverService(prisma, newDriver.id);
 
     expect(deletedDriver).toEqual(newDriverWithISOStrings);

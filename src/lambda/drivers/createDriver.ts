@@ -25,7 +25,7 @@ const createDriverHandler: PrismaOperationHandler<'createDriver'> = async (
 export const handler = createPrismaHandler<'createDriver'>(
   createDriverHandler,
   {
-    requiredRole: ['driver', 'admin'],
+    requiredRole: ['admin'],
     validateInput: schemas.NewDriver,
   }
 );

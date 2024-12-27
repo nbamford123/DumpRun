@@ -132,5 +132,5 @@ variable "cancel_pickup_acceptance_lambda_arn" {
 variable "cognito_user_pool_arn" {
   type        = string
   description = "ARN of the Cognito User Pool to use for authorization"
-  default = "arn:aws:cognito-idp:us-west-2:369547265320:userpool/us-west-2_vriluhdDN"
+  default = "arn:aws:cognito-idp:us-west-2:369547265320:userpool/us-west-2_USvU0lkCR"
 }

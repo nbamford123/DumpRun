@@ -12,7 +12,6 @@ import { getUserService, updateUserService } from './userServices.js';
 const updateUserHandler: PrismaOperationHandler<'updateUser'> = async (
   context
 ) => {
-  // Only admin or this user can update
   const user = await getUserService(context.client, context.userId);
   if (user === null) return NotFound('User not found');
   if (context.userRole !== 'admin' && context.userId !== user.id) {

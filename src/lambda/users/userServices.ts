@@ -80,75 +80,98 @@ export const createUserService = async (
 ): Promise<CreateUserResult<User>> => {
   const cognito = cognitoClient.getInstance();
   const userPoolId = process.env.COGNITO_USER_POOL_ID;
+
   try {
-    // Start a transaction for the entire user creation process
-    const myUser = await prisma.$transaction(
-      async (tx) => {
-        // Create Cognito user with phone number as username (like we would in production)
-        const cognitoResponse = await cognito.adminCreateUser({
-          UserPoolId: userPoolId,
-          Username: userData.phoneNumber, // Using phone as username like Uber
-          UserAttributes: [
-            {
-              Name: 'phone_number',
-              Value: formatPhoneForCognito(userData.phoneNumber),
-            },
-            {
-              Name: 'phone_number_verified',
-              Value: 'true', // Auto-verified for now, will be 'false' when we add SMS
-            },
-            {
-              Name: 'email',
-              Value: userData.email,
-            },
-            {
-              Name: 'email_verified',
-              Value: 'true',
-            },
-            {
-              Name: 'given_name',
-              Value: userData.firstName,
-            },
-            {
-              Name: 'family_name',
-              Value: userData.lastName,
-            },
-          ],
-          TemporaryPassword: generateSecurePassword(),
-          MessageAction: 'SUPPRESS', // We'll handle our own communication
-        });
+    const formattedPhone = formatPhoneForCognito(userData.phoneNumber);
+    // Create Cognito user with phone number as username (like we would in production), and test password for now
+    const cognitoResponse = await cognito.adminCreateUser({
+      UserPoolId: userPoolId,
+      Username: formattedPhone, // Using phone as username like Uber
+      UserAttributes: [
+        {
+          Name: 'phone_number',
+          Value: formattedPhone,
+        },
+        {
+          Name: 'phone_number_verified',
+          Value: 'true', // Auto-verified for now, will be 'false' when we add SMS
+        },
+        {
+          Name: 'email',
+          Value: userData.email,
+        },
+        {
+          Name: 'email_verified',
+          Value: 'true',
+        },
+        {
+          Name: 'given_name',
+          Value: userData.firstName,
+        },
+        {
+          Name: 'family_name',
+          Value: userData.lastName,
+        },
+        {
+          Name: 'custom:role',
+          Value: 'user',
+        },
+      ],
+      TemporaryPassword: process.env.TEST_USER_PASSWORD,
+      MessageAction: 'SUPPRESS', // We'll handle our own communication
+    });
 
-        const cognitoUserId = cognitoResponse.User?.Username;
-        if (!cognitoUserId) {
-          throw new Error('Failed to get Cognito user ID after creation');
+    const cognitoUserId = cognitoResponse.User?.Username;
+    if (!cognitoUserId) {
+      throw new Error('Failed to get Cognito user ID after creation');
+    }
+    try {
+      const myUser = await prisma.$transaction(
+        async (tx) => {
+          // Create the user in the database
+          const dbNewUser = {
+            ...(userToDB(userData) as DBUser),
+            id: cognitoUserId,
+          };
+          const dbUser = await tx.user.create({
+            data: dbNewUser,
+          });
+
+          // Set a permanent password (in production, this would happen after SMS verification)
+          // skipping this for e2e testing purposes-- how would we ever capture this new password?
+          // await cognito.adminSetUserPassword({
+          //   UserPoolId: userPoolId,
+          //   Username: cognitoUserId,
+          //   Password: generateSecurePassword(),
+          //   Permanent: true,
+          // });
+
+          return dbUser;
+        },
+        {
+          maxWait: 5000,
+          timeout: 10000,
+          isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
         }
-
-        // Create the user in the database
-        const dbNewUser = {
-          ...(userToDB(userData) as DBUser),
-          id: cognitoUserId,
-        };
-        const dbUser = await tx.user.create({
-          data: dbNewUser,
-        });
-
-        // Set a permanent password (in production, this would happen after SMS verification)
-        await cognito.adminSetUserPassword({
-          UserPoolId: userPoolId,
-          Username: cognitoUserId,
-          Password: generateSecurePassword(),
-          Permanent: true,
-        });
-
-        return dbUser;
-      },
-      {
-        maxWait: 5000,
-        timeout: 10000,
-        isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+      );
+      return { type: 'success', user: dbToUser(myUser) };
+    } catch (error) {
+      // If database transaction fails, clean up Cognito user
+      if (cognitoUserId) {
+        try {
+          await cognito.adminDeleteUser({
+            UserPoolId: userPoolId,
+            Username: cognitoUserId,
+          });
+        } catch (deleteError) {
+          console.error(
+            'Failed to delete Cognito user during rollback:',
+            deleteError
+          );
+        }
       }
-    );
-    return { type: 'success', user: dbToUser(myUser) };
+      throw error;
+    }
   } catch (error) {
     // Handle Cognito-specific errors
     if (isCognitoError(error)) {
@@ -180,7 +203,7 @@ export const createUserService = async (
         return { type: 'email_exists', email: userData.email };
       }
     }
-    throw error;
+    throw error; // Re-throw the original error    throw error;
   }
 };
 

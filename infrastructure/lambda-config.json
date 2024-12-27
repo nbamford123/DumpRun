@@ -34,7 +34,7 @@
     "handler": "index.handler",
     "role_name": "lambda-cognito-role",
     "zip_file": "dist/users/createUser.zip",
-    "environment": "DATABASE_URL=${DATABASE_URL},NODE_PATH=/opt/nodejs/node_modules,PRISMA_QUERY_ENGINE_LIBRARY=/opt/nodejs/node_modules/.prisma/client/libquery_engine-rhel-openssl-3.0.x.so.node,COGNITO_USER_POOL_ID=${COGNITO_USER_POOL_ID},ALLOWED_ORIGINS=${ALLOWED_ORIGINS}",
+    "environment": "DATABASE_URL=${DATABASE_URL},NODE_PATH=/opt/nodejs/node_modules,PRISMA_QUERY_ENGINE_LIBRARY=/opt/nodejs/node_modules/.prisma/client/libquery_engine-rhel-openssl-3.0.x.so.node,COGNITO_USER_POOL_ID=${COGNITO_USER_POOL_ID},ALLOWED_ORIGINS=${ALLOWED_ORIGINS},TEST_USER_PASSWORD=${TEST_USER_PASSWORD}",
     "layer": "${LAMBDA_LAYER_ARN}",
     "managed_policies": [
       "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
@@ -89,7 +89,7 @@
     "handler": "index.handler",
     "role_name": "lambda-basic-role",
     "zip_file": "dist/users/deleteUser.zip",
-    "environment": "DATABASE_URL=${DATABASE_URL},NODE_PATH=/opt/nodejs/node_modules,PRISMA_QUERY_ENGINE_LIBRARY=/opt/nodejs/node_modules/.prisma/client/libquery_engine-rhel-openssl-3.0.x.so.node,ALLOWED_ORIGINS=${ALLOWED_ORIGINS}",
+    "environment": "DATABASE_URL=${DATABASE_URL},NODE_PATH=/opt/nodejs/node_modules,PRISMA_QUERY_ENGINE_LIBRARY=/opt/nodejs/node_modules/.prisma/client/libquery_engine-rhel-openssl-3.0.x.so.node,ALLOWED_ORIGINS=${ALLOWED_ORIGINS},COGNITO_USER_POOL_ID=${COGNITO_USER_POOL_ID}",
     "layer": "${LAMBDA_LAYER_ARN}",
     "managed_policies": [
       "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
@@ -111,7 +111,7 @@
     "handler": "index.handler",
     "role_name": "lambda-cognito-role",
     "zip_file": "dist/drivers/createDriver.zip",
-    "environment": "DATABASE_URL=${DATABASE_URL},NODE_PATH=/opt/nodejs/node_modules,PRISMA_QUERY_ENGINE_LIBRARY=/opt/nodejs/node_modules/.prisma/client/libquery_engine-rhel-openssl-3.0.x.so.node,COGNITO_USER_POOL_ID=${COGNITO_USER_POOL_ID},ALLOWED_ORIGINS=${ALLOWED_ORIGINS}",
+    "environment": "DATABASE_URL=${DATABASE_URL},NODE_PATH=/opt/nodejs/node_modules,PRISMA_QUERY_ENGINE_LIBRARY=/opt/nodejs/node_modules/.prisma/client/libquery_engine-rhel-openssl-3.0.x.so.node,COGNITO_USER_POOL_ID=${COGNITO_USER_POOL_ID},ALLOWED_ORIGINS=${ALLOWED_ORIGINS},TEST_USER_PASSWORD=${TEST_USER_PASSWORD}",
     "layer": "${LAMBDA_LAYER_ARN}",
     "managed_policies": [
       "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
@@ -166,7 +166,7 @@
     "handler": "index.handler",
     "role_name": "lambda-basic-role",
     "zip_file": "dist/drivers/deleteDriver.zip",
-    "environment": "DATABASE_URL=${DATABASE_URL},NODE_PATH=/opt/nodejs/node_modules,PRISMA_QUERY_ENGINE_LIBRARY=/opt/nodejs/node_modules/.prisma/client/libquery_engine-rhel-openssl-3.0.x.so.node,ALLOWED_ORIGINS=${ALLOWED_ORIGINS}",
+    "environment": "DATABASE_URL=${DATABASE_URL},NODE_PATH=/opt/nodejs/node_modules,PRISMA_QUERY_ENGINE_LIBRARY=/opt/nodejs/node_modules/.prisma/client/libquery_engine-rhel-openssl-3.0.x.so.node,ALLOWED_ORIGINS=${ALLOWED_ORIGINS},COGNITO_USER_POOL_ID=${COGNITO_USER_POOL_ID}",
     "layer": "${LAMBDA_LAYER_ARN}",
     "managed_policies": [
       "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"

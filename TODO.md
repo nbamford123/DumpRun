@@ -1,10 +1,12 @@
 # Temporary ToDo File
 
 ## Backend
-1. e2e tests 
-  - put the test id back in get pickup
-2. redploy
-- pretty  much everything in user and driver service is repeated, should be abstracted out to shared code
+- split the tier1 and tier2 e2e tests up by endpoint
+- make sure the 409 responses are specified in the openapi spec
+- consider implementing a periodic reconciliation job that checks for and cleans up any inconsistencies between Cognito and your database, as network issues or other factors could still occasionally lead to inconsistencies despite these safeguards.
+- note the create/update lambda functions read the database url from .env, and it is sometimes localhost depending on testing-- should we have a PRODUCTION_DATABASE_URL or something?
+- should terraform (and deploy bash scripts) be getting its variables from the environment vs. hardcoded?
+- pretty  much everything in user and driver service is repeated, should be abstracted out to shared code. Would also decrease the testing burden. They can still live in different tables
 - open api spec doesn't have deleted or deletedat for user. Only prisma schema
 - update delete user and driver service to only mark deleted and the get, etc. calls to check the for the flag.
 - add a "verified" flag to user and driver schemas

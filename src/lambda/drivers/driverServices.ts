@@ -11,7 +11,6 @@ import {
   type Driver,
   type NewDriver,
   type UpdateDriver,
-  type PrismaError,
   type CreateUserResult,
   isCognitoError,
   isValidPreferredContact,
@@ -85,74 +84,96 @@ export const createDriverService = async (
   const cognito = cognitoClient.getInstance();
   const userPoolId = process.env.COGNITO_USER_POOL_ID;
   try {
-    // Start a transaction for the entire driver creation process
-    const myDriver = await prisma.$transaction(
-      async (tx) => {
-        // Create Cognito user with phone number as username (like we would in production)
-        const cognitoResponse = await cognito.adminCreateUser({
-          UserPoolId: userPoolId,
-          Username: driverData.phoneNumber, // Using phone as username like Uber
-          UserAttributes: [
-            {
-              Name: 'phone_number',
-              Value: formatPhoneForCognito(driverData.phoneNumber),
-            },
-            {
-              Name: 'phone_number_verified',
-              Value: 'true', // Auto-verified for now, will be 'false' when we add SMS
-            },
-            {
-              Name: 'email',
-              Value: driverData.email,
-            },
-            {
-              Name: 'email_verified',
-              Value: 'true',
-            },
-            {
-              Name: 'given_name',
-              Value: driverData.firstName,
-            },
-            {
-              Name: 'family_name',
-              Value: driverData.lastName,
-            },
-          ],
-          TemporaryPassword: generateSecurePassword(),
-          MessageAction: 'SUPPRESS', // We'll handle our own communication
-        });
+    const formattedPhone = formatPhoneForCognito(driverData.phoneNumber);
+    // Create Cognito user with phone number as username (like we would in production)
+    const cognitoResponse = await cognito.adminCreateUser({
+      UserPoolId: userPoolId,
+      Username: formattedPhone, // Using phone as username like Uber
+      UserAttributes: [
+        {
+          Name: 'phone_number',
+          Value: formattedPhone,
+        },
+        {
+          Name: 'phone_number_verified',
+          Value: 'true', // Auto-verified for now, will be 'false' when we add SMS
+        },
+        {
+          Name: 'email',
+          Value: driverData.email,
+        },
+        {
+          Name: 'email_verified',
+          Value: 'true',
+        },
+        {
+          Name: 'given_name',
+          Value: driverData.firstName,
+        },
+        {
+          Name: 'family_name',
+          Value: driverData.lastName,
+        },
+        {
+          Name: 'custom:role',
+          Value: 'driver',
+        },
+      ],
+      TemporaryPassword: process.env.TEST_USER_PASSWORD,
+      MessageAction: 'SUPPRESS', // We'll handle our own communication
+    });
 
-        const cognitoUserId = cognitoResponse.User?.Username;
-        if (!cognitoUserId) {
-          throw new Error('Failed to get Cognito user ID after creation');
+    const cognitoUserId = cognitoResponse.User?.Username;
+    if (!cognitoUserId) {
+      throw new Error('Failed to get Cognito user ID after creation');
+    }
+    try {
+      const myDriver = await prisma.$transaction(
+        async (tx) => {
+          // Create the user in the database
+          const dbNewDriver = {
+            ...(driverToDB(driverData) as DBDriver),
+            id: cognitoUserId,
+          };
+          const dbDriver = await tx.driver.create({
+            data: dbNewDriver,
+          });
+
+          // // Set a permanent password (in production, this would happen after SMS verification)
+          // skipping this for e2e testing purposes-- how would we ever capture this new password?
+          // await cognito.adminSetUserPassword({
+          //   UserPoolId: userPoolId,
+          //   Username: cognitoUserId,
+          //   Password: generateSecurePassword(),
+          //   Permanent: true,
+          // });
+
+          return dbDriver;
+        },
+        {
+          maxWait: 5000,
+          timeout: 10000,
+          isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
         }
-
-        // Create the user in the database
-        const dbNewDriver = {
-          ...(driverToDB(driverData) as DBDriver),
-          id: cognitoUserId,
-        };
-        const dbDriver = await tx.driver.create({
-          data: dbNewDriver,
-        });
-
-        // Set a permanent password (in production, this would happen after SMS verification)
-        await cognito.adminSetUserPassword({
-          UserPoolId: userPoolId,
-          Username: cognitoUserId,
-          Password: generateSecurePassword(),
-          Permanent: true,
-        });
-
-        return dbDriver;
-      },
-      {
-        maxWait: 5000,
-        timeout: 10000,
-        isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+      );
+      return { type: 'success', user: dbToDriver(myDriver) };
+    } catch (error) {
+      // If database transaction fails, clean up Cognito user
+      if (cognitoUserId) {
+        try {
+          await cognito.adminDeleteUser({
+            UserPoolId: userPoolId,
+            Username: cognitoUserId,
+          });
+        } catch (deleteError) {
+          console.error(
+            'Failed to delete Cognito user during rollback:',
+            deleteError
+          );
+        }
       }
-    );
-    return { type: 'success', user: dbToDriver(myDriver) };
+      throw error;
+    }
   } catch (error) {
     // Handle Cognito-specific errors
     if (isCognitoError(error)) {
@@ -239,19 +260,64 @@ export const deleteDriverService = async (
   prisma: PrismaClient,
   id: string
 ): Promise<Driver | null> => {
+  const cognito = cognitoClient.getInstance();
+  const userPoolId = process.env.COGNITO_USER_POOL_ID;
+
+  if (!userPoolId) {
+    throw new Error('COGNITO_USER_POOL_ID environment variable is not set');
+  }
+
   try {
-    const driver = await prisma.driver.delete({
-      where: {
-        id: id,
+    const deletedDriver = await prisma.$transaction(
+      async (tx) => {
+        const driver = await tx.driver.findUnique({
+          where: { id },
+        });
+        if (!driver) {
+          return null;
+        }
+
+        // Delete from Cognito first
+        try {
+          await cognito.adminDeleteUser({
+            UserPoolId: userPoolId,
+            Username: id,
+          });
+        } catch (error) {
+          if (
+            !isCognitoError(error) ||
+            error.name !== 'UserNotFoundException'
+          ) {
+            throw error;
+          }
+          // If user not found in Cognito, continue with DB deletion
+          console.warn(`Cognito user ${id} not found during deletion`);
+        }
+        await tx.driver.delete({
+          where: { id },
+        });
+
+        return driver;
       },
-    });
-    return dbToDriver(driver);
+      {
+        maxWait: 5000,
+        timeout: 10000,
+        isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+      }
+    );
+    return deletedDriver ? dbToDriver(deletedDriver) : null;
   } catch (error) {
     if (
       error instanceof Prisma.PrismaClientKnownRequestError &&
       error.code === 'P2025'
     ) {
       // Record to delete does not exist
+      return null;
+    }
+    if (isCognitoError(error) && error.name === 'UserNotFoundException') {
+      console.error(
+        `Inconsistency detected: User ${id} exists in DB but not in Cognito`
+      );
       return null;
     }
     throw error; // Re-throw other errors

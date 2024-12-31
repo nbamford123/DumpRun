@@ -30,7 +30,7 @@ describe('createHandler', () => {
     } as Context);
     expect(mockHandler).toHaveBeenCalledWith({
       requestId: awsRequestId,
-      userId: requestContextAdmin.authorizer.claims.sub,
+      cognitoUserId: requestContextAdmin.authorizer.claims.sub,
       userRole: requestContextAdmin.authorizer.claims['custom:role'],
     });
   });

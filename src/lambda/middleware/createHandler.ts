@@ -55,7 +55,7 @@ export const createHandler = <T extends keyof operations>(
 			// Base context without parameters
 			let handlerContext = {
 				requestId: awsRequestId,
-				userId: event.requestContext?.authorizer?.claims?.sub ?? '',
+				cognitoUserId: event.requestContext?.authorizer?.claims?.sub ?? '',
 				userRole: role,
 				body: undefined,
 			} as HandlerContext<T>;

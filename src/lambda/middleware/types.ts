@@ -60,7 +60,7 @@ export type OperationRequestBody<T extends keyof operations> =
 
 export type HandlerContext<T extends keyof operations> = {
 	requestId: string;
-	userId: string;
+	cognitoUserId: string;
 	userRole: string;
 	body: OperationRequestBody<T>;
 } & (HasQueryParams<T> extends true

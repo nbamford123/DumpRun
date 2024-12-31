@@ -69,7 +69,7 @@ const dbToDriver = (dbDriver: DBDriver): Driver => {
   };
 };
 
-const driverToDB = (driver: NewDriver): Partial<DBDriver> => {
+const driverToDB = (driver: NewDriver | UpdateDriver): Partial<DBDriver> => {
   const { address, ...dbDriver } = driver;
   return {
     ...dbDriver,
@@ -215,7 +215,7 @@ export const updateDriverService = async (
     const updatedDriver = await prisma.driver.update({
       where: { id: id },
       data: {
-        ...driver,
+        ...driverToDB(driver),
       },
     });
     return dbToDriver(updatedDriver);

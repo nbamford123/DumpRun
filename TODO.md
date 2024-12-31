@@ -1,6 +1,8 @@
 # Temporary ToDo File
 
 ## Backend
+- a lot of our tests (like updateuser) aren't very exhaustive. 
+- e2e tier1 and tier2 tests don't exit, they go into watch mode
 - what kind of ci do we need to develop? Everything still handled manually
 - checking for email duplication up front which is better, but how to test cognito rollback?
 - should be forcing a email duplication check in integration tests

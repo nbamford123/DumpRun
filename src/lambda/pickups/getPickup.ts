@@ -27,7 +27,7 @@ const getPickupHandler: DynamoOperationHandler<'getPickup'> = async (
   )
     return NotFound('Pickup not found');
 
-  if (validGetPickup(context.userRole, context.userId, pickup))
+  if (validGetPickup(context.userRole, context.cognitoUserId, pickup))
     return createSuccessResponse<'getPickup'>(200, pickup);
 
   return Forbidden("User doesn't have permission");

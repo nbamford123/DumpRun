@@ -26,7 +26,7 @@ const acceptPickupHandler: DynamoOperationHandler<'acceptPickup'> = async (
 	const acceptedPickup = (await acceptPickupService(
 		context.client,
 		context.params.pickupId,
-		context.userId,
+		context.cognitoUserId,
 	)) as NonNullable<unknown>;
 	return createSuccessResponse<'acceptPickup'>(200, acceptedPickup);
 };

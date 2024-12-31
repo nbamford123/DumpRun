@@ -18,7 +18,7 @@ const updatePickupHandler: DynamoOperationHandler<'updatePickup'> = async (
 	);
 	if (pickup == null || pickup.status === 'deleted')
 		return NotFound('Pickup not found');
-	if (context.userRole === 'admin' || context.userId === pickup.userId) {
+	if (context.userRole === 'admin' || context.cognitoUserId === pickup.userId) {
 		if (pickup.status === 'accepted' || pickup.status === 'completed') {
 			return Forbidden('Cannot modify an accepted or completed pickup');
 		}

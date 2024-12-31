@@ -10,14 +10,17 @@ import { getDriverService, deleteDriverService } from './driverServices.js';
 const deleteDriverHandler: PrismaOperationHandler<'deleteDriver'> = async (
   context
 ) => {
-  const driver = await getDriverService(context.client, context.userId);
+  const driver = await getDriverService(
+    context.client,
+    context.params.driverId
+  );
   if (driver === null) return NotFound('Driver not found');
 
   // Only admin or *this* user can delete
-  if (context.userRole === 'admin' || context.userId === driver.id) {
+  if (context.userRole === 'admin' || context.cognitoUserId === driver.id) {
     const deletedDriver = (await deleteDriverService(
       context.client,
-      context.userId
+      context.params.driverId
     )) as NonNullable<Driver>;
 
     return createSuccessResponse<'deleteDriver'>(204, deletedDriver);

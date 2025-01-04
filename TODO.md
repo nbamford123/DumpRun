@@ -1,9 +1,12 @@
 # Temporary ToDo File
 
 ## Backend
+- why does update pickup status by admin fail? Add integration test!
+- better error messages for invalid input!
+- getPickups - we need a status of "all" and perhaps the ability to specify multuple statuses like 'accepted|canceleld'
 - a lot of our tests (like updateuser) aren't very exhaustive. 
 - e2e tier1 and tier2 tests don't exit, they go into watch mode
-- what kind of ci do we need to develop? Everything still handled manually
+- what kind of ci do we need to develop? Everything still handled manually - ask Claude
 - checking for email duplication up front which is better, but how to test cognito rollback?
 - should be forcing a email duplication check in integration tests
 - e2e tier2 tests are way too fragile-- have some kind of cleanup sweep or something so it's not necessary to manually clean the tables on failures

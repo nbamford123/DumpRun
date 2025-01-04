@@ -1,7 +1,7 @@
 # variables.tf
 variable "allowed_origins" {
   type    = string
-  default = "http://localhost:5173"
+  default = "https://dumprun-admin.netlify.app"
 }
 
 variable "aws_region" {

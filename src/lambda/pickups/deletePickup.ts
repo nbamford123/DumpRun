@@ -15,7 +15,7 @@ const deletePickupHandler: DynamoOperationHandler<'deletePickup'> = async (
 	if (pickup == null || pickup.status === 'deleted')
 		return NotFound('Pickup not found');
 	// Only admin or user who created pickup can delete
-	if (context.userId === pickup.userId || context.userRole === 'admin') {
+	if (context.cognitoUserId === pickup.userId || context.userRole === 'admin') {
 		// Users can only soft delete their own pickups if they're not in progress (and not cancelled)
 		if (
 			pickup.status !== 'available' &&

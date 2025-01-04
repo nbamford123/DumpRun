@@ -25,8 +25,8 @@ const cancelAcceptedPickupHandler: DynamoOperationHandler<
 	// If you're the user or driver, you can cancel (or admin)
 	if (
 		context.userRole === 'admin' ||
-		pickup.driverId === context.userId ||
-		pickup.userId === context.userId
+		pickup.driverId === context.cognitoUserId ||
+		pickup.userId === context.cognitoUserId
 	) {
 		if (pickup.status !== 'accepted')
 			return Conflict(

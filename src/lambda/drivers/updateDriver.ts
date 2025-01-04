@@ -12,9 +12,9 @@ import { getDriverService, updateDriverService } from './driverServices.js';
 const updateDriverHandler: PrismaOperationHandler<'updateDriver'> = async (
   context
 ) => {
-  const user = await getDriverService(context.client, context.userId);
+  const user = await getDriverService(context.client, context.params.driverId);
   if (user === null) return NotFound('Driver not found');
-  if (context.userRole !== 'admin' && context.userId !== user.id) {
+  if (context.userRole !== 'admin' && context.cognitoUserId !== user.id) {
     console.warn('Unauthorized access attempt', {
       requestId: context.requestId,
     });
@@ -22,7 +22,7 @@ const updateDriverHandler: PrismaOperationHandler<'updateDriver'> = async (
   }
   const updateDriver = (await updateDriverService(
     context.client,
-    context.userId,
+    context.params.driverId,
     context.body
   )) as NonNullable<Driver>;
   return createSuccessResponse<'updateDriver'>(200, updateDriver);

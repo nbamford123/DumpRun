@@ -12,9 +12,9 @@ import { getUserService, updateUserService } from './userServices.js';
 const updateUserHandler: PrismaOperationHandler<'updateUser'> = async (
   context
 ) => {
-  const user = await getUserService(context.client, context.userId);
+  const user = await getUserService(context.client, context.params.userId);
   if (user === null) return NotFound('User not found');
-  if (context.userRole !== 'admin' && context.userId !== user.id) {
+  if (context.userRole !== 'admin' && context.cognitoUserId !== user.id) {
     console.warn('Unauthorized access attempt', {
       requestId: context.requestId,
     });
@@ -22,7 +22,7 @@ const updateUserHandler: PrismaOperationHandler<'updateUser'> = async (
   }
   const updateUser = (await updateUserService(
     context.client,
-    context.userId,
+    context.params.userId,
     context.body
   )) as NonNullable<User>;
   return createSuccessResponse<'updateUser'>(200, updateUser);

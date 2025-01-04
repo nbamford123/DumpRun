@@ -66,7 +66,7 @@ const dbToUser = (dbUser: DBUser): User => {
   };
 };
 
-const userToDB = (user: NewUser): Partial<DBUser> => {
+const userToDB = (user: NewUser | UpdateUser): Partial<DBUser> => {
   const { address, ...dbUser } = user;
   return {
     ...dbUser,
@@ -212,7 +212,7 @@ export const updateUserService = async (
     const updatedUser = await prisma.user.update({
       where: { id: id },
       data: {
-        ...user,
+        ...userToDB(user),
       },
     });
     return dbToUser(updatedUser);

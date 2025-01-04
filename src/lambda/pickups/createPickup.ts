@@ -12,7 +12,7 @@ const createPickupHandler: DynamoOperationHandler<'createPickup'> = async (
 ) => {
 	const newPickup = await createPickupService(
 		context.client,
-		context.userId,
+		context.cognitoUserId,
 		context.body,
 	);
 	return createSuccessResponse<'createPickup'>(201, newPickup);

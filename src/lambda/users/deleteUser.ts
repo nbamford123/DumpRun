@@ -10,11 +10,11 @@ import { getUserService, deleteUserService } from './userServices.js';
 const deleteUserHandler: PrismaOperationHandler<'deleteUser'> = async (
   context
 ) => {
-  const user = await getUserService(context.client, context.userId);
+  const user = await getUserService(context.client, context.params.userId);
   if (user === null) return NotFound('User not found');
 
   // Only admin or *this* user can delete
-  if (context.userRole !== 'admin' && context.userId !== user.id) {
+  if (context.userRole !== 'admin' && context.cognitoUserId !== user.id) {
     console.warn('Unauthorized access attempt', {
       requestId: context.requestId,
     });
@@ -23,7 +23,7 @@ const deleteUserHandler: PrismaOperationHandler<'deleteUser'> = async (
 
   const deletedUser = (await deleteUserService(
     context.client,
-    context.userId
+    context.params.userId
   )) as NonNullable<User>;
 
   return createSuccessResponse<'deleteUser'>(204, deletedUser);
